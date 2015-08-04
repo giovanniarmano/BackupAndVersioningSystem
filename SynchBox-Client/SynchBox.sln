@@ -5,15 +5,20 @@ VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SynchBox-Client", "SynchBox-Client\SynchBox-Client.csproj", "{65DF9442-3180-4128-8E07-FFF7DDD91A14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncBox-Server", "SyncBox-Server\SyncBox-Server.csproj", "{F3625690-2AF6-40CE-B943-48793C8E7B4D}"
+EndProject
 Global
 	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 2
+		SccNumberOfProjects = 3
 		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
 		SccTeamFoundationServer = https://bertrone.visualstudio.com/defaultcollection
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = SynchBox-Client\\SynchBox-Client.csproj
-		SccProjectName1 = SynchBox-Client
-		SccLocalPath1 = SynchBox-Client
+		SccProjectUniqueName0 = SynchBox-Client\\SynchBox-Client.csproj
+		SccProjectName0 = SynchBox-Client
+		SccLocalPath0 = SynchBox-Client
+		SccLocalPath1 = .
+		SccProjectUniqueName2 = SyncBox-Server\\SyncBox-Server.csproj
+		SccProjectName2 = SyncBox-Server
+		SccLocalPath2 = SyncBox-Server
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,6 +29,10 @@ Global
 		{65DF9442-3180-4128-8E07-FFF7DDD91A14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{65DF9442-3180-4128-8E07-FFF7DDD91A14}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{65DF9442-3180-4128-8E07-FFF7DDD91A14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F3625690-2AF6-40CE-B943-48793C8E7B4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F3625690-2AF6-40CE-B943-48793C8E7B4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F3625690-2AF6-40CE-B943-48793C8E7B4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F3625690-2AF6-40CE-B943-48793C8E7B4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
