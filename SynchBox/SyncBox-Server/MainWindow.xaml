@@ -3,6 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MainWindow" Height="350" Width="525">
     <Grid>
-        
+        <GroupBox Header="Database Options" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="63" Width="385"/>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="97*"/>
+                <ColumnDefinition Width="420*"/>
+            </Grid.ColumnDefinitions>
+            <TextBox HorizontalAlignment="Left" Height="23" Margin="10,34,0,0" TextWrapping="Wrap" Text="C:\backup_server\db.db" VerticalAlignment="Top" Width="279" Grid.Column="1"/>
+            <Label Content="DB Path" HorizontalContentAlignment="Right" VerticalAlignment="Top" Margin="0,31,10,0" HorizontalAlignment="Right" Width="66"/>
+            <Button x:Name="b_start" Content="Start" Grid.Column="1" HorizontalAlignment="Left" Margin="222,177,0,0" VerticalAlignment="Top" Width="74" Click="b_start_Click"/>
+
+        </Grid>
     </Grid>
 </Window>

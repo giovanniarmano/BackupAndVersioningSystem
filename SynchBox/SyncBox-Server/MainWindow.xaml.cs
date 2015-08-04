@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+
 namespace SyncBox_Server
 {
     /// <summary>
@@ -20,9 +21,20 @@ namespace SyncBox_Server
     /// </summary>
     public partial class MainWindow : Window
     {
+        db db_handle = new db();
+
         public MainWindow()
         {
             InitializeComponent();
+            //MessageBox.Show("Begin");
+        }
+
+        private void b_start_Click(object sender, RoutedEventArgs e)
+        {
+ 
+            MessageBox.Show("Ciao!" + db_handle.start());
+            
+
         }
     }
 }
