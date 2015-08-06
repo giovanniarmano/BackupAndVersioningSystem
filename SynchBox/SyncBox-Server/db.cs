@@ -57,7 +57,7 @@ namespace SyncBox_Server
                 create_db_table();
             }
 
-            dbConnection.Close();
+           // dbConnection.Close();
 
             return true;
         }
