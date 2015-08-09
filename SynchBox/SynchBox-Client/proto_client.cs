@@ -30,6 +30,16 @@ namespace SynchBox_Client
 
             [ProtoMember(2)]
             public bool accepted;
+
+            public string ToString()
+            {
+                StringBuilder str = new StringBuilder("");
+                str.Append("msgtype->");
+                str.Append(msgtype);
+                str.Append("\naccepted->");
+                str.Append(accepted);
+                return str.ToString();
+            }
         }
 
         
@@ -47,6 +57,20 @@ namespace SynchBox_Client
 
             [ProtoMember(4)]
             public string password;
+
+            public string ToString()
+            {
+                StringBuilder str = new StringBuilder(""); 
+                str.Append("is_logged->");
+                str.Append(is_logged);
+                str.Append("\nuid->");
+                str.Append(uid);
+                str.Append("\nusername->");
+                str.Append(username);
+                str.Append("\npassword->");
+                str.Append(password);
+                return str.ToString();
+            }
         }
 
         /////////////////--END--///////////////////////
@@ -58,7 +82,16 @@ namespace SynchBox_Client
                 msgtype = (byte)CmdType.Login,
                 accepted = false,
             };
-            
+
+            MessageBox.Show("GOT CONNECTION Stream: sending data...");
+            Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
+
+            MessageBox.Show("Attempting reading data!");
+            messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+            if (msgtype_r.accepted == false)
+                throw new Exception("Message Type not Accepted by Server.\n" + msgtype_r.ToString());
+
             login_c login = new login_c
             {
                 is_logged = false,
@@ -67,15 +100,16 @@ namespace SynchBox_Client
                 password = _password
             };
 
-            MessageBox.Show("GOT CONNECTION Stream: sneding data...");
-            Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
+            //MessageBox.Show("GOT CONNECTION Stream: sending data...");
+            Serializer.SerializeWithLengthPrefix(netStream, login, PrefixStyle.Base128);
 
-            MessageBox.Show("Attempting reading data!");
-            messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+            //MessageBox.Show("Attempting reading data!");
+            login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
-            MessageBox.Show("DEBUG HERE!");
 
-            return login;
+            MessageBox.Show("SENT LOGIN\n" + login.ToString() + "\n\nRCVD LOGIN\n" + login_r.ToString());
+
+            return login_r;
         }
 
         //public void my_sender(enum CmdType, )
