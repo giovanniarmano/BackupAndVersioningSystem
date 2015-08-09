@@ -18,6 +18,8 @@ namespace SynchBox_Client
         private string remoteAddressString = "127.0.0.1";
         private int port = 1500;
         private Socket sender;
+        private bool connected = false;
+        NetworkStream netStream;
 
         //default ctor
         public SyncSocketClient() { 
@@ -31,9 +33,18 @@ namespace SynchBox_Client
 
         public void setPort(int port) { this.port = port; }
         public void setAddress(string address) { this.remoteAddressString = address; }
-        
 
-        public Socket Connect() {
+
+        public NetworkStream getStream() {
+            if (connected == false)
+                throw new Exception("Socket not connected!");
+
+            netStream = new NetworkStream(sender, true);
+
+            return netStream;
+        }
+
+        public void Connect() {
         // Data buffer for incoming data.
         //byte[] bytes = new byte[1024];
 
@@ -69,10 +80,11 @@ namespace SynchBox_Client
                 //MessageBox.Show("Echoed test = {0}",
                 //    Encoding.ASCII.GetString(bytes,0,bytesRec));
 
-                return sender;
-
+                //return sender;
+                connected = true;
 
             }
+/*    
             catch (ArgumentNullException ane)
             {
                 MessageBox.Show("ArgumentNullException :" + ane.ToString());
@@ -83,15 +95,16 @@ namespace SynchBox_Client
                 MessageBox.Show("SocketException :" + se.ToString());
                 throw;
             }
-            catch (Exception e)
+ */
+           catch (Exception e)
             {
-                MessageBox.Show("Unexpected exception : " + e.ToString());
+                //MessageBox.Show("Unexpected exception : " + e.ToString());
                 throw;
             }
             
 
         } catch (Exception e) {
-            MessageBox.Show( e.ToString());
+            //MessageBox.Show( e.ToString());
             throw;
         }
     }

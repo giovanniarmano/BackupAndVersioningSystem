@@ -3,21 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ProtoBuf;
 using System.Net;
 using System.Net.Sockets;
 using System.Windows;
-using ProtoBuf;
 
-namespace SynchBox_Client
+namespace SyncBox_Server
 {
-    enum CmdType : byte { Login , Register };
+    //TODO Synch with client!!
+    enum CmdType : byte { Login, Register };
 
-    class proto_client
+    class proto_server
     {
-        private NetworkStream netStream= null;
+         private NetworkStream netStream= null;
 
         //ctor
-        public proto_client(NetworkStream s) { netStream = s; }
+        public proto_server(NetworkStream s) { netStream = s; }
 
         ///////////////--BEGIN--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
@@ -52,7 +53,7 @@ namespace SynchBox_Client
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
         
-        public login_c do_login(string _username, string _password){
+        public login_c manage_login(){
             messagetype_c msgtype = new messagetype_c
             {
                 msgtype = (byte)CmdType.Login,
@@ -62,23 +63,25 @@ namespace SynchBox_Client
             login_c login = new login_c
             {
                 is_logged = false,
-                uid = -1,
-                username = _username,
-                password = _password
+                uid = -1
             };
-
-            MessageBox.Show("GOT CONNECTION Stream: sneding data...");
-            Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
 
             MessageBox.Show("Attempting reading data!");
             messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
 
+            //CHECK credentials
+
+            msgtype_r.accepted = true;
+
+            MessageBox.Show("GOT CONNECTION Stream: sneding data...");
+            Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+
+           
             MessageBox.Show("DEBUG HERE!");
 
             return login;
         }
 
-        //public void my_sender(enum CmdType, )
 
     }
 }

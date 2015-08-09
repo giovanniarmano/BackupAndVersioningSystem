@@ -11,24 +11,22 @@ namespace SyncBox_Server
 {
     class SyncSocketListener
     {
-        private int port = 0;
+        private int port = -1;
+
+        //private Socket handler;
+        private Socket listener;
 
         public SyncSocketListener(){
-            port = 1001;
+            port = 1500;
         }
 
         public SyncSocketListener(int port){
             this.port=port;
         }
 
-        public bool Start()
+        public void Start()
         {
             //NO MULTITHREAD FUNCTION
-
-            string data = null;
-
-            // Data buffer for incoming data.
-            byte[] bytes = new Byte[1024];
 
             MessageBox.Show("listener start!");
 
@@ -40,52 +38,28 @@ namespace SyncBox_Server
             IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
 
             // Create a TCP/IP socket.
-            Socket listener = new Socket(AddressFamily.InterNetwork,
+            listener = new Socket(AddressFamily.InterNetwork,
                 SocketType.Stream, ProtocolType.Tcp );
 
             // Bind the socket to the local endpoint and 
             // listen for incoming connections.
-            try {
                 listener.Bind(localEndPoint);
                 listener.Listen(10); //max number of pending connections
-
                 // Start listening for connections.
-                while (true) {
-                    MessageBox.Show("Waiting for a connection...");
-                    // Program is suspended while waiting for an incoming connection.
-                    Socket handler = listener.Accept();
-                    data = null;
+          }
 
-                    // An incoming connection needs to be processed.
-                    while (true) {
-                        bytes = new byte[1024];
-                        int bytesRec = handler.Receive(bytes);
-                        data += Encoding.ASCII.GetString(bytes,0,bytesRec);
-                        if (data.IndexOf("<EOF>") > -1) {
-                            break;
-                        }
-                    }
-
-                    // Show the data on the console.
-                    MessageBox.Show( "Text received : {0}", data);
-
-                    // Echo the data back to the client.
-                    byte[] msg = Encoding.ASCII.GetBytes(data);
-
-                    handler.Send(msg);
-                    handler.Shutdown(SocketShutdown.Both);
-                    handler.Close();
-                }
+        public Socket AcceptConnection() {
+            Socket handler = listener.Accept();
+            return handler;
             
-            } catch (Exception e) {
-                MessageBox.Show(e.ToString());
-                return false;
-            }
+            //handler.Send(msg);
+            //handler.Shutdown(SocketShutdown.Both);
+            //handler.Close();
+        }
 
-            MessageBox.Show("\nPress ENTER to continue...");
-            //Console.Read();
-
-            
-    }
+        public NetworkStream getStream(Socket s) { 
+            NetworkStream netStream = new NetworkStream(s, true);
+            return netStream;
+        }
 }
 }
