@@ -24,6 +24,7 @@ namespace SyncBox_Server
             //dbConnection = dbConn;
             dbPath = dbConn;
             dbConnection = string.Format(@"Data Source={0}; Pooling=false; FailIfMissing=false;", dbConn);
+
         }
 
        // public void set_path(string path)

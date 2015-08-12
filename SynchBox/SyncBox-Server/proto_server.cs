@@ -105,7 +105,14 @@ namespace SyncBox_Server
                     Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
                     manage_login();
                 break;
-               
+
+                case (byte)CmdType.Register:
+                MessageBox.Show("REGISTER CASE");
+                msgtype_r.accepted = true;
+                Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                manage_register();
+                break;
+
                 default:
                    MessageBox.Show("DEFAULT");
                 break;
@@ -122,10 +129,10 @@ namespace SyncBox_Server
 
             //CHECK credentials
 
+            string sql = "select * from USERS where user = '" + login_r.username + "' ;";
+
             string md5pwd = CalculateMD5Hash(login_r.password);
 
-            string sql = "select * from USERS ;";//WHERE md5 = " + md5pwd + " ;";
-            
             DataTable dt = db_handle.GetDataTable(sql);
 
             bool success = false;
@@ -160,6 +167,53 @@ namespace SyncBox_Server
             Serializer.SerializeWithLengthPrefix(netStream, login_r, PrefixStyle.Base128);
 
             MessageBox.Show("SENT LOGIN->" + login_r.ToString());
+
+        }
+
+        public void manage_register()
+        {
+
+            //MessageBox.Show("Attempting reading data!");
+            login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
+
+            //MessageBox.Show("RCV LOGIN->" + login_r.ToString());
+
+            
+
+            string sql = "select * from USERS where user = '" + login_r.username + "' ;";
+
+            DataTable dt = db_handle.GetDataTable(sql);
+
+            if (dt.Rows.Count == 0)
+            {
+                string md5pwd = CalculateMD5Hash(login_r.password);
+                string sqlupdate = "insert into USERS (user,md5) values ('" + login_r.username + "','" + md5pwd + "');";
+
+                int row_updated = db_handle.ExecuteNonQuery(sqlupdate);
+
+                string sql_ = "select * from USERS where user = '" + login_r.username + "' ;";
+
+                DataTable dt_ = db_handle.GetDataTable(sql_);
+
+                login_r.uid = int.Parse(dt_.Rows[0]["uid"].ToString());
+                login_r.is_logged = true;
+
+
+            }
+            else if (dt.Rows.Count >= 1)
+            {
+                login_r.is_logged = false;
+            }
+            
+            login_r.password = null;
+
+            //salvo nella sessione utente login! 
+            login_session = login_r;
+
+            //   MessageBox.Show("GOT CONNECTION Stream: sneding data...");
+            Serializer.SerializeWithLengthPrefix(netStream, login_r, PrefixStyle.Base128);
+
+            MessageBox.Show("GEGISTER LOGIN->" + login_r.ToString());
 
         }
 

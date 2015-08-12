@@ -112,6 +112,43 @@ namespace SynchBox_Client
             return login_r;
         }
 
+        public login_c do_register(string _username, string _password)
+        {
+            messagetype_c msgtype = new messagetype_c
+            {
+                msgtype = (byte)CmdType.Register,
+                accepted = false,
+            };
+
+            //MessageBox.Show("GOT CONNECTION Stream: sending data...");
+            Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
+
+            //MessageBox.Show("Attempting reading data!");
+            messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+            if (msgtype_r.accepted == false)
+                throw new Exception("Message Type not Accepted by Server.\n" + msgtype_r.ToString());
+
+            login_c login = new login_c
+            {
+                is_logged = false,
+                uid = -1,
+                username = _username,
+                password = _password
+            };
+
+            //MessageBox.Show("GOT CONNECTION Stream: sending data...");
+            Serializer.SerializeWithLengthPrefix(netStream, login, PrefixStyle.Base128);
+
+            //MessageBox.Show("Attempting reading data!");
+            login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
+
+
+            MessageBox.Show("SENT REGISTER\n" + login.ToString() + "\n\nRCVD REGISTER\n" + login_r.ToString());
+
+            return login_r;
+        }
+
         //public void my_sender(enum CmdType, )
 
     }
