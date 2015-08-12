@@ -9,7 +9,7 @@
                 <ColumnDefinition Width="97*"/>
                 <ColumnDefinition Width="420*"/>
             </Grid.ColumnDefinitions>
-            <TextBox HorizontalAlignment="Left" Height="23" Margin="10,34,0,0" TextWrapping="Wrap" Text="C:\backup_server\db.db" VerticalAlignment="Top" Width="279" Grid.Column="1"/>
+            <TextBox x:Name="db_path_textbox" HorizontalAlignment="Left" Height="23" Margin="10,34,0,0" TextWrapping="Wrap" Text="e:\backup\db.db" VerticalAlignment="Top" Width="279" Grid.Column="1"/>
             <Label Content="DB Path" HorizontalContentAlignment="Right" VerticalAlignment="Top" Margin="0,31,10,0" HorizontalAlignment="Right" Width="66"/>
             <Button x:Name="b_start" Content="Start" Grid.Column="1" HorizontalAlignment="Left" Margin="222,177,0,0" VerticalAlignment="Top" Width="74" Click="b_start_Click"/>
 

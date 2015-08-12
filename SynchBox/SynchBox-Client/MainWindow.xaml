@@ -25,7 +25,7 @@
                         <Label Content="Password:" HorizontalAlignment="Right" HorizontalContentAlignment="Right" Margin="0,58,10,0" VerticalAlignment="Top" Height="23" Width="88"/>
                         <PasswordBox Grid.Column="1" Margin="0,63,7,0" VerticalAlignment="Top" Height="18"/>
                         <Image Grid.Column="1" HorizontalAlignment="Left" Height="37" Margin="23,100,0,0" VerticalAlignment="Top" Width="42" Source="images/login.png"/>
-                        <Button x:Name="b_login_login" Content="Login" Grid.Column="1" HorizontalAlignment="Left" Margin="70,100,0,0" VerticalAlignment="Top" Width="124" Height="37"/>
+                        <Button x:Name="b_login_login" Content="Login" Grid.Column="1" HorizontalAlignment="Left" Margin="70,100,0,0" VerticalAlignment="Top" Width="124" Height="37" Click="b_login_login_Click"/>
 
                     </Grid>
 

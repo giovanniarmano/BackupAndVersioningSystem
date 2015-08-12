@@ -7,6 +7,9 @@ using ProtoBuf;
 using System.Net;
 using System.Net.Sockets;
 using System.Windows;
+using System.Data;
+//using System.Web.Security;
+using System.Security.Cryptography;
 
 namespace SyncBox_Server
 {
@@ -19,11 +22,16 @@ namespace SyncBox_Server
          private NetworkStream netStream= null;
          public login_c login_session;
          private db db_handle;
+         private string dbConnection;
 
         //ctor
-        public proto_server(NetworkStream s) { netStream = s; }
+         public proto_server(NetworkStream s, string dbConnection) { 
+             netStream = s; 
+             this.dbConnection = dbConnection;
+             db_handle = new db(dbConnection);
+         }
 
-        public void setDb(db handle) { db_handle = handle; }
+        //public void setDb(db handle) { db_handle = handle; }
 
         ///////////////--BEGIN--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
@@ -113,13 +121,38 @@ namespace SyncBox_Server
             MessageBox.Show("RCV LOGIN->" + login_r.ToString());
 
             //CHECK credentials
-            //set id
-            //rmv pwd
 
-            login_r.is_logged = true;
-            login_r.password = "";
-            login_r.uid = 1;
+            string md5pwd = CalculateMD5Hash(login_r.password);
 
+            string sql = "select * from USERS ;";//WHERE md5 = " + md5pwd + " ;";
+            
+            DataTable dt = db_handle.GetDataTable(sql);
+
+            bool success = false;
+
+            if (dt.Rows.Count == 0) {
+                success = false;
+            }
+            else if (dt.Rows.Count == 1) {
+                if (dt.Rows[0]["user"].ToString().Equals(login_r.username) && dt.Rows[0]["md5"].ToString().Equals(md5pwd))
+                    success = true;
+                else
+                    success = false;
+            }
+            else {
+                success = false;
+            }
+
+            if (success)
+            {
+                login_r.uid = int.Parse(dt.Rows[0]["uid"].ToString());
+                login_r.is_logged = true;
+            }
+            else {
+                login_r.is_logged = false;
+            }
+            login_r.password = null;
+            
             //salvo nella sessione utente login! 
             login_session = login_r;
 
@@ -128,6 +161,22 @@ namespace SyncBox_Server
 
             MessageBox.Show("SENT LOGIN->" + login_r.ToString());
 
+        }
+
+        public string CalculateMD5Hash(string input)
+        {
+            // step 1, calculate MD5 hash from input
+            MD5 md5 = System.Security.Cryptography.MD5.Create();
+            byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            byte[] hash = md5.ComputeHash(inputBytes);
+
+            // step 2, convert byte array to hex string
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < hash.Length; i++)
+            {
+                sb.Append(hash[i].ToString("X2"));
+            }
+            return sb.ToString();
         }
 
     }
