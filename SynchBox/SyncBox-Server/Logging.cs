@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SyncBox_Server
 {
-    class Logging
+    public class Logging
     {
         public Logging()
         {
@@ -23,7 +23,7 @@ namespace SyncBox_Server
                 StreamWriter SW;
                 DateTime t = DateTime.Now;
                 SW = File.AppendText("E:\\backup\\Log_server.txt");
-                SW.WriteLine(t.ToString() +" - " + message);
+                SW.WriteLine(t.ToString() + " - (" + System.Threading.Thread.CurrentThread.ManagedThreadId + ")" + message);
                 SW.Close();
             }
         }

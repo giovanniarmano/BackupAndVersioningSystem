@@ -9,17 +9,13 @@ using System.Windows;
 
 namespace SyncBox_Server
 {
-    class SyncSocketListener
+    public class SyncSocketListener
     {
         private int port = -1;
         Logging log;
 
         //private Socket handler;
         private Socket listener;
-
-        public SyncSocketListener(){
-            port = 1500;
-        }
 
         public SyncSocketListener(int port,Logging log){
             this.port=port;
@@ -29,9 +25,7 @@ namespace SyncBox_Server
         public void Start()
         {
             //NO MULTITHREAD FUNCTION
-
-            log.WriteToLog("SynSockListener.Start() - started");
-
+            log.WriteToLog("Binding ...");
             // Establish the local endpoint for the socket.
             // Dns.GetHostName returns the name of the 
             // host running the application.
@@ -41,26 +35,22 @@ namespace SyncBox_Server
 
             // Create a TCP/IP socket.
             listener = new Socket(AddressFamily.InterNetwork,
-                SocketType.Stream, ProtocolType.Tcp );
+            SocketType.Stream, ProtocolType.Tcp );
 
             // Bind the socket to the local endpoint and 
             // listen for incoming connections.
-            log.WriteToLog("binding to local endpoint");
-                listener.Bind(localEndPoint);
-                listener.Listen(10); //max number of pending connections
-                // Start listening for connections.
-                log.WriteToLog("binding successfull");
+            
+            listener.Bind(localEndPoint);
+            listener.Listen(10); //max number of pending connections
+            // Start listening for connections.
+            log.WriteToLog("Binding DONE");
           }
 
         public Socket AcceptConnection() {
-            log.WriteToLog("tryiing to accept connextion");
+            log.WriteToLog("Accepting connection ...");
             Socket handler = listener.Accept();
-            log.WriteToLog("connection accepted!");
+            log.WriteToLog("Accepting connection DONE");
             return handler;
-            
-            //handler.Send(msg);
-            //handler.Shutdown(SocketShutdown.Both);
-            //handler.Close();
         }
 
         public NetworkStream getStream(Socket s) { 

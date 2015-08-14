@@ -12,7 +12,7 @@ using System.Windows;
 
 namespace SynchBox_Client
 {
-    class SyncSocketClient
+    public class SyncSocketClient
     {   
         //TODO Remove @ release
         private string remoteAddressString = "127.0.0.1";

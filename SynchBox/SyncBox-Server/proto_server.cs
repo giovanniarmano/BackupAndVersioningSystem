@@ -8,9 +8,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Windows;
 using System.Data;
-//using System.Web.Security;
 using System.Security.Cryptography;
 
+//TODO Logout method-> unset login_session
 namespace SyncBox_Server
 {
     //TODO Synch with client!!
@@ -33,8 +33,6 @@ namespace SyncBox_Server
              this.log = log;
          }
 
-        //public void setDb(db handle) { db_handle = handle; }
-
         ///////////////--BEGIN--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
 
@@ -51,10 +49,11 @@ namespace SyncBox_Server
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("");
-                str.Append("msgtype->");
+                str.Append("|msgtype->");
                 str.Append(msgtype);
-                str.Append("\naccepted->");
+                str.Append("|accepted->");
                 str.Append(accepted);
+                str.Append("|");
                 return str.ToString();
             }
         }
@@ -79,14 +78,15 @@ namespace SyncBox_Server
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("");
-                str.Append("is_logged->");
+                str.Append("|is_logged->");
                 str.Append(is_logged);
-                str.Append("\nuid->");
+                str.Append("|uid->");
                 str.Append(uid);
-                str.Append("\nusername->");
+                str.Append("|username->");
                 str.Append(username);
-                str.Append("\npassword->");
+                str.Append("|npassword->");
                 str.Append(password);
+                str.Append("|");
                 return str.ToString();
             }
         }
@@ -99,24 +99,23 @@ namespace SyncBox_Server
 
             messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
             
-
             switch (msgtype_r.msgtype){
                 case (byte)CmdType.Login:
-                    log.WriteToLog("LOGIN CASE");
+                    log.WriteToLog("manage LOGIN CASE ...");
                     msgtype_r.accepted = true;
                     Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
                     manage_login();
                 break;
 
                 case (byte)CmdType.Register:
-                log.WriteToLog("REGISTER CASE");
+                log.WriteToLog("manage REGISTER CASE ...");
                 msgtype_r.accepted = true;
                 Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
                 manage_register();
                 break;
 
                 default:
-                   log.WriteToLog("DEFAULT");
+                   log.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
                 break;
             }
         }
@@ -124,10 +123,9 @@ namespace SyncBox_Server
 
         public void manage_login(){
        
-            //MessageBox.Show("Attempting reading data!");
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
-            log.WriteToLog("RCV LOGIN->" + login_r.ToString());
+            log.WriteToLog("received - " + login_r.ToString());
 
             //CHECK credentials
 
@@ -165,22 +163,17 @@ namespace SyncBox_Server
             //salvo nella sessione utente login! 
             login_session = login_r;
 
-       //   MessageBox.Show("GOT CONNECTION Stream: sneding data...");
             Serializer.SerializeWithLengthPrefix(netStream, login_r, PrefixStyle.Base128);
 
-            log.WriteToLog("SENT LOGIN->" + login_r.ToString());
+            log.WriteToLog("sent + " + login_r.ToString());
 
         }
 
         public void manage_register()
         {
-
-            //MessageBox.Show("Attempting reading data!");
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
-            //MessageBox.Show("RCV LOGIN->" + login_r.ToString());
-
-            
+            log.WriteToLog("received - " + login_r.ToString());
 
             string sql = "select * from USERS where user = '" + login_r.username + "' ;";
 
@@ -200,7 +193,6 @@ namespace SyncBox_Server
                 login_r.uid = int.Parse(dt_.Rows[0]["uid"].ToString());
                 login_r.is_logged = true;
 
-
             }
             else if (dt.Rows.Count >= 1)
             {
@@ -215,7 +207,7 @@ namespace SyncBox_Server
             //   MessageBox.Show("GOT CONNECTION Stream: sneding data...");
             Serializer.SerializeWithLengthPrefix(netStream, login_r, PrefixStyle.Base128);
 
-            log.WriteToLog("REGISTER LOGIN->" + login_r.ToString());
+            log.WriteToLog("sent - " + login_r.ToString());
 
         }
 

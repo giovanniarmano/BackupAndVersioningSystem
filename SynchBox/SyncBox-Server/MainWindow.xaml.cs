@@ -12,65 +12,94 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using System.Windows;
 using System.Net;
 using System.Net.Sockets;
-
+using System.Threading;
 
 namespace SyncBox_Server
 {
-   // public struct Param
-   // {
-   //     public SyncSocketListener listener;
-   //     public string dbConnection;
-   // }
+    //Parameter class -> object to pass to each thread serving the clients
+    public class Param
+    {
+        public SyncSocketListener listener;
+        public string dbConnection;
+        public Logging log;
 
+        public Param(SyncSocketListener listener,string dbConnection,Logging log){
+            this.listener = listener;
+            this.dbConnection = dbConnection;
+            this.log = log;
+        }
+    }
+    
     /// <summary>
     /// Logica di interazione per MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        public const int NTHREAD = 2;   //# of threads
+        
         db db_handle;
         string dbConnection;
-        SyncSocketListener listener;
+        public SyncSocketListener listener;
         Logging log = new Logging();
+        
+        Thread[] thread_array = new Thread[NTHREAD];    //Array of threads //TODO improve?? HOW?
 
         public MainWindow()
         {
             InitializeComponent();
-            log.WriteToLog("Initialize component");
-            //MessageBox.Show("Begin");
+            log.WriteToLog("-----SERVER START-----");
+            
+        }
+
+        //NON SONO PER NIENTE SICURO CHE FUNZIONI!!
+        //per il disturittore
+        //per il metodo abort! per robustezza e perchè potrebbe esserci un try catch nel thread
+         ~MainWindow()
+        {
+            log.WriteToLog("Shutting down MainWindow...");
+            int i = 0;
+            for (i = 0; i < NTHREAD; i++)
+            {
+                if (thread_array[i] != null) { 
+                    thread_array[i].Abort();
+                    log.WriteToLog("THREAD ABORTED - " + i);
+                }
+            }
+            log.WriteToLog("Shutting down MainWindow DONE");
+            
         }
 
         private void b_start_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                log.WriteToLog("trying to start the server ..."); 
+                log.WriteToLog("starting the server ..."); 
+                
                 db_handle = new db(db_path_textbox.Text);
                 dbConnection = db_path_textbox.Text;
-                //alloc db structs 
-                log.WriteToLog("trying to get db handle");
                 db_handle.start();
                 
-                log.WriteToLog("trying to get new listener");
                 //nuovo oggetto listener
                 listener = new SyncSocketListener(1500,log);
-                //mi metto in ascolto! Bind
                 listener.Start();
 
-                log.WriteToLog("listener started");
+                //in release, here is MULTITHREAD!!!!!!!!!! DONE
+                //si può fare MUCH MUCH BETTER!
                 
+                Param p = new Param(listener,dbConnection,log);
+                
+                int i = 0;
+                for (i = 0; i < NTHREAD; i++)
+                {              
+                    thread_array[i] = new Thread(new ParameterizedThreadStart(manage_Client));
+                    thread_array[i].Start(p);
 
-                //in release, here is MULTITHREAD!!!!!!!!!!
+                    log.WriteToLog("THREAD STARTED - " + i);
+                }
 
-     //           Param p;// = new Param(listener,dbConnection);
-     //           p.listener = listener;
-     //           p.dbConnection = dbConnection;
-
-                log.WriteToLog("trying to manage client");
-                manage_Client();
-
+                log.WriteToLog("starting the server DONE");
             }
             catch (Exception exc)
             {
@@ -79,41 +108,40 @@ namespace SyncBox_Server
             }
         }
 
-        public void manage_Client()
+        //Cuncurrency Thread Function! manages multiple clients requests
+        public void manage_Client(object obj)
         {
+            Param p = (Param)obj;
             NetworkStream connected_stream;
             proto_server protoServer;
             try
             {
                 while (true) 
                 {
-                    log.WriteToLog("manage client - accepting connection");
-                    //SyncSocketListener listener = p.getListener();
-                    Socket s = listener.AcceptConnection();
-                    connected_stream = listener.getStream(s);
-
-                    log.WriteToLog("manage client - connection accepted!");
-
-                    protoServer = new proto_server(connected_stream, dbConnection,log);
-                    //protoServer.setDb(db_handle);
-                    //protoServer.manage_login();
-                    //try
-                    //{
+                    Socket s = p.listener.AcceptConnection();
+                    connected_stream = p.listener.getStream(s);
+                    protoServer = new proto_server(connected_stream, p.dbConnection,p.log);
+                    
+                    try
+                    {
                         while (true)
                         {
-                            log.WriteToLog("try to manage protoserver");
                             protoServer.manage();
-                            log.WriteToLog("protoserver managed");
                         }
-                   // }
-                   // catch (Exception ex) {
-                   //     MessageBox.Show(ex.ToString());
-                   // }
+                    }
+                    catch (System.IO.IOException se) {
+                        p.log.WriteToLog("qui io penso che la connessione sia stata chiusa dal client!" + se.ToString());
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("qui io penso che ci sia stato un altro tipo di eccezione" + ex.ToString());
+                        p.log.WriteToLog("qui io penso che ci sia stato un altro tipo di eccezione" + ex.ToString());
+                    }
                 }
             }catch (Exception exc) 
             {
                 MessageBox.Show(exc.ToString());
-                log.WriteToLog(exc.ToString());
+                p.log.WriteToLog(exc.ToString());
             }
         }
     }
