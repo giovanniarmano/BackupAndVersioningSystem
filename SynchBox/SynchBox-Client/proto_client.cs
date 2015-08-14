@@ -15,9 +15,10 @@ namespace SynchBox_Client
     class proto_client
     {
         private NetworkStream netStream= null;
+        Logging log;
 
         //ctor
-        public proto_client(NetworkStream s) { netStream = s; }
+        public proto_client(NetworkStream s, Logging log) { netStream = s; this.log = log; }
 
         ///////////////--BEGIN--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
@@ -83,10 +84,10 @@ namespace SynchBox_Client
                 accepted = false,
             };
 
-            MessageBox.Show("GOT CONNECTION Stream: sending data...");
+            log.WriteToLog("GOT CONNECTION Stream: sending data...");
             Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
 
-            MessageBox.Show("Attempting reading data!");
+            log.WriteToLog("Attempting reading data!");
             messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
 
             if (msgtype_r.accepted == false)
@@ -107,7 +108,7 @@ namespace SynchBox_Client
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
 
-            MessageBox.Show("SENT LOGIN\n" + login.ToString() + "\n\nRCVD LOGIN\n" + login_r.ToString());
+            log.WriteToLog("SENT LOGIN\n" + login.ToString() + "\n\nRCVD LOGIN\n" + login_r.ToString());
 
             return login_r;
         }
@@ -144,7 +145,7 @@ namespace SynchBox_Client
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
 
-            MessageBox.Show("SENT REGISTER\n" + login.ToString() + "\n\nRCVD REGISTER\n" + login_r.ToString());
+            log.WriteToLog("SENT REGISTER\n" + login.ToString() + "\n\nRCVD REGISTER\n" + login_r.ToString());
 
             return login_r;
         }

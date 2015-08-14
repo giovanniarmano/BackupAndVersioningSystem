@@ -76,6 +76,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Logging.cs" />
     <Compile Include="proto_server.cs" />
     <Compile Include="SyncSocketListener.cs" />
     <Page Include="MainWindow.xaml">

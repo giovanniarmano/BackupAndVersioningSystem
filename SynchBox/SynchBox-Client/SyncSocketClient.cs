@@ -20,15 +20,20 @@ namespace SynchBox_Client
         private Socket sender;
         private bool connected = false;
         NetworkStream netStream;
+        Logging log;
+        //static SyncSocketClient this_ = null;
 
         //default ctor
         public SyncSocketClient() { 
         }
         
         //ctor
-        public SyncSocketClient(string ip, int port) {
+        public SyncSocketClient(string ip, int port,Logging log) {
+            //if (this_ == null) { }
             remoteAddressString = ip;
             this.port = port;
+            this.log = log;
+          //  this_ = this;
         }
 
         public void setPort(int port) { this.port = port; }
@@ -66,7 +71,7 @@ namespace SynchBox_Client
             {
                 sender.Connect(remoteEP);
 
-                MessageBox.Show("Socket connected to" +
+                log.WriteToLog("Socket connected to" +
                     sender.RemoteEndPoint.ToString());
 
                 // Encode the data string into a byte array.

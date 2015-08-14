@@ -12,6 +12,7 @@ namespace SyncBox_Server
     class SyncSocketListener
     {
         private int port = -1;
+        Logging log;
 
         //private Socket handler;
         private Socket listener;
@@ -20,15 +21,16 @@ namespace SyncBox_Server
             port = 1500;
         }
 
-        public SyncSocketListener(int port){
+        public SyncSocketListener(int port,Logging log){
             this.port=port;
+            this.log = log;
         }
 
         public void Start()
         {
             //NO MULTITHREAD FUNCTION
 
-            MessageBox.Show("listener start!");
+            log.WriteToLog("SynSockListener.Start() - started");
 
             // Establish the local endpoint for the socket.
             // Dns.GetHostName returns the name of the 
@@ -43,13 +45,17 @@ namespace SyncBox_Server
 
             // Bind the socket to the local endpoint and 
             // listen for incoming connections.
+            log.WriteToLog("binding to local endpoint");
                 listener.Bind(localEndPoint);
                 listener.Listen(10); //max number of pending connections
                 // Start listening for connections.
+                log.WriteToLog("binding successfull");
           }
 
         public Socket AcceptConnection() {
+            log.WriteToLog("tryiing to accept connextion");
             Socket handler = listener.Accept();
+            log.WriteToLog("connection accepted!");
             return handler;
             
             //handler.Send(msg);

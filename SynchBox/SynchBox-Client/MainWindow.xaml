@@ -26,6 +26,7 @@
                         <PasswordBox x:Name="password_tb" Grid.Column="1" Margin="0,63,7,0" VerticalAlignment="Top" Height="18" Password="pwd"/>
                         <Image Grid.Column="1" HorizontalAlignment="Left" Height="37" Margin="23,95,0,0" VerticalAlignment="Top" Width="42" Source="images/login.png"/>
                         <Button x:Name="b_login_login" Content="Login" Grid.Column="1" HorizontalAlignment="Left" Margin="70,95,0,0" VerticalAlignment="Top" Width="124" Height="37" Click="b_login_login_Click"/>
+                        <Button x:Name="b_logout_login" Content="Logout" Grid.Column="1" HorizontalAlignment="Left" Margin="70,95,0,0" VerticalAlignment="Top" Width="124" Height="37" Click="b_logout_login_Click" Visibility="Hidden"/>
                         <Button x:Name="b_register" Content="or Register" Grid.Column="1" HorizontalContentAlignment="Right" HorizontalAlignment="Left" Margin="127,138,0,0" VerticalAlignment="Top" Width="67" Height="20" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="#FF000CFF" BorderThickness="0" Click="b_register_Click"/>
 
                         <!--

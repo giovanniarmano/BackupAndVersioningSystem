@@ -60,6 +60,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Logging.cs" />
     <Compile Include="proto_client.cs" />
     <Compile Include="SyncSocketClient.cs" />
     <Page Include="MainWindow.xaml">
