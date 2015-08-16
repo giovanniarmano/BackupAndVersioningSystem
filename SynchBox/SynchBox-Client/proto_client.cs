@@ -35,10 +35,11 @@ namespace SynchBox_Client
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("");
-                str.Append("msgtype->");
+                str.Append("|msgtype->");
                 str.Append(msgtype);
-                str.Append("\naccepted->");
+                str.Append("|accepted->");
                 str.Append(accepted);
+                str.Append("|");
                 return str.ToString();
             }
         }
@@ -61,15 +62,16 @@ namespace SynchBox_Client
 
             public string ToString()
             {
-                StringBuilder str = new StringBuilder(""); 
-                str.Append("is_logged->");
+                StringBuilder str = new StringBuilder("");
+                str.Append("|is_logged->");
                 str.Append(is_logged);
-                str.Append("\nuid->");
+                str.Append("|uid->");
                 str.Append(uid);
-                str.Append("\nusername->");
+                str.Append("|username->");
                 str.Append(username);
-                str.Append("\npassword->");
+                str.Append("|npassword->");
                 str.Append(password);
+                str.Append("|");
                 return str.ToString();
             }
         }
@@ -84,10 +86,10 @@ namespace SynchBox_Client
                 accepted = false,
             };
 
-            log.WriteToLog("GOT CONNECTION Stream: sending data...");
+            log.WriteToLog("LOGGING IN ...");
             Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
 
-            log.WriteToLog("Attempting reading data!");
+            //log.WriteToLog("Attempting reading data!");
             messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
 
             if (msgtype_r.accepted == false)
@@ -108,7 +110,9 @@ namespace SynchBox_Client
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
 
-            log.WriteToLog("SENT LOGIN\n" + login.ToString() + "\n\nRCVD LOGIN\n" + login_r.ToString());
+            log.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
+            //log.WriteToLog("logging in: sending data...");
+            
 
             return login_r;
         }
@@ -121,6 +125,8 @@ namespace SynchBox_Client
                 accepted = false,
             };
 
+            log.WriteToLog("REGISTER ...");
+
             //MessageBox.Show("GOT CONNECTION Stream: sending data...");
             Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
 
@@ -145,7 +151,8 @@ namespace SynchBox_Client
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
 
-            log.WriteToLog("SENT REGISTER\n" + login.ToString() + "\n\nRCVD REGISTER\n" + login_r.ToString());
+            //log.WriteToLog("SENT REGISTER\n" + login.ToString() + "\n\nRCVD REGISTER\n" + login_r.ToString());
+            log.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
 
             return login_r;
         }

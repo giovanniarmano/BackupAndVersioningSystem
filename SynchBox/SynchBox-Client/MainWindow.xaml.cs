@@ -66,7 +66,7 @@ namespace SynchBox_Client
                 validateTextBoxes();
                 //throw new Exception("Complete Login/Registration information");
 
-                log.WriteToLog("if ip!=ip || port!=port || !connected -> new SynsocketCliuent");
+                log.WriteToLog("if ip!=ip || port!=port || !connected -> new SynsocketClient");
                 if ((!ip.Equals(ip_tb.Text)) || (!port.Equals(port_tb.Text)) || (!connected))
                 {
                     log.WriteToLog("connecting ...");

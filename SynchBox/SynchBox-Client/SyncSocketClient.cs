@@ -50,15 +50,10 @@ namespace SynchBox_Client
         }
 
         public void Connect() {
-        // Data buffer for incoming data.
-        //byte[] bytes = new byte[1024];
-
-        // Connect to a remote device.
         try {
+            //log.WriteToLog("connecting ...");
             // Establish the remote endpoint for the socket.
-            // This example uses port 11000 on the local computer.
             IPHostEntry ipHostInfo = Dns.Resolve(Dns.GetHostName());
-    //        IPAddress ipAddress = ipHostInfo.AddressList[0];
             IPAddress remoteAddress = IPAddress.Parse(remoteAddressString);
             IPEndPoint remoteEP = new IPEndPoint(remoteAddress,port);
 
@@ -67,66 +62,32 @@ namespace SynchBox_Client
                 SocketType.Stream, ProtocolType.Tcp );
 
             // Connect the socket to the remote endpoint. Catch any errors.
-            try
-            {
-                sender.Connect(remoteEP);
-
-                log.WriteToLog("Socket connected to" +
-                    sender.RemoteEndPoint.ToString());
-
-                // Encode the data string into a byte array.
-                //byte[] msg = Encoding.ASCII.GetBytes("This is a test<EOF>");
-
-                // Send the data through the socket.
-                //int bytesSent = sender.Send(msg);
-
-                // Receive the response from the remote device.
-                //int bytesRec = sender.Receive(bytes);
-                //MessageBox.Show("Echoed test = {0}",
-                //    Encoding.ASCII.GetString(bytes,0,bytesRec));
-
-                //return sender;
-                connected = true;
-
-            }
-/*    
-            catch (ArgumentNullException ane)
-            {
-                MessageBox.Show("ArgumentNullException :" + ane.ToString());
-                throw;
-            }
-            catch (SocketException se)
-            {
-                MessageBox.Show("SocketException :" + se.ToString());
-                throw;
-            }
- */
-           catch (Exception e)
-            {
-                //MessageBox.Show("Unexpected exception : " + e.ToString());
-                throw;
-            }
             
+            sender.Connect(remoteEP);
+
+            //log.WriteToLog("connecting DONE");
+            //log.WriteToLog("connected to " + sender.RemoteEndPoint.ToString());
+                
+            connected = true;
 
         } catch (Exception e) {
             //MessageBox.Show( e.ToString());
+            log.WriteToLog("connecting FAILED");
             throw;
         }
     }
 
-
-        public void Close() {
+        public void Close() 
+        {
             try
             {
                 // Release the socket.
                 sender.Shutdown(SocketShutdown.Both);
                 sender.Close();
-            } catch (Exception e) {
-            MessageBox.Show( e.ToString());
+            } catch (Exception e) 
+            {
+                MessageBox.Show( e.ToString());
+            }
         }
-        }
-
-
-
     }
 }
