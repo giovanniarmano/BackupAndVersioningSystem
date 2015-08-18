@@ -29,9 +29,20 @@ namespace SyncBox_Server
             // Establish the local endpoint for the socket.
             // Dns.GetHostName returns the name of the 
             // host running the application.
+            
+            //OLD DEPRECATED
+            /*
             IPHostEntry ipHostInfo = Dns.Resolve(Dns.GetHostName());
+            //IPHostEntry ipHostInfo = Dns.Resolve(Dns.GetHostEntry);
             IPAddress ipAddress = ipHostInfo.AddressList[0];
             IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
+            */
+            IPHostEntry ipHostInfo = Dns.Resolve(Dns.GetHostName());
+           // IPHostEntry ipHostInfo = Dns.GetHostEntry("localhost");
+            IPAddress ipAddress = ipHostInfo.AddressList.ToList().Find(p=>p.AddressFamily==AddressFamily.InterNetwork);
+            IPEndPoint localEndPoint = new IPEndPoint(ipAddress, port);
+         
+            
 
             // Create a TCP/IP socket.
             listener = new Socket(AddressFamily.InterNetwork,

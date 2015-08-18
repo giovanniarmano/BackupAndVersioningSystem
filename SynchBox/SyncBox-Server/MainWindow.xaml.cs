@@ -75,8 +75,9 @@ namespace SyncBox_Server
         {
             try
             {
-                log.WriteToLog("starting the server ..."); 
-                
+                log.WriteToLog("starting the server ...");
+                starting_ui();
+
                 db_handle = new db(db_path_textbox.Text);
                 dbConnection = db_path_textbox.Text;
                 db_handle.start();
@@ -94,17 +95,44 @@ namespace SyncBox_Server
                 for (i = 0; i < NTHREAD; i++)
                 {              
                     thread_array[i] = new Thread(new ParameterizedThreadStart(manage_Client));
+                    thread_array[i].IsBackground = true;
                     thread_array[i].Start(p);
 
                     log.WriteToLog("THREAD STARTED - " + i);
                 }
 
+                started_ui();
                 log.WriteToLog("starting the server DONE");
             }
             catch (Exception exc)
             {
                 MessageBox.Show("Exception trying starting server! " + exc.ToString());
                 log.WriteToLog("Exception trying starting server! " + exc.ToString());
+            }
+        }
+
+        private void b_stop_Click(object sender, RoutedEventArgs e)
+        {
+            log.WriteToLog("stopping the server ...");
+            closing_ui();
+
+            StopServerThreads();
+
+            log.WriteToLog("stopping the server DONE");
+            closed_ui();
+
+        }
+
+        public void StopServerThreads() { 
+            int i = 0;
+            for (i = 0; i < NTHREAD; i++) {
+                if (thread_array[i] != null)
+                {
+                    if (thread_array[i].IsAlive) {
+                        thread_array[i].Abort();
+                        
+                    }
+                }
             }
         }
 
@@ -129,6 +157,15 @@ namespace SyncBox_Server
                             protoServer.manage();
                         }
                     }
+                    catch (ThreadAbortException te)
+                    {
+                        log.WriteToLog("ThreaAbortExeption catching ...");
+                        connected_stream.Close();
+                        s.Shutdown(SocketShutdown.Both);
+                        s.Close();
+                        log.WriteToLog("ThreaAbortExeption catching DONE");
+                        throw;
+                    }
                     catch (System.IO.IOException se) {
                         p.log.WriteToLog("qui io penso che la connessione sia stata chiusa dal client!" + se.ToString());
                     }
@@ -144,5 +181,51 @@ namespace SyncBox_Server
                 p.log.WriteToLog(exc.ToString());
             }
         }
+
+       
+
+        private void starting_ui()
+        {
+            b_start.Content = "Starting ...";
+            b_start.IsEnabled = false;
+            disable_tb();
+        }
+
+        private void started_ui()
+        {
+            b_start.Content = "Start";
+            b_start.IsEnabled = true;
+            b_start.Visibility = Visibility.Hidden;
+            b_stop.Visibility = Visibility.Visible;
+            disable_tb();
+        }
+
+        private void closing_ui()
+        {
+            b_stop.Content = "Stopping ...";
+            b_stop.IsEnabled = false;
+            disable_tb();
+        }
+
+        private void closed_ui()
+        {
+            b_stop.Content = "Stop";
+            b_stop.IsEnabled = true;
+            b_stop.Visibility = Visibility.Hidden;
+            b_start.Visibility = Visibility.Visible;
+            enable_tb();
+        }
+
+        private void enable_tb()
+        {
+            db_path_textbox.IsEnabled = true;
+            port_tb.IsEnabled = true;
+        }
+        private void disable_tb()
+        {
+            db_path_textbox.IsEnabled = false;
+            port_tb.IsEnabled = false;
+        }
+
     }
 }
