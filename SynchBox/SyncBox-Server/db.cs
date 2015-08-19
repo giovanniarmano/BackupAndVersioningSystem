@@ -13,19 +13,29 @@ namespace SyncBox_Server
 {
 
     //use lock to execute query??
-    class db
+    public static class  db
     {
-        protected string dbConnection; 
-        protected string dbPath;
+        static string dbConnection; 
+        static string dbPath;
        
-        public db(string dbConn)
+        //public static db(string dbConn)
+        //{
+        //    //dbConnection = "e:\\backup\\db.db";
+        //    //dbConnection = dbConn;
+        //    dbPath = dbConn;
+        //    dbConnection = string.Format(@"Data Source={0}; Pooling=false; FailIfMissing=false;", dbConn);
+
+        //}
+
+
+        public static void setDbConn(string dbConn)
         {
             //dbConnection = "e:\\backup\\db.db";
             //dbConnection = dbConn;
             dbPath = dbConn;
             dbConnection = string.Format(@"Data Source={0}; Pooling=false; FailIfMissing=false;", dbConn);
-
         }
+        //public db() { }
 
        // public void set_path(string path)
        // {
@@ -35,13 +45,13 @@ namespace SyncBox_Server
         //start viene chiamata solo dal main thread del server, che verifica se il percorso è valido etc ec e
         // ... e se il db non esiste o èp vuoto ne crea uno con le tabelle di default!
 
-        public void start()
+        public static void start()
         {
             bool create_table = false;
             //if not db, create db
             if (!File.Exists(dbPath))
             {
-                if (MessageBox.Show("File '" + this.dbPath + "' Not Exist. Do you want to create a new db file?", "Create new db ?", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
+                if (MessageBox.Show("File '" + db.dbPath + "' Not Exist. Do you want to create a new db file?", "Create new db ?", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.No)
                 {
                     throw new Exception("No db opened or created!");
                 }
@@ -57,7 +67,7 @@ namespace SyncBox_Server
             }
         }
 
-        private void create_db_table()
+        private static void create_db_table()
         {
             var connString = string.Format(@"Data Source={0}; Pooling=false; FailIfMissing=false;", dbPath);
             SQLiteConnection cnntodb = new SQLiteConnection(connString);
@@ -76,34 +86,34 @@ namespace SyncBox_Server
         /// </summary>  
         /// <param name="inputFile">The File containing the DB</param>  
 
-        public db(string DBDirectoryInfo, String inputFile)
-        {
-            string sourceFile = Path.Combine(DBDirectoryInfo, inputFile);
-            dbConnection = String.Format("Data Source={0}", sourceFile);
-        }
+        //public db(string DBDirectoryInfo, String inputFile)
+        //{
+        //    string sourceFile = Path.Combine(DBDirectoryInfo, inputFile);
+        //    dbConnection = String.Format("Data Source={0}", sourceFile);
+        //}
 
         /// <summary>  
         ///     Single Param Constructor for specifying advanced connection options.  
         /// </summary>  
         /// <param name="connectionOpts">A dictionary containing all desired options and their 
         //   values</param>  
-        public db(Dictionary<String, String> connectionOpts)
-        {
-            String str = "";
-            foreach (KeyValuePair<String, String> row in connectionOpts)
-            {
-                str += String.Format("{0}={1}; ", row.Key, row.Value);
-            }
-            str = str.Trim().Substring(0, str.Length - 1);
-            dbConnection = str;
-        }
+        //public db(Dictionary<String, String> connectionOpts)
+        //{
+        //    String str = "";
+        //    foreach (KeyValuePair<String, String> row in connectionOpts)
+        //    {
+        //        str += String.Format("{0}={1}; ", row.Key, row.Value);
+        //    }
+        //    str = str.Trim().Substring(0, str.Length - 1);
+        //    dbConnection = str;
+        //}
 
         /// <summary>  
         ///     Allows the programmer to run a query against the Database.  
         /// </summary>  
         /// <param name="sql">The SQL to run</param>  
         /// <returns>A DataTable containing the result set.</returns>  
-        public DataTable GetDataTable(string sql)
+        public static DataTable GetDataTable(string sql)
         {
             DataTable dt = new DataTable();
             try
@@ -129,7 +139,7 @@ namespace SyncBox_Server
         /// </summary>  
         /// <param name="sql">The SQL to be run.</param>  
         /// <returns>An Integer containing the number of rows updated.</returns>  
-        public int ExecuteNonQuery(string sql)
+        public static  int ExecuteNonQuery(string sql)
         {
             SQLiteConnection cnn = new SQLiteConnection(dbConnection);
             cnn.Open();
@@ -145,7 +155,7 @@ namespace SyncBox_Server
         /// </summary>  
         /// <param name="sql">The query to run.</param>  
         /// <returns>A string.</returns>  
-        public string ExecuteScalar(string sql)
+        public static string ExecuteScalar(string sql)
         {
             SQLiteConnection cnn = new SQLiteConnection(dbConnection);
             cnn.Open();
@@ -167,7 +177,7 @@ namespace SyncBox_Server
         /// <param name="data">A dictionary containing Column names and their new values.</param>  
         /// <param name="where">The where clause for the update statement.</param>  
         /// <returns>A boolean true or false to signify success or failure.</returns>  
-        public bool Update(String tableName, Dictionary<String, String> data, String where)
+        public static bool Update(String tableName, Dictionary<String, String> data, String where)
         {
             String vals = "";
             Boolean returnCode = true;
@@ -181,7 +191,7 @@ namespace SyncBox_Server
             }
             try
             {
-                this.ExecuteNonQuery(String.Format("update {0} set {1} where {2};", tableName,
+                db.ExecuteNonQuery(String.Format("update {0} set {1} where {2};", tableName,
                                        vals, where));
             }
             catch (Exception ex)
@@ -198,12 +208,12 @@ namespace SyncBox_Server
         /// <param name="tableName">The table from which to delete.</param>  
         /// <param name="where">The where clause for the delete.</param>  
         /// <returns>A boolean true or false to signify success or failure.</returns>  
-        public bool Delete(String tableName, String where)
+        public static  bool Delete(String tableName, String where)
         {
             Boolean returnCode = true;
             try
             {
-                this.ExecuteNonQuery(String.Format("delete from {0} where {1};", tableName, where));
+                db.ExecuteNonQuery(String.Format("delete from {0} where {1};", tableName, where));
             }
             catch (Exception ex)
             {
@@ -218,7 +228,7 @@ namespace SyncBox_Server
         /// <param name="tableName">The table into which we insert the data.</param>  
         /// <param name="data">A dictionary containing the column names and data for the insert.</param>  
         /// <returns>A boolean true or false to signify success or failure.</returns>  
-        public bool Insert(String tableName, Dictionary<String, String> data)
+        public static  bool Insert(String tableName, Dictionary<String, String> data)
         {
             String columns = "";
             String values = "";
@@ -232,7 +242,7 @@ namespace SyncBox_Server
             values = values.Substring(0, values.Length - 1);
             try
             {
-                this.ExecuteNonQuery(String.Format("insert into {0}({1}) values({2});", tableName, columns, values));
+                db.ExecuteNonQuery(String.Format("insert into {0}({1}) values({2});", tableName, columns, values));
             }
             catch (Exception ex)
             {
@@ -245,15 +255,15 @@ namespace SyncBox_Server
         ///     Allows the programmer to easily delete all data from the DB.  
         /// </summary>  
         /// <returns>A boolean true or false to signify success or failure.</returns>  
-        public bool ClearDB()
+        public static  bool ClearDB()
         {
             DataTable tables;
             try
             {
-                tables = this.GetDataTable("select NAME from SQLITE_MASTER where type= 'table' order by NAME;");
+                tables = db.GetDataTable("select NAME from SQLITE_MASTER where type= 'table' order by NAME;");
                 foreach (DataRow table in tables.Rows)
                 {
-                    this.ClearTable(table["NAME"].ToString());
+                    db.ClearTable(table["NAME"].ToString());
                 }
                 return true;
             }
@@ -268,12 +278,12 @@ namespace SyncBox_Server
         /// </summary>  
         /// <param name="table">The name of the table to clear.</param>  
         /// <returns>A boolean true or false to signify success or failure.</returns>  
-        public bool ClearTable(String table)
+        public static  bool ClearTable(String table)
         {
             try
             {
 
-                this.ExecuteNonQuery(String.Format("delete from {0};", table));
+                db.ExecuteNonQuery(String.Format("delete from {0};", table));
                 return true;
             }
             catch
@@ -286,7 +296,7 @@ namespace SyncBox_Server
         ///     Allows the programmer to easily test connect to the DB.  
         /// </summary>  
         /// <returns>A boolean true or false to signify success or failure.</returns>  
-        public bool TestConnection()
+        public static bool TestConnection()
         {
             using (SQLiteConnection cnn = new SQLiteConnection(dbConnection))
             {
@@ -312,7 +322,7 @@ namespace SyncBox_Server
         ///     Allows the programmer to easily test if table exists in the DB.  
         /// </summary>  
         /// <returns>A boolean true or false to signify success or failure.</returns>  
-        public bool IsTableExists(String tableName)
+        public static bool IsTableExists(String tableName)
         {
             string count = "0";
             if (dbConnection == default(string))

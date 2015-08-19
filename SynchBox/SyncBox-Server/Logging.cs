@@ -7,16 +7,16 @@ using System.Threading.Tasks;
 
 namespace SyncBox_Server
 {
-    public class Logging
+    public static class Logging
     {
-        public Logging()
-        {
+        //public Logging()
+        //{
 
-        }
+        //}
 
         private static readonly object locker = new object();
 
-        public void WriteToLog(string message)
+        public static void WriteToLog(string message)
         {
             lock (locker)
             {
