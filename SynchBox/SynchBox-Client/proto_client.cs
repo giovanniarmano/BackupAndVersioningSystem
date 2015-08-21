@@ -15,10 +15,10 @@ namespace SynchBox_Client
     class proto_client
     {
         private NetworkStream netStream= null;
-        Logging log;
+        //Logging log;
 
         //ctor
-        public proto_client(NetworkStream s, Logging log) { netStream = s; this.log = log; }
+        public proto_client(NetworkStream s) { netStream = s; }
 
         ///////////////--BEGIN--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
@@ -86,10 +86,10 @@ namespace SynchBox_Client
                 accepted = false,
             };
 
-            log.WriteToLog("LOGGING IN ...");
+            Logging.WriteToLog("LOGGING IN ...");
             Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
 
-            //log.WriteToLog("Attempting reading data!");
+            //Logging.WriteToLog("Attempting reading data!");
             messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
 
             if (msgtype_r.accepted == false)
@@ -110,8 +110,8 @@ namespace SynchBox_Client
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
 
-            log.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
-            //log.WriteToLog("logging in: sending data...");
+            Logging.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
+            //Logging.WriteToLog("logging in: sending data...");
             
 
             return login_r;
@@ -125,7 +125,7 @@ namespace SynchBox_Client
                 accepted = false,
             };
 
-            log.WriteToLog("REGISTER ...");
+            Logging.WriteToLog("REGISTER ...");
 
             //MessageBox.Show("GOT CONNECTION Stream: sending data...");
             Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
@@ -151,8 +151,8 @@ namespace SynchBox_Client
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
 
-            //log.WriteToLog("SENT REGISTER\n" + login.ToString() + "\n\nRCVD REGISTER\n" + login_r.ToString());
-            log.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
+            //Logging.WriteToLog("SENT REGISTER\n" + login.ToString() + "\n\nRCVD REGISTER\n" + login_r.ToString());
+            Logging.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
 
             return login_r;
         }

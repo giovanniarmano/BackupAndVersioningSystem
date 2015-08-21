@@ -20,7 +20,7 @@ namespace SynchBox_Client
         private Socket sender;
         private bool connected = false;
         NetworkStream netStream;
-        Logging log;
+        //Logging log;
         //static SyncSocketClient this_ = null;
 
         //default ctor
@@ -28,11 +28,11 @@ namespace SynchBox_Client
         }
         
         //ctor
-        public SyncSocketClient(string ip, int port,Logging log) {
+        public SyncSocketClient(string ip, int port) {
             //if (this_ == null) { }
             remoteAddressString = ip;
             this.port = port;
-            this.log = log;
+            //this.log = log;
           //  this_ = this;
         }
 
@@ -51,7 +51,7 @@ namespace SynchBox_Client
 
         public void Connect() {
         try {
-            //log.WriteToLog("connecting ...");
+            //Logging.WriteToLog("connecting ...");
             // Establish the remote endpoint for the socket.
             IPHostEntry ipHostInfo = Dns.Resolve(Dns.GetHostName());
             IPAddress remoteAddress = IPAddress.Parse(remoteAddressString);
@@ -65,14 +65,14 @@ namespace SynchBox_Client
             
             sender.Connect(remoteEP);
 
-            //log.WriteToLog("connecting DONE");
-            //log.WriteToLog("connected to " + sender.RemoteEndPoint.ToString());
+            //Logging.WriteToLog("connecting DONE");
+            //Logging.WriteToLog("connected to " + sender.RemoteEndPoint.ToString());
                 
             connected = true;
 
         } catch (Exception e) {
             //MessageBox.Show( e.ToString());
-            log.WriteToLog("connecting FAILED");
+            Logging.WriteToLog("connecting FAILED");
             throw;
         }
     }

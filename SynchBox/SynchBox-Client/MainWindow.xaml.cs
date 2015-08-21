@@ -27,7 +27,7 @@ namespace SynchBox_Client
         NetworkStream sender_stream;
         proto_client protoClient;
         
-        Logging log = new Logging();
+        //Logging log = new Logging();
 
         string username = "";
         string uid = "";
@@ -47,7 +47,7 @@ namespace SynchBox_Client
         public MainWindow()
         {
             InitializeComponent();
-            log.WriteToLog("-----CLIENT STARTED------");
+            Logging.WriteToLog("-----CLIENT STARTED------");
             initializeSessionParam();
         }
 
@@ -60,56 +60,56 @@ namespace SynchBox_Client
         {
             try
             {
-                log.WriteToLog("Logging in ...");
+                Logging.WriteToLog("Logging in ...");
                 //check non null textbox
-                //log.WriteToLog("validating textboxes");
+                //Logging.WriteToLog("validating textboxes");
                 validateTextBoxes();
                 //throw new Exception("Complete Login/Registration information");
 
-                log.WriteToLog("if ip!=ip || port!=port || !connected -> new SynsocketClient");
+                Logging.WriteToLog("if ip!=ip || port!=port || !connected -> new SynsocketClient");
                 if ((!ip.Equals(ip_tb.Text)) || (!port.Equals(port_tb.Text)) || (!connected))
                 {
-                    log.WriteToLog("connecting ...");
-                    sender_SyncSocketClient = new SyncSocketClient(ip_tb.Text, int.Parse(port_tb.Text), log);
-                    //log.WriteToLog("trying to connecting");
+                    Logging.WriteToLog("connecting ...");
+                    sender_SyncSocketClient = new SyncSocketClient(ip_tb.Text, int.Parse(port_tb.Text));
+                    //Logging.WriteToLog("trying to connecting");
                     sender_SyncSocketClient.Connect();
-                    //log.WriteToLog("connection successfull");
+                    //Logging.WriteToLog("connection successfull");
                     ip = ip_tb.Text;
                     port = port_tb.Text;
                     connected = true;
-                    log.WriteToLog("connecting DONE  " + ip +":"+ port);
+                    Logging.WriteToLog("connecting DONE  " + ip +":"+ port);
 
-                    //log.WriteToLog("getting sender stream and protoclient");
+                    //Logging.WriteToLog("getting sender stream and protoclient");
 
                     sender_stream = sender_SyncSocketClient.getStream();
-                    protoClient = new proto_client(sender_stream, log);
-                    //log.WriteToLog("sender stream and protoclient succedeed! OK");
+                    protoClient = new proto_client(sender_stream);
+                    //Logging.WriteToLog("sender stream and protoclient succedeed! OK");
                 }
                 else
                 {
-                    log.WriteToLog("ALREADY connected  " + ip + ":" + port);
+                    Logging.WriteToLog("ALREADY connected  " + ip + ":" + port);
                 }
 
                 
-                //log.WriteToLog("trying protoclient.do_login");
+                //Logging.WriteToLog("trying protoclient.do_login");
                 var login_result = protoClient.do_login(username_tb.Text, password_tb.Password);
 
                 
                 if (!login_result.is_logged) {
-                    log.WriteToLog("logging in FAILED");
+                    Logging.WriteToLog("logging in FAILED");
                     throw new Exception("Login Failed!");    
                 }
-                log.WriteToLog("logging in SUCCESSFULL");
+                Logging.WriteToLog("logging in SUCCESSFULL");
 
                 //set them to the calass params for login
                 username = login_result.username;
                 uid = login_result.uid.ToString();
 
-                log.WriteToLog("user:" + username +" - uid:"+ uid);
+                Logging.WriteToLog("user:" + username +" - uid:"+ uid);
                 
                 login_ui();
 
-                //log.WriteToLog("set login name, clear textbox, disable text box");
+                //Logging.WriteToLog("set login name, clear textbox, disable text box");
                 //istantiate myprotocol
 
                 //myprotocol login
@@ -124,14 +124,14 @@ namespace SynchBox_Client
                 //spostati su home
             }
             catch (System.IO.IOException se) {
-                log.WriteToLog("Socket exception!" + se.ToString());
+                Logging.WriteToLog("Socket exception!" + se.ToString());
                 connected = false;
                 b_login_login_Click(this,null);
             }
             catch (Exception exc)
             {
                 MessageBox.Show("not possible to login or connect to server! Error : " + exc.ToString());
-                log.WriteToLog("not possible to login or connect to server! Error : " + exc.ToString());
+                Logging.WriteToLog("not possible to login or connect to server! Error : " + exc.ToString());
             }
         }
 
@@ -139,18 +139,18 @@ namespace SynchBox_Client
         {
             try
             {
-                log.WriteToLog("Registering ...");
+                Logging.WriteToLog("Registering ...");
                 //check non null textbox
-                //log.WriteToLog("validating textboxes");
+                //Logging.WriteToLog("validating textboxes");
                 validateTextBoxes();
                 //throw new Exception("Complete Login/Registration information");
 
 
-                log.WriteToLog("if ip!=ip || port!=port || !connected -> new SynsocketCliuent");
+                Logging.WriteToLog("if ip!=ip || port!=port || !connected -> new SynsocketCliuent");
                 if ((!ip.Equals(ip_tb.Text)) || (!port.Equals(port_tb.Text)) || (!connected))
                 {
-                    log.WriteToLog("connecting ...");
-                    sender_SyncSocketClient = new SyncSocketClient(ip_tb.Text, int.Parse(port_tb.Text), log);
+                    Logging.WriteToLog("connecting ...");
+                    sender_SyncSocketClient = new SyncSocketClient(ip_tb.Text, int.Parse(port_tb.Text));
                     
                     sender_SyncSocketClient.Connect();
                     
@@ -158,31 +158,31 @@ namespace SynchBox_Client
                     port = port_tb.Text;
                     connected = true;
 
-                    log.WriteToLog("connecting DONE  " + ip + ":" + port);
+                    Logging.WriteToLog("connecting DONE  " + ip + ":" + port);
                     
                     sender_stream = sender_SyncSocketClient.getStream();
-                    protoClient = new proto_client(sender_stream, log);
+                    protoClient = new proto_client(sender_stream);
            
                 }
                 else
                 {
-                    log.WriteToLog("ALREADY connected  " + ip + ":" + port);
+                    Logging.WriteToLog("ALREADY connected  " + ip + ":" + port);
                 }
 
                 var login_result = protoClient.do_register(username_tb.Text, password_tb.Password);
 
                 if (!login_result.is_logged)
                 {
-                    log.WriteToLog("logging in FAILED");
+                    Logging.WriteToLog("logging in FAILED");
                     throw new Exception("Login Failed!");
                 }
-                log.WriteToLog("logging in SUCCESSFULL");
+                Logging.WriteToLog("logging in SUCCESSFULL");
 
                 //set them to the calass params for login
                 username = login_result.username;
                 uid = login_result.uid.ToString();
 
-                log.WriteToLog("user:" + username + " - uid:" + uid);
+                Logging.WriteToLog("user:" + username + " - uid:" + uid);
                 
                 login_ui();
 
@@ -204,7 +204,7 @@ namespace SynchBox_Client
             catch (Exception exc)
             {
                 MessageBox.Show("not possible to login or connect to server! Error : " + exc.ToString());
-                log.WriteToLog("not possible to login or connect to server! Error : " + exc.ToString());
+                Logging.WriteToLog("not possible to login or connect to server! Error : " + exc.ToString());
             }
         }
 
