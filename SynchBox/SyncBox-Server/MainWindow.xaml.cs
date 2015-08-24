@@ -17,65 +17,22 @@ using System.Net.Sockets;
 using System.Threading;
 
 namespace SyncBox_Server
-{
-    ////Parameter class -> object to pass to each thread serving the clients
-    //public class Param
-    //{
-    //    public SyncSocketListener listener;
-    //    public string dbConnection;
-
-        
-    //    // public Logging log;
-
-    //    //public Param(SyncSocketListener listener,string dbConnection,Logging log){
-    //    //    this.listener = listener;
-    //    //    this.dbConnection = dbConnection;
-    //    //   // this.log = log;
-    //    //}
-    //}
-    
+{    
     /// <summary>
     /// Logica di interazione per MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
         public Task tAcceptConnections;
-        private CancellationTokenSource cts = new CancellationTokenSource();
-
-        // public const int NTHREAD = 2;   //# of threads
-        
-       // db db_handle;
+        CancellationTokenSource cts;
         string dbConnection;
         public SyncSocketListener listener;
-      
-        //  Logging log = new Logging();
-        
-        //Thread[] thread_array = new Thread[NTHREAD];    //Array of threads //TODO improve?? HOW?
 
         public MainWindow()
         {
             InitializeComponent();
             Logging.WriteToLog("-----SERVER START-----");
-            
         }
-
-        //NON SONO PER NIENTE SICURO CHE FUNZIONI!!
-        //per il disturittore
-        //per il metodo abort! per robustezza e perchè potrebbe esserci un try catch nel thread
-        // ~MainWindow()
-        //{
-        //    Logging.WriteToLog("Shutting down MainWindow...");
-        //    int i = 0;
-        //    for (i = 0; i < NTHREAD; i++)
-        //    {
-        //        if (thread_array[i] != null) { 
-        //            thread_array[i].Abort();
-        //            Logging.WriteToLog("THREAD ABORTED - " + i);
-        //        }
-        //    }
-        //    Logging.WriteToLog("Shutting down MainWindow DONE");
-            
-        //}
 
         private void b_start_Click(object sender, RoutedEventArgs e)
         {
@@ -83,6 +40,7 @@ namespace SyncBox_Server
             {
                 Logging.WriteToLog("starting the server ...");
                 starting_ui();
+                cts = new CancellationTokenSource();
 
                 db.setDbConn(db_path_textbox.Text);
 
@@ -90,30 +48,9 @@ namespace SyncBox_Server
                 db.start();
                 
                 //nuovo oggetto listener
-                listener = new SyncSocketListener(1500);
+                listener = new SyncSocketListener(1500,cts.Token);
                 listener.Start();
 
-                tAcceptConnections = new Task(listener.acceptConnections, TaskCreationOptions.LongRunning);
-                tAcceptConnections.Start();
-
-                //tAcceptConnections = Task.Factory.StartNew(listener.acceptConnections, cts, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-
-               // tAcceptConnections.Start(cts);
-                //in release, here is MULTITHREAD!!!!!!!!!! DONE
-                //si può fare MUCH MUCH BETTER!
-                /*
-                Param p = new Param(listener,dbConnection,log);
-                
-                int i = 0;
-                for (i = 0; i < NTHREAD; i++)
-                {              
-                    thread_array[i] = new Thread(new ParameterizedThreadStart(manage_Client));
-                    thread_array[i].IsBackground = true;
-                    thread_array[i].Start(p);
-
-                    Logging.WriteToLog("THREAD STARTED - " + i);
-                }
-                */
                 started_ui();
                 Logging.WriteToLog("starting the server DONE");
             }
@@ -121,6 +58,7 @@ namespace SyncBox_Server
             {
                 MessageBox.Show("Exception trying starting server! " + exc.ToString());
                 Logging.WriteToLog("Exception trying starting server! " + exc.ToString());
+                closed_ui();
             }
         }
 
@@ -131,78 +69,17 @@ namespace SyncBox_Server
 
            // StopServerThreads();
             //TODO REDO!
-            if (cts != null)
+            
+            if (cts != null) {
+                Logging.WriteToLog("Cancelling Tasks ...");
                 cts.Cancel();
+            }
+            //TODO Check if not throw exceotons
+            listener.Stop();
 
             Logging.WriteToLog("stopping the server DONE");
             closed_ui();
-
         }
-
-        //public void StopServerThreads() { 
-        //    int i = 0;
-        //    for (i = 0; i < NTHREAD; i++) {
-        //        if (thread_array[i] != null)
-        //        {
-        //            if (thread_array[i].IsAlive) {
-        //                thread_array[i].Abort();
-                        
-        //            }
-        //        }
-        //    }
-        //}
-
-        //Cuncurrency Thread Function! manages multiple clients requests
-
-
-        //public void manage_Client(object obj)
-        //{
-        //    Param p = (Param)obj;
-        //    NetworkStream connected_stream;
-        //    proto_server protoServer;
-        //    try
-        //    {
-        //        while (true)
-        //        {
-        //            Socket s = p.listener.AcceptConnection();
-        //            connected_stream = p.listener.getStream(s);
-        //            protoServer = new proto_server(connected_stream, p.dbConnection, p.log);
-
-        //            try
-        //            {
-        //                while (true)
-        //                {
-        //                    protoServer.manage();
-        //                }
-        //            }
-        //            catch (ThreadAbortException te)
-        //            {
-        //                Logging.WriteToLog("ThreaAbortExeption catching ...");
-        //                connected_stream.Close();
-        //                s.Shutdown(SocketShutdown.Both);
-        //                s.Close();
-        //                Logging.WriteToLog("ThreaAbortExeption catching DONE");
-        //                throw;
-        //            }
-        //            catch (System.IO.IOException se)
-        //            {
-        //                p.Logging.WriteToLog("qui io penso che la connessione sia stata chiusa dal client!" + se.ToString());
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                MessageBox.Show("qui io penso che ci sia stato un altro tipo di eccezione" + ex.ToString());
-        //                p.Logging.WriteToLog("qui io penso che ci sia stato un altro tipo di eccezione" + ex.ToString());
-        //            }
-        //        }
-        //    }
-        //    catch (Exception exc)
-        //    {
-        //        MessageBox.Show(exc.ToString());
-        //        p.Logging.WriteToLog(exc.ToString());
-        //    }
-        //}
-
-       
 
         private void starting_ui()
         {
@@ -246,6 +123,5 @@ namespace SyncBox_Server
             db_path_textbox.IsEnabled = false;
             port_tb.IsEnabled = false;
         }
-
     }
 }

@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Windows;
 using System.Data;
 using System.Security.Cryptography;
+using System.Threading;
 
 //TODO Logout method-> unset login_session
 namespace SyncBox_Server
@@ -19,28 +20,12 @@ namespace SyncBox_Server
     //Tante istanze quanti sono i processi attivi sul server!
     public static class proto_server
     {
-         //private NetworkStream netStream= null;
-         //public login_c login_session;
-         //private db db_handle;
-        // private string dbConnection;
-        // private Logging log;
-
-        //ctor
-        // public proto_server(NetworkStream s, string dbConnection,Logging log) { 
-             //netStream = s; 
-             //TODO???su
-             //this.dbConnection = dbConnection;
-             //db_handle = new db(dbConnection);
-           //  this.log = log;
-         //}
-
         ///////////////--BEGIN--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
 
         [ProtoContract]
         public class messagetype_c
         {
-
             [ProtoMember(1)]
             public byte msgtype;
 
@@ -59,11 +44,9 @@ namespace SyncBox_Server
             }
         }
 
-
         [ProtoContract]
         public class login_c
         {
-
             [ProtoMember(1)]
             public bool is_logged;
 
@@ -96,36 +79,43 @@ namespace SyncBox_Server
         ///////////STRUCT DEFINITIONS /////////////////
 
 
-        public static void manage(NetworkStream netStream)
+        public static void manage(NetworkStream netStream,CancellationToken ct,ref bool exc)
         {
+            try
+            {
+                //magari si può mettere nella chiamata sopra!
+                //NetworkStream netStream = new NetworkStream(s, false); ///false = not own the socket
 
-            //magari si può mettere nella chiamata sopra!
-            //NetworkStream netStream = new NetworkStream(s, false); ///false = not own the socket
+                //Logging.WriteToLog("sleeping ...");
+                //System.Threading.Thread.Sleep(5000);
+                //Logging.WriteToLog("sleeping DONE");
 
-            //Logging.WriteToLog("sleeping ...");
-            //System.Threading.Thread.Sleep(5000);
-            //Logging.WriteToLog("sleeping DONE");
+                messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
 
-            messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
-            
-            switch (msgtype_r.msgtype){
-                case (byte)CmdType.Login:
-                    Logging.WriteToLog("manage LOGIN CASE ...");
-                    msgtype_r.accepted = true;
-                    Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
-                    manage_login(netStream);
-                break;
+                switch (msgtype_r.msgtype)
+                {
+                    case (byte)CmdType.Login:
+                        Logging.WriteToLog("manage LOGIN CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_login(netStream);
+                        break;
 
-                case (byte)CmdType.Register:
-                Logging.WriteToLog("manage REGISTER CASE ...");
-                msgtype_r.accepted = true;
-                Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
-                manage_register(netStream);
-                break;
+                    case (byte)CmdType.Register:
+                        Logging.WriteToLog("manage REGISTER CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_register(netStream);
+                        break;
 
-                default:
-                   Logging.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
-                break;
+                    default:
+                        Logging.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
+                        break;
+                }
+            }
+            catch (Exception ex) {
+                exc = true;
+                Logging.WriteToLog(ex.ToString());
             }
         }
 
