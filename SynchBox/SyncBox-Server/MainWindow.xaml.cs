@@ -71,7 +71,7 @@ namespace SyncBox_Server
             //TODO REDO!
             
             if (cts != null) {
-                Logging.WriteToLog("Cancelling Tasks ...");
+                Logging.WriteToLog("Cancelling Tasks ... ");
                 cts.Cancel();
             }
             //TODO Check if not throw exceotons
