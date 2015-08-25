@@ -9,85 +9,60 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Windows;
+using System.Threading;
 
 namespace SynchBox_Client
 {
     public class SyncSocketClient
     {   
-        //TODO Remove @ release
-        private string remoteAddressString = "127.0.0.1";
-        private int port = 1500;
-        private Socket sender;
-        private bool connected = false;
+        TcpClient client;
+
+        IPAddress ipAddress;
+        int port;
         NetworkStream netStream;
-        //Logging log;
-        //static SyncSocketClient this_ = null;
+   
+        bool connected = false;
+        CancellationToken ct;
 
-        //default ctor
-        public SyncSocketClient() { 
-        }
-        
-        //ctor
-        public SyncSocketClient(string ip, int port) {
-            //if (this_ == null) { }
-            remoteAddressString = ip;
+        public SyncSocketClient(string ip, int port, CancellationToken ct) 
+        {
+            ipAddress = IPAddress.Parse(ip);
             this.port = port;
-            //this.log = log;
-          //  this_ = this;
+            this.ct = ct;
         }
-
-        public void setPort(int port) { this.port = port; }
-        public void setAddress(string address) { this.remoteAddressString = address; }
-
 
         public NetworkStream getStream() {
             if (connected == false)
                 throw new Exception("Socket not connected!");
-
-            netStream = new NetworkStream(sender, true);
-
             return netStream;
         }
 
-        public void Connect() {
-        try {
-            //Logging.WriteToLog("connecting ...");
-            // Establish the remote endpoint for the socket.
-            IPHostEntry ipHostInfo = Dns.Resolve(Dns.GetHostName());
-            IPAddress remoteAddress = IPAddress.Parse(remoteAddressString);
-            IPEndPoint remoteEP = new IPEndPoint(remoteAddress,port);
-
-            // Create a TCP/IP  socket.
-            sender = new Socket(AddressFamily.InterNetwork, 
-                SocketType.Stream, ProtocolType.Tcp );
-
-            // Connect the socket to the remote endpoint. Catch any errors.
-            
-            sender.Connect(remoteEP);
-
-            //Logging.WriteToLog("connecting DONE");
-            //Logging.WriteToLog("connected to " + sender.RemoteEndPoint.ToString());
-                
-            connected = true;
-
-        } catch (Exception e) {
-            //MessageBox.Show( e.ToString());
-            Logging.WriteToLog("connecting FAILED");
-            throw;
-        }
-    }
-
-        public void Close() 
+        public async Task<bool> StartClientAsync()
         {
             try
             {
-                // Release the socket.
-                sender.Shutdown(SocketShutdown.Both);
-                sender.Close();
-            } catch (Exception e) 
-            {
-                MessageBox.Show( e.ToString());
+                Logging.WriteToLog("Starting client async ...");
+                client = new TcpClient();
+                await client.ConnectAsync(ipAddress, port);
+                netStream = client.GetStream();
+                connected = true;
+                Logging.WriteToLog("Starting client async DONE");
             }
+            catch (Exception e)
+            {
+                Logging.WriteToLog("Error in Connecting to the server.");
+                Logging.WriteToLog(e.ToString());
+                //throw;
+                return false;
+            }
+
+            return true;
         }
+
+        public void Close() {
+            //magari mando un msg close prima
+            client.Close();
+        }
+
     }
 }

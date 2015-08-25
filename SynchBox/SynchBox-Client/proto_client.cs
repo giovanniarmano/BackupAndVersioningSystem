@@ -7,18 +7,19 @@ using System.Net;
 using System.Net.Sockets;
 using System.Windows;
 using ProtoBuf;
+using System.Threading;
 
 namespace SynchBox_Client
 {
     enum CmdType : byte { Login , Register };
 
-    class proto_client
+    public static class proto_client
     {
-        private NetworkStream netStream= null;
+        //private NetworkStream netStream= null;
         //Logging log;
 
         //ctor
-        public proto_client(NetworkStream s) { netStream = s; }
+        //public proto_client(NetworkStream s) { netStream = s; }
 
         ///////////////--BEGIN--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
@@ -78,8 +79,18 @@ namespace SynchBox_Client
 
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
-        
-        public login_c do_login(string _username, string _password){
+
+        //public async Task<login_c> do_loginAsync(string _username, string _password) {
+        //    Task<login_c> t = Task.Factory.StartNew<login_c>(()=>
+        //            do_login(_username,_password)
+        //        );
+        //   login_c ret_login_c =  await t;
+
+        //   return ret_login_c;
+        //}
+
+
+        public static login_c do_login(NetworkStream netStream,string _username, string _password,CancellationToken ct){
             messagetype_c msgtype = new messagetype_c
             {
                 msgtype = (byte)CmdType.Login,
@@ -108,7 +119,7 @@ namespace SynchBox_Client
 
             //MessageBox.Show("Attempting reading data!");
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
-
+            
 
             Logging.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
             //Logging.WriteToLog("logging in: sending data...");
@@ -117,7 +128,7 @@ namespace SynchBox_Client
             return login_r;
         }
 
-        public login_c do_register(string _username, string _password)
+        public static login_c do_register(NetworkStream netStream,string _username, string _password,CancellationToken ct)
         {
             messagetype_c msgtype = new messagetype_c
             {

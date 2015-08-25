@@ -90,7 +90,13 @@ namespace SyncBox_Server
                 //System.Threading.Thread.Sleep(5000);
                 //Logging.WriteToLog("sleeping DONE");
 
+                
+
                 messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+                //DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
+                System.Threading.Thread.Sleep(1000);
+                
 
                 switch (msgtype_r.msgtype)
                 {

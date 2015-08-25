@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 //using System.Windows;
 
 namespace SynchBox_Client
@@ -25,22 +26,28 @@ namespace SynchBox_Client
     {
         SyncSocketClient sender_SyncSocketClient;
         NetworkStream sender_stream;
-        proto_client protoClient;
+        //proto_client protoClient;
         
-        //Logging log = new Logging();
+        CancellationTokenSource cts;
+        
+        SyncSocketClient cur_client = null;
+        
+        string ip = "";
+        int int_port = -1;
+        string port = "";
+
+        bool connected = false;
 
         string username = "";
         string uid = "";
-        string ip = "";
-        string port = "";
-        bool connected;
-
+       
         private void initializeSessionParam()
         {
             username = "";
             uid = "";
             ip = "";
             port = "";
+            int_port = -1;
             connected = false;
         }
 
@@ -58,57 +65,94 @@ namespace SynchBox_Client
 
         private void b_login_login_Click(object sender, RoutedEventArgs e)
         {
+            Logging.WriteToLog("calling login async ...");
+            //multitask fatto dentro ! qui sotto
+            begin_login_ui();
+            loginRegisterAsync("login"); 
+            
+            Logging.WriteToLog("calling login async DONE");
+        }
+
+        //login
+        //register
+        private async Task loginRegisterAsync(string op) {
             try
-            {
-                Logging.WriteToLog("Logging in ...");
-                //check non null textbox
-                //Logging.WriteToLog("validating textboxes");
+            {   
+                Logging.WriteToLog("Logging-in/registering async ...");
+                
+                cts = new CancellationTokenSource();
                 validateTextBoxes();
-                //throw new Exception("Complete Login/Registration information");
 
-                Logging.WriteToLog("if ip!=ip || port!=port || !connected -> new SynsocketClient");
-                if ((!ip.Equals(ip_tb.Text)) || (!port.Equals(port_tb.Text)) || (!connected))
+                Logging.WriteToLog("connecting ...");
+                sender_SyncSocketClient = await myStartAsync(ip_tb.Text, int.Parse(port_tb.Text),cts.Token);
+
+                if (!connected)
+                    throw new Exception("Connection FAILED");
+
+                Logging.WriteToLog("connecting DONE  " + ip + ":" + int_port);
+
+                sender_stream = sender_SyncSocketClient.getStream();
+                //protoClient = new proto_client(sender_stream);
+
+                proto_client.login_c login_result;
+                string usr = username_tb.Text; string pwd = password_tb.Password;
+                switch (op)
                 {
-                    Logging.WriteToLog("connecting ...");
-                    sender_SyncSocketClient = new SyncSocketClient(ip_tb.Text, int.Parse(port_tb.Text));
-                    //Logging.WriteToLog("trying to connecting");
-                    sender_SyncSocketClient.Connect();
-                    //Logging.WriteToLog("connection successfull");
-                    ip = ip_tb.Text;
-                    port = port_tb.Text;
-                    connected = true;
-                    Logging.WriteToLog("connecting DONE  " + ip +":"+ port);
+                    case "login":
+                        //HERE MULTITASK
 
-                    //Logging.WriteToLog("getting sender stream and protoclient");
+                        Task<proto_client.login_c> t = Task.Factory.StartNew<proto_client.login_c>(()=>
+                        proto_client.do_login(sender_stream, usr, pwd, cts.Token)
+                        );
+                        
+                        login_result = await t;
 
-                    sender_stream = sender_SyncSocketClient.getStream();
-                    protoClient = new proto_client(sender_stream);
-                    //Logging.WriteToLog("sender stream and protoclient succedeed! OK");
-                }
-                else
-                {
-                    Logging.WriteToLog("ALREADY connected  " + ip + ":" + port);
-                }
+                        if (!login_result.is_logged)
+                        {
+                            Logging.WriteToLog("logging in FAILED");
+                            throw new Exception("Login Failed!");    
+                        }
+                        Logging.WriteToLog("logging in SUCCESSFULL");
 
+                        username = login_result.username;
+                        uid = login_result.uid.ToString();
+
+                        Logging.WriteToLog("user:" + username + " - uid:" + uid);
                 
-                //Logging.WriteToLog("trying protoclient.do_login");
-                var login_result = protoClient.do_login(username_tb.Text, password_tb.Password);
+                        login_ui();
+                    break;
 
+                    case "register":
+                        //HERE MULTITASK
+                        Task<proto_client.login_c> t1 = Task.Factory.StartNew<proto_client.login_c>(()=>
+                        proto_client.do_register(sender_stream, usr, pwd, cts.Token)
+                        );
+                        
+                        login_result = await t1;
+
+                        if (!login_result.is_logged)
+                        {
+                            Logging.WriteToLog("logging in FAILED");
+                            throw new Exception("Login Failed!");
+                        }
+                        Logging.WriteToLog("logging in SUCCESSFULL");
+
+                        //set them to the calass params for login
+                        username = login_result.username;
+                        uid = login_result.uid.ToString();
+
+                        Logging.WriteToLog("user:" + username + " - uid:" + uid);
                 
-                if (!login_result.is_logged) {
-                    Logging.WriteToLog("logging in FAILED");
-                    throw new Exception("Login Failed!");    
+                        login_ui();
+
+                    break;
+
+                    default:
+
+                    break;
                 }
-                Logging.WriteToLog("logging in SUCCESSFULL");
 
-                //set them to the calass params for login
-                username = login_result.username;
-                uid = login_result.uid.ToString();
-
-                Logging.WriteToLog("user:" + username +" - uid:"+ uid);
-                
-                login_ui();
-
+                end_login_register_ui();
                 //Logging.WriteToLog("set login name, clear textbox, disable text box");
                 //istantiate myprotocol
 
@@ -122,90 +166,68 @@ namespace SynchBox_Client
                 //set them (textbox values) to the class params
 
                 //spostati su home
+
             }
-            catch (System.IO.IOException se) {
+            catch (System.IO.IOException se)
+            {
                 Logging.WriteToLog("Socket exception!" + se.ToString());
                 connected = false;
-                b_login_login_Click(this,null);
+                //TODO ??
+                b_login_login_Click(this, null);
+                end_login_register_ui();
             }
             catch (Exception exc)
             {
-                MessageBox.Show("not possible to login or connect to server! Error : " + exc.ToString());
+                MessageBox.Show(exc.Message);                
                 Logging.WriteToLog("not possible to login or connect to server! Error : " + exc.ToString());
+                end_login_register_ui();
             }
+        }
+
+
+        private async Task<SyncSocketClient> myStartAsync(string _ip, int _port,CancellationToken ct)
+        {
+           // Thread.Sleep(3000);
+            //throw new NotImplementedException();
+            if (connected)
+            {
+                if (_ip.CompareTo(ip) == 0 && _port == int_port)
+                {
+                    return cur_client;
+                }
+                else
+                {
+                    if (cur_client != null) { 
+                        //close client //open new one
+                        cur_client.Close();
+                        cur_client = null;
+                        ip = "";
+                        int_port = -1;
+                        connected = false;
+                    }
+                }
+            }
+            cur_client = new SyncSocketClient(_ip, _port,ct);
+            
+            bool successful_connect = await cur_client.StartClientAsync();
+            if (!successful_connect)
+            {
+                Logging.WriteToLog("Connecting FAILED");      
+            }
+            else { 
+                connected = true;
+                ip = _ip;
+                int_port = _port;
+            }
+            return cur_client;
         }
 
         private void b_register_Click(object sender, RoutedEventArgs e)
         {
-            try
-            {
-                Logging.WriteToLog("Registering ...");
-                //check non null textbox
-                //Logging.WriteToLog("validating textboxes");
-                validateTextBoxes();
-                //throw new Exception("Complete Login/Registration information");
-
-
-                Logging.WriteToLog("if ip!=ip || port!=port || !connected -> new SynsocketCliuent");
-                if ((!ip.Equals(ip_tb.Text)) || (!port.Equals(port_tb.Text)) || (!connected))
-                {
-                    Logging.WriteToLog("connecting ...");
-                    sender_SyncSocketClient = new SyncSocketClient(ip_tb.Text, int.Parse(port_tb.Text));
-                    
-                    sender_SyncSocketClient.Connect();
-                    
-                    ip = ip_tb.Text;
-                    port = port_tb.Text;
-                    connected = true;
-
-                    Logging.WriteToLog("connecting DONE  " + ip + ":" + port);
-                    
-                    sender_stream = sender_SyncSocketClient.getStream();
-                    protoClient = new proto_client(sender_stream);
-           
-                }
-                else
-                {
-                    Logging.WriteToLog("ALREADY connected  " + ip + ":" + port);
-                }
-
-                var login_result = protoClient.do_register(username_tb.Text, password_tb.Password);
-
-                if (!login_result.is_logged)
-                {
-                    Logging.WriteToLog("logging in FAILED");
-                    throw new Exception("Login Failed!");
-                }
-                Logging.WriteToLog("logging in SUCCESSFULL");
-
-                //set them to the calass params for login
-                username = login_result.username;
-                uid = login_result.uid.ToString();
-
-                Logging.WriteToLog("user:" + username + " - uid:" + uid);
-                
-                login_ui();
-
-                //istantiate myprotocol
-
-                //myprotocol login
-                //throws exception
-
-                //set session, user etc parameters
-
-                //UI login-> logout & not possible to login again
-
-                //set them (textbox values) to the class params
-
-                //spostati su home
-
-                
-            }
-            catch (Exception exc)
-            {
-                MessageBox.Show("not possible to login or connect to server! Error : " + exc.ToString());
-                Logging.WriteToLog("not possible to login or connect to server! Error : " + exc.ToString());
-            }
+            Logging.WriteToLog("calling register async ...");
+            begin_register_ui();
+            loginRegisterAsync("register");
+            Logging.WriteToLog("calling register async DONE");
         }
 
         private void setNameLogin() {
@@ -236,6 +258,28 @@ namespace SynchBox_Client
             {
                 throw new Exception("Port Format not correct! Must Be a number (0..65535)");
             }
+        }
+
+        private void begin_login_ui()
+        {
+            b_login_login.Content = "Logging ...";
+            b_login_login.IsEnabled = false;
+            b_register.IsEnabled = false;
+        }
+
+        private void begin_register_ui()
+        {
+            b_register.Content = "Registering ...";
+            b_login_login.IsEnabled = false;
+            b_register.IsEnabled = false;
+        }
+
+        private void end_login_register_ui() {
+            b_login_login.Content = "Login";
+            b_register.Content = "or Register";
+            b_login_login.IsEnabled = true;
+            b_register.IsEnabled = true;
+            
         }
 
         private void login_ui() {
