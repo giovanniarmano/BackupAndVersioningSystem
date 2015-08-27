@@ -79,6 +79,7 @@ namespace SyncBox_Server
                         Task t = Task.Factory.StartNew(() =>
                             proto_server.manage(ns, ct, ref exceptionCatch)
                             );
+                        
                         await t;
 
                         

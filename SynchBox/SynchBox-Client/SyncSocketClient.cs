@@ -15,14 +15,14 @@ namespace SynchBox_Client
 {
     public class SyncSocketClient
     {   
-        TcpClient client;
+        TcpClient client = null;
 
-        IPAddress ipAddress;
-        int port;
-        NetworkStream netStream;
+        IPAddress ipAddress = null;
+        int port = -1;
+        NetworkStream netStream = null;
    
         bool connected = false;
-        CancellationToken ct;
+        CancellationToken ct ;
 
         public SyncSocketClient(string ip, int port, CancellationToken ct) 
         {
@@ -61,7 +61,22 @@ namespace SynchBox_Client
 
         public void Close() {
             //magari mando un msg close prima
-            client.Close();
+            if (client != null)
+            {
+                Logging.WriteToLog("Closing Stream & TcpClient ...");
+                client.GetStream().Close();
+                client.Close();
+                Logging.WriteToLog("Closing Stream & TcpClient DONE");
+            }
+            else 
+            {
+                Logging.WriteToLog("Closing Stream & TcpClient ... ALREADY CLOSED OR NULL");
+            }
+            client = null;
+            ipAddress = null;
+            port = -1;
+            netStream = null;
+            connected = false;
         }
 
     }

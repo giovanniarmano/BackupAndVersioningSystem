@@ -11,7 +11,7 @@ using System.Threading;
 
 namespace SynchBox_Client
 {
-    enum CmdType : byte { Login , Register };
+    enum CmdType : byte { Login, Register, Logout };
 
     public static class proto_client
     {
@@ -80,15 +80,27 @@ namespace SynchBox_Client
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
 
-        //public async Task<login_c> do_loginAsync(string _username, string _password) {
-        //    Task<login_c> t = Task.Factory.StartNew<login_c>(()=>
-        //            do_login(_username,_password)
-        //        );
-        //   login_c ret_login_c =  await t;
 
-        //   return ret_login_c;
-        //}
+        public static void do_logout(NetworkStream netStream)
+        {
+            try { 
+            messagetype_c msgtype = new messagetype_c
+            {
+                msgtype = (byte)CmdType.Logout,
+                accepted = false,
+            };
 
+            Logging.WriteToLog("LOGGING OUT (sending logout msg to the server) ...");
+            Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
+            Logging.WriteToLog("LOGGING OUT DONE");
+            }
+            catch (Exception e)
+            {
+                Logging.WriteToLog(e.ToString());
+                //DEBUG --remove in release
+                MessageBox.Show(e.Message);
+            }
+        }
 
         public static login_c do_login(NetworkStream netStream,string _username, string _password,CancellationToken ct){
             messagetype_c msgtype = new messagetype_c

@@ -15,7 +15,7 @@ using System.Threading;
 namespace SyncBox_Server
 {
     //TODO Synch with client!!
-    enum CmdType : byte { Login, Register };
+    enum CmdType : byte { Login, Register, Logout };
 
     //Tante istanze quanti sono i processi attivi sul server!
     public static class proto_server
@@ -114,6 +114,13 @@ namespace SyncBox_Server
                         manage_register(netStream);
                         break;
 
+                    case (byte)CmdType.Logout:
+                        Logging.WriteToLog("manage LOGOUT CASE ...");
+                        msgtype_r.accepted = true;
+                        //Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_logout(netStream);
+                        break;
+
                     default:
                         Logging.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
                         break;
@@ -123,6 +130,12 @@ namespace SyncBox_Server
                 exc = true;
                 Logging.WriteToLog(ex.ToString());
             }
+        }
+
+        private static void manage_logout(NetworkStream netStream)
+        {
+            netStream.Close();
+            throw new Exception("Logout msg received!");
         }
 
 

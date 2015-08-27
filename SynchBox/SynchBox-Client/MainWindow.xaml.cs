@@ -24,8 +24,8 @@ namespace SynchBox_Client
     /// </summary>
     public partial class MainWindow : Window
     {
-        SyncSocketClient sender_SyncSocketClient;
-        NetworkStream sender_stream;
+       // SyncSocketClient sender_SyncSocketClient;
+        //NetworkStream sender_stream;
         //proto_client protoClient;
         
         CancellationTokenSource cts;
@@ -67,10 +67,18 @@ namespace SynchBox_Client
         {
             Logging.WriteToLog("calling login async ...");
             //multitask fatto dentro ! qui sotto
-            begin_login_ui();
+            //begin_login_ui();
             loginRegisterAsync("login"); 
             
             Logging.WriteToLog("calling login async DONE");
+        }
+
+        private void b_register_Click(object sender, RoutedEventArgs e)
+        {
+            Logging.WriteToLog("calling register async ...");
+            //begin_register_ui();
+            loginRegisterAsync("register");
+            Logging.WriteToLog("calling register async DONE");
         }
 
         //login
@@ -79,19 +87,22 @@ namespace SynchBox_Client
             try
             {   
                 Logging.WriteToLog("Logging-in/registering async ...");
-                
-                cts = new CancellationTokenSource();
+                           
                 validateTextBoxes();
 
+                cts = new CancellationTokenSource();
+                begin_login_ui();
+
                 Logging.WriteToLog("connecting ...");
-                sender_SyncSocketClient = await myStartAsync(ip_tb.Text, int.Parse(port_tb.Text),cts.Token);
+               // sender_SyncSocketClient =
+                    await myStartAsync(ip_tb.Text, int.Parse(port_tb.Text),cts.Token);
 
                 if (!connected)
                     throw new Exception("Connection FAILED");
 
                 Logging.WriteToLog("connecting DONE  " + ip + ":" + int_port);
 
-                sender_stream = sender_SyncSocketClient.getStream();
+               //sender_stream = sender_SyncSocketClient.getStream();
                 //protoClient = new proto_client(sender_stream);
 
                 proto_client.login_c login_result;
@@ -102,7 +113,7 @@ namespace SynchBox_Client
                         //HERE MULTITASK
 
                         Task<proto_client.login_c> t = Task.Factory.StartNew<proto_client.login_c>(()=>
-                        proto_client.do_login(sender_stream, usr, pwd, cts.Token)
+                        proto_client.do_login(cur_client.getStream(), usr, pwd, cts.Token)
                         );
                         
                         login_result = await t;
@@ -125,7 +136,7 @@ namespace SynchBox_Client
                     case "register":
                         //HERE MULTITASK
                         Task<proto_client.login_c> t1 = Task.Factory.StartNew<proto_client.login_c>(()=>
-                        proto_client.do_register(sender_stream, usr, pwd, cts.Token)
+                        proto_client.do_register(cur_client.getStream(), usr, pwd, cts.Token)
                         );
                         
                         login_result = await t1;
@@ -222,13 +233,7 @@ namespace SynchBox_Client
             return cur_client;
         }
 
-        private void b_register_Click(object sender, RoutedEventArgs e)
-        {
-            Logging.WriteToLog("calling register async ...");
-            begin_register_ui();
-            loginRegisterAsync("register");
-            Logging.WriteToLog("calling register async DONE");
-        }
+       
 
         private void setNameLogin() {
             welcome_l.Content = "welcome, " + username + " @ " + ip + ":" + port;
@@ -327,7 +332,11 @@ namespace SynchBox_Client
             //do logout
             username = "";
             uid = "";
-
+            
+            proto_client.do_logout(cur_client.getStream());
+            cur_client.Close();
+            //.Close();
+            initializeSessionParam();
             //ui logout
             logout_ui();
         }
