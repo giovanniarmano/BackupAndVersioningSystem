@@ -3,152 +3,166 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" x:Class="SynchBox_Client.MainWindow"
         Title="Sync-Box Client" MinHeight="450" Height="500" MinWidth="600" Width="600">
-	<Window.Resources>
-		<Style TargetType="TabItem">
-			<Setter Property="Template">
-				<Setter.Value>
-					<ControlTemplate TargetType="TabItem">
+    <Window.Resources>
+        <Style TargetType="TabItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
 
-						<Border x:Name="Border"
+                        <Border x:Name="Border"
 						BorderThickness="1,1,1,0" 
 						BorderBrush="Gainsboro" 
 						CornerRadius="4,4,0,0" 
 						Margin="2,0"
 						
 						>
-					<ContentPresenter ContentSource="Header"/>
-						</Border>
-						<ControlTemplate.Triggers>
-							<Trigger Property="IsSelected" Value="True">
-                                        <Setter TargetName="Border" Property="Background" Value="LightSkyBlue" />
-                                    </Trigger>
-                                    <Trigger Property="IsSelected" Value="False">
-                                        <Setter TargetName="Border" Property="Background" Value="GhostWhite" />
-                                    </Trigger>
+                            <ContentPresenter ContentSource="Header"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="Background" Value="LightSkyBlue" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter TargetName="Border" Property="Background" Value="GhostWhite" />
+                            </Trigger>
 
-							<Trigger Property="IsSelected" Value="False">
-								<Setter TargetName="Border" Property="BorderBrush" Value="#E0E0E0" />
-								<Setter Property="Foreground" Value="#C0C0C0" />
-								
-							</Trigger>
-							<Trigger Property="IsSelected" Value="True">
-								<Setter TargetName="Border" Property="BorderBrush" Value="#FF9900" />
-								<Setter Property="Foreground" Value="#FF9900" />
-								
-							</Trigger>
-							
-						</ControlTemplate.Triggers>
-					</ControlTemplate>
-				</Setter.Value>
-			</Setter>
-		</Style>
-	</Window.Resources>
-	
-	<Grid>
-		<Grid.Background>
-			<LinearGradientBrush EndPoint="-0.086,-0.161" StartPoint="1.857,2.186">
-				<GradientStop Color="#FF78B5FF"/>
-				<GradientStop Color="White" Offset="1"/>
-			</LinearGradientBrush>
-		</Grid.Background>
-		<Grid.RowDefinitions>
-			<RowDefinition Height="5*"/>
-			<RowDefinition Height="79*"/>
-		</Grid.RowDefinitions>
-		<Grid Grid.Row="0">
-			<Label x:Name="welcome_l" Content="Welcome, no user logged in !" HorizontalContentAlignment="Right" HorizontalAlignment="Left" Margin="13,1,0,0" VerticalAlignment="Top" Width="564" FontStyle="Italic"/>
-		</Grid>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#E0E0E0" />
+                                <Setter Property="Foreground" Value="#C0C0C0" />
+
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#FF9900" />
+                                <Setter Property="Foreground" Value="#FF9900" />
+
+                            </Trigger>
+
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.Background>
+            <LinearGradientBrush EndPoint="-0.086,-0.161" StartPoint="1.857,2.186">
+                <GradientStop Color="#FF78B5FF"/>
+                <GradientStop Color="White" Offset="1"/>
+            </LinearGradientBrush>
+        </Grid.Background>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5*"/>
+            <RowDefinition Height="79*"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Label x:Name="welcome_l" Content="Welcome, no user logged in !" HorizontalContentAlignment="Right" HorizontalAlignment="Left" Margin="13,1,0,0" VerticalAlignment="Top" Width="564" FontStyle="Italic"/>
+        </Grid>
 
 
-		<TabControl Grid.Row="1" Background="{x:Null}" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}" >
-			
-        <TabItem Margin="-2,-2,-2,0.333" >
-		<!--BorderBrush="{x:Null}" Background="{x:Null}"--> 
-		
-			
-			
+        <TabControl Grid.Row="1" Background="{x:Null}" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}" >
 
-            <TabItem.Header>
-                <StackPanel Orientation="Horizontal" Height="60" Width="130">
-                    <Image Source="/images/user.png" Width="61" />
-                    <TextBlock Text="Login" VerticalAlignment="Center"/>
-                </StackPanel>
-            </TabItem.Header>
-            <Grid >
-                <GroupBox Header="Login" HorizontalAlignment="Left" Margin="32,33,0,0" VerticalAlignment="Top" Height="178" Width="322" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}">
-                    <Grid Margin="0,0,-2,-7">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="9*"/>
-                            <ColumnDefinition Width="17*"/>
-                        </Grid.ColumnDefinitions>
-                        <Label Content="Username:" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top"  Margin="0,8,10,0" Width="88" Height="23"/>
-                        <TextBox x:Name="username_tb" Grid.Column="1" Height="20" TextWrapping="Wrap" Text="usr" VerticalAlignment="Top" Margin="0,12,7,0" Padding="0"/>
-                        <Label Content="Password:" HorizontalAlignment="Right" HorizontalContentAlignment="Right" Margin="0,58,10,0" VerticalAlignment="Top" Height="23" Width="88"/>
-                        <PasswordBox x:Name="password_tb" Grid.Column="1" Margin="0,62,7,0" VerticalAlignment="Top" Height="20" Password="pwd"/>
-                        <Image Grid.Column="1" HorizontalAlignment="Left" Height="37" Margin="23,95,0,0" VerticalAlignment="Top" Width="42" Source="images/login.png"/>
-                        <Button x:Name="b_login_login" Content="Login" Grid.Column="1" HorizontalAlignment="Left" Margin="70,95,0,0" VerticalAlignment="Top" Width="124" Height="37" Click="b_login_login_Click"/>
-                        <Button x:Name="b_logout_login" Content="Logout" Grid.Column="1" HorizontalAlignment="Left" Margin="70,95,0,0" VerticalAlignment="Top" Width="124" Height="37" Click="b_logout_login_Click" Visibility="Hidden"/>
-                        <Button x:Name="b_register" Content="or Register" Grid.Column="1" HorizontalContentAlignment="Right" HorizontalAlignment="Left" Margin="127,138,0,0" VerticalAlignment="Top" Width="67" Height="20" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="#FF000CFF" BorderThickness="0" Click="b_register_Click"/>
+            <TabItem Margin="-2,-2,-2,0.333" >
+                <!--BorderBrush="{x:Null}" Background="{x:Null}"-->
 
-                        <!--
+
+
+
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Height="60" Width="130">
+                        <Image Source="/images/user.png" Width="61" />
+                        <TextBlock Text="Login" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid >
+                    <GroupBox Header="Login" HorizontalAlignment="Left" Margin="32,33,0,0" VerticalAlignment="Top" Height="178" Width="322" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}">
+                        <Grid Margin="0,0,-2,-7">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="9*"/>
+                                <ColumnDefinition Width="17*"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Content="Username:" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top"  Margin="0,8,10,0" Width="88" Height="23"/>
+                            <TextBox x:Name="username_tb" Grid.Column="1" Height="20" TextWrapping="Wrap" Text="usr" VerticalAlignment="Top" Margin="0,12,7,0" Padding="0"/>
+                            <Label Content="Password:" HorizontalAlignment="Right" HorizontalContentAlignment="Right" Margin="0,58,10,0" VerticalAlignment="Top" Height="23" Width="88"/>
+                            <PasswordBox x:Name="password_tb" Grid.Column="1" Margin="0,62,7,0" VerticalAlignment="Top" Height="20" Password="pwd"/>
+                            <Image Grid.Column="1" HorizontalAlignment="Left" Height="37" Margin="23,95,0,0" VerticalAlignment="Top" Width="42" Source="images/login.png"/>
+                            <Button x:Name="b_login_login" Content="Login" Grid.Column="1" HorizontalAlignment="Left" Margin="70,95,0,0" VerticalAlignment="Top" Width="124" Height="37" Click="b_login_login_Click"/>
+                            <Button x:Name="b_logout_login" Content="Logout" Grid.Column="1" HorizontalAlignment="Left" Margin="70,95,0,0" VerticalAlignment="Top" Width="124" Height="37" Click="b_logout_login_Click" Visibility="Hidden"/>
+                            <Button x:Name="b_register" Content="or Register" Grid.Column="1" HorizontalContentAlignment="Right" HorizontalAlignment="Left" Margin="127,138,0,0" VerticalAlignment="Top" Width="67" Height="20" Background="{x:Null}" BorderBrush="{x:Null}" Foreground="#FF000CFF" BorderThickness="0" Click="b_register_Click"/>
+
+                            <!--
                         <Label x:Name="l_register" Content="or Register" Grid.Column="1" HorizontalContentAlignment="Right" HorizontalAlignment="Left" Margin="70,137.5,0,0" VerticalAlignment="Top" Width="124" Height="20" Foreground="#FF000CFF" />
                         -->
-                    </Grid>
+                        </Grid>
 
-                </GroupBox>
+                    </GroupBox>
 
-                <GroupBox Header="Server" HorizontalAlignment="Left" Margin="32,216,0,0" VerticalAlignment="Top" Height="128" Width="322" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}">
-                    <Grid Margin="0,0,-2,-7">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="9*"/>
-                            <ColumnDefinition Width="17*"/>
-                        </Grid.ColumnDefinitions>
-                        <Label Content="IP Address:" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top"  Margin="0,8,10,0" Width="88" Height="23"/>
-                        <TextBox x:Name="ip_tb" Grid.Column="1" Height="20" TextWrapping="Wrap" Text="127.0.0.1" VerticalAlignment="Top" Margin="0,12,7,0" Padding="0"/>
-                        <Label Content="Port:" HorizontalContentAlignment="Right"  HorizontalAlignment="Right" Margin="0,58,10,0" VerticalAlignment="Top" Height="23" Width="60"/>
-                        <TextBox x:Name="port_tb" Grid.Column="1" Margin="0,62,7,0" VerticalAlignment="Top" Height="20" Text="1500" Padding="0"/>
-                    </Grid>
+                    <GroupBox Header="Server" HorizontalAlignment="Left" Margin="32,216,0,0" VerticalAlignment="Top" Height="128" Width="322" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}">
+                        <Grid Margin="0,0,-2,-7">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="9*"/>
+                                <ColumnDefinition Width="17*"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Content="IP Address:" HorizontalContentAlignment="Right" HorizontalAlignment="Right" VerticalAlignment="Top"  Margin="0,8,10,0" Width="88" Height="23"/>
+                            <TextBox x:Name="ip_tb" Grid.Column="1" Height="20" TextWrapping="Wrap" Text="127.0.0.1" VerticalAlignment="Top" Margin="0,12,7,0" Padding="0"/>
+                            <Label Content="Port:" HorizontalContentAlignment="Right"  HorizontalAlignment="Right" Margin="0,58,10,0" VerticalAlignment="Top" Height="23" Width="60"/>
+                            <TextBox x:Name="port_tb" Grid.Column="1" Margin="0,62,7,0" VerticalAlignment="Top" Height="20" Text="1500" Padding="0"/>
+                        </Grid>
 
-                </GroupBox>
+                    </GroupBox>
 
-            </Grid>
-        </TabItem>
-        <TabItem  >
-            <TabItem.Header>
-                <StackPanel Orientation="Horizontal" Height="60" Width="130">
-                    <Image Source="/images/home.png" Width="61" />
-                    <TextBlock Text="Home" VerticalAlignment="Center"/>
-                </StackPanel>
-            </TabItem.Header>
-          
-        </TabItem>
+                </Grid>
+            </TabItem>
+            <TabItem  >
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Height="60" Width="130">
+                        <Image Source="/images/home.png" Width="61" />
+                        <TextBlock Text="Home" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid>
+                    <GroupBox Header="Folder Monitoring" HorizontalAlignment="Left" Margin="10,113,0,0" VerticalAlignment="Top" Height="103" Width="265">
+                        <Grid Margin="0,0,-2,-12">
 
-        <TabItem  >
-            <TabItem.Header>
-                <StackPanel Orientation="Horizontal" Height="60" Width="130">
-                    <Image Source="/images/restore.png" Width="61" />
-                    <TextBlock Text="Restore" VerticalAlignment="Center"/>
-                </StackPanel>
-            </TabItem.Header>
-            <Grid>
-                <CheckBox Content="CheckBox" HorizontalAlignment="Left" Margin="336,124,0,0" VerticalAlignment="Top"/>
-                <ListBox HorizontalAlignment="Left" Height="100" Margin="96,170,0,0" VerticalAlignment="Top" Width="100"/>
-            </Grid>
-        </TabItem>
-        <TabItem  >
-            <TabItem.Header>
-                <StackPanel Orientation="Horizontal" Height="60" Width="130">
-                    <Image Source="/images/settings.png" Width="61" />
-                    <TextBlock Text="Settings" VerticalAlignment="Center"/>
-                </StackPanel>
-            </TabItem.Header>
-            <Grid >
-                <CheckBox Content="CheckBox" HorizontalAlignment="Left" Margin="336,124,0,0" VerticalAlignment="Top"/>
-                <ListBox HorizontalAlignment="Left" Height="100" Margin="96,170,0,0" VerticalAlignment="Top" Width="100"/>
-            </Grid>
-        </TabItem>
-    </TabControl>
-	</Grid>
-    
+                            <TextBox Height="23" Margin="10,10,9,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="E:\backup_monitoring"/>
+                            <Button Content="Sfoglia" HorizontalAlignment="Right" Margin="0,49,9,0" Width="75" Height="22" VerticalAlignment="Top"/>
+                        </Grid>
+                    </GroupBox>
+                    <Button x:Name="b_start_sync" Content="Start" HorizontalAlignment="Left" Margin="112,14,0,0" VerticalAlignment="Top" Width="73" Click="Button_Click_1"/>
+                    <Label Content="Syncronization" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+
+
+
+                </Grid>
+
+            </TabItem>
+
+            <TabItem  >
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Height="60" Width="130">
+                        <Image Source="/images/restore.png" Width="61" />
+                        <TextBlock Text="Restore" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid>
+                    <CheckBox Content="CheckBox" HorizontalAlignment="Left" Margin="336,124,0,0" VerticalAlignment="Top"/>
+                    <ListBox HorizontalAlignment="Left" Height="100" Margin="96,170,0,0" VerticalAlignment="Top" Width="100"/>
+                </Grid>
+            </TabItem>
+            <TabItem  >
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Height="60" Width="130">
+                        <Image Source="/images/settings.png" Width="61" />
+                        <TextBlock Text="Settings" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid >
+                    <CheckBox Content="CheckBox" HorizontalAlignment="Left" Margin="336,124,0,0" VerticalAlignment="Top"/>
+                    <ListBox HorizontalAlignment="Left" Height="100" Margin="96,170,0,0" VerticalAlignment="Top" Width="100"/>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+
 
 </Window>

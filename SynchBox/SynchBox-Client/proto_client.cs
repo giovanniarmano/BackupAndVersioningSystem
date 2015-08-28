@@ -182,5 +182,65 @@ namespace SynchBox_Client
 
         //public void my_sender(enum CmdType, )
 
+        public static void do_sync(NetworkStream netStream, SessionVars vars, CancellationToken ct)
+        {
+
+            //controllo se vars.uid ha già effettuato almeno una sincronizzazione!
+
+            //list last -> server
+
+            //list last response
+
+            //HO filesystem_server
+
+            //se no
+            {
+                //foreach item in list
+                { 
+                    //get
+
+                    //get response
+
+                    //write on disk
+                }
+            }
+
+            while (!ct.IsCancellationRequested) { 
+                //update/populate filesystem struct
+                //HO filesystem_client
+
+                //compare_filesystems(server,client);
+
+                //sleep (timesleep)
+            }
+
+        }
+
+        //compare filesystems
+        {   
+            //request changeset #
+            //begin new changeset state = not finished!
+
+            //foreach client file
+            {
+                //if present in the server
+                    //scegli il più recente!
+
+                    //se client + recente, update
+
+                    //se server + recente, get last version
+
+                //if not present in the server add
+
+                //if non ho dei file che sono sul server
+                    //get di tutti quei file
+             
+                //SEMPRE
+                //fai tipo un update del numero di modifiche apportate al changeset!
+                
+            }
+            
+        }
+
     }
 }

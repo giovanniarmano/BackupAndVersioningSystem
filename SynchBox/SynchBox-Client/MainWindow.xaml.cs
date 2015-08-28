@@ -18,7 +18,11 @@ using System.Threading;
 //using System.Windows;
 
 namespace SynchBox_Client
-{   
+{
+    public class SessionVars { 
+        
+    }
+
     /// <summary>
     /// Logica di interazione per MainWindow.xaml
     /// </summary>
@@ -49,6 +53,7 @@ namespace SynchBox_Client
             port = "";
             int_port = -1;
             connected = false;
+           
         }
 
         public MainWindow()
@@ -56,6 +61,7 @@ namespace SynchBox_Client
             InitializeComponent();
             Logging.WriteToLog("-----CLIENT STARTED------");
             initializeSessionParam();
+            SessionVars vars = new SessionVars();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -340,5 +346,24 @@ namespace SynchBox_Client
             //ui logout
             logout_ui();
         }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            Logging.WriteToLog("Begin syncronization ...");
+            StartSyncAsync();
+            
+        }
+
+        private async Task StartSyncAsync()
+        {
+            //cur_client.getStream();
+            //cts.Token;
+
+            //check campi
+
+            proto_client.do_sync();
+
+        }
+
     }
 }
