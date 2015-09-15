@@ -361,7 +361,8 @@ namespace SynchBox_Client
 
             //check campi
 
-            proto_client.do_sync();
+           //TODO UNCOMMENT
+           // proto_client.do_sync();
 
         }
 

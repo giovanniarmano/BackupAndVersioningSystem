@@ -8,6 +8,9 @@ using System.Net.Sockets;
 using System.Windows;
 using ProtoBuf;
 using System.Threading;
+using System.Data;
+using System.IO;
+using System.Security.Cryptography;
 
 namespace SynchBox_Client
 {
@@ -181,7 +184,9 @@ namespace SynchBox_Client
         }
 
         //public void my_sender(enum CmdType, )
-
+        
+        
+        /*
         public static void do_sync(NetworkStream netStream, SessionVars vars, CancellationToken ct)
         {
 
@@ -215,7 +220,44 @@ namespace SynchBox_Client
             }
 
         }
+        */
 
+
+        /*
+        private static DataTable populateFS(ref DataTable dt, string rootFolder){
+                dt = new DataTable();
+                dt.Clear();
+                dt.Columns.Add("uid");   //user_id
+                dt.Columns.Add("fid");   //file id
+                dt.Columns.Add("cid");   //changeset id 
+                dt.Columns.Add("rev");   //revision
+                dt.Columns.Add("name");  //filename
+                dt.Columns.Add("folder_path");//path
+                dt.Columns.Add("md5");   //md5
+                
+                List<string> search = Directory.GetFiles(rootFolder, "*.*").ToList();
+
+                foreach(string item in search)
+                {
+                
+                        //calculate md5 in bytearray
+                        byte[] filehash;
+
+                        using (var md5 = MD5.Create())
+                        {
+                            using (var stream = File.OpenRead(item))
+                            {
+                                filehash =  md5.ComputeHash(stream);
+                            }
+                        }
+
+
+                }   
+    
+        }
+        */
+        
+        /*
         //compare filesystems
         {   
             //request changeset #
@@ -241,6 +283,7 @@ namespace SynchBox_Client
             }
             
         }
-
+         */
     }
+        
 }
