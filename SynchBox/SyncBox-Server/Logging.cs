@@ -22,7 +22,7 @@ namespace SyncBox_Server
             {
                 StreamWriter SW;
                 DateTime t = DateTime.Now;
-                SW = File.AppendText("E:\\backup\\Log_server.txt");
+                SW = File.AppendText("D:\\backup\\Log_server.txt");
                 SW.WriteLine(t.ToString() + " - (" + System.Threading.Thread.CurrentThread.ManagedThreadId + ")" + message);
                 SW.Close();
             }

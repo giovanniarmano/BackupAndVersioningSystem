@@ -19,7 +19,7 @@ namespace SynchBox_Client
             {
                 StreamWriter SW;
                 DateTime t = DateTime.Now;
-                SW = File.AppendText("E:\\backup\\Log_client.txt");
+                SW = File.AppendText("D:\\backup\\Log_client.txt");
                 SW.WriteLine(t.ToString() + " - (" + System.Threading.Thread.CurrentThread.ManagedThreadId + ")" + message);
                 SW.Close();
             }
