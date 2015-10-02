@@ -366,5 +366,12 @@ namespace SynchBox_Client
 
         }
 
+        private void button_Click_2(object sender, RoutedEventArgs e)
+        {
+            //Test List protobuf
+            proto_client.do_test(cur_client.getStream(), 5, cts.Token);
+                        
+
+        }
     }
 }

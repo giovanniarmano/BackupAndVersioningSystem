@@ -15,7 +15,7 @@ using System.Threading;
 namespace SyncBox_Server
 {
     //TODO Synch with client!!
-    enum CmdType : byte { Login, Register, Logout };
+    enum CmdType : byte { Login, Register, Logout, Test };
 
     //Tante istanze quanti sono i processi attivi sul server!
     public static class proto_server
@@ -75,6 +75,47 @@ namespace SyncBox_Server
             }
         }
 
+        [ProtoContract]
+        public class myObj
+        {
+            [ProtoMember(1)]
+            public int int1;
+
+            [ProtoMember(2)]
+            public int int2;
+
+            [ProtoMember(3)]
+            public string s1;
+
+            [ProtoMember(4)]
+            public string s2;
+
+            public string ToString()
+            {
+                StringBuilder str = new StringBuilder("");
+                str.Append("|int1->");
+                str.Append(int1);
+                str.Append("|int2->");
+                str.Append(int2);
+                str.Append("|s1->");
+                str.Append(s2);
+                str.Append("|s2->");
+                str.Append(s2);
+                str.Append("|");
+                return str.ToString();
+            }
+
+        }
+
+
+        [ProtoContract]
+        public class test_c
+        {
+            [ProtoMember(1)]
+            public List<myObj> intlist;
+            
+        }
+
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
 
@@ -92,10 +133,12 @@ namespace SyncBox_Server
 
                 
 
+   
                 messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
 
+
                 //DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(500);
                 
 
                 switch (msgtype_r.msgtype)
@@ -121,6 +164,13 @@ namespace SyncBox_Server
                         manage_logout(netStream);
                         break;
 
+                    case (byte)CmdType.Test:
+                        Logging.WriteToLog("manage TEST CASE ...");
+                        msgtype_r.accepted = true;
+                        //Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_test(netStream);
+                        break;
+
                     default:
                         Logging.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
                         break;
@@ -131,6 +181,62 @@ namespace SyncBox_Server
                 Logging.WriteToLog(ex.ToString());
             }
         }
+
+        public static void manage_test(NetworkStream netStream)
+        {
+            test_c tc = Serializer.DeserializeWithLengthPrefix<test_c>(netStream, PrefixStyle.Base128);
+
+            Logging.WriteToLog("-------TEST LIST RECEIVED--------\n" + tc.intlist.ToString());
+
+            int i;
+
+            for (i = 0; i < tc.intlist.Count; i++)
+            {
+                Logging.WriteToLog(tc.intlist[i].ToString());
+            }
+
+            //Il client mi manda una lista, vedo riesco a vederla!! Faigo!
+
+            /*
+            Logging.WriteToLog("received - " + login_r.ToString());
+
+            string sql = "select * from USERS where user = '" + login_r.username + "' ;";
+
+            DataTable dt = db.GetDataTable(sql);
+
+            if (dt.Rows.Count == 0)
+            {
+                string md5pwd = CalculateMD5Hash(login_r.password);
+                string sqlupdate = "insert into USERS (user,md5) values ('" + login_r.username + "','" + md5pwd + "');";
+
+                int row_updated = db.ExecuteNonQuery(sqlupdate);
+
+                string sql_ = "select * from USERS where user = '" + login_r.username + "' ;";
+
+                DataTable dt_ = db.GetDataTable(sql_);
+
+                login_r.uid = int.Parse(dt_.Rows[0]["uid"].ToString());
+                login_r.is_logged = true;
+
+            }
+            else if (dt.Rows.Count >= 1)
+            {
+                login_r.is_logged = false;
+            }
+
+            login_r.password = null;
+
+            //salvo nella sessione utente login! 
+            //login_session = login_r;
+
+            //   MessageBox.Show("GOT CONNECTION Stream: sneding data...");
+            Serializer.SerializeWithLengthPrefix(netStream, login_r, PrefixStyle.Base128);
+
+            Logging.WriteToLog("sent - " + login_r.ToString());
+            */
+        }
+
+
 
         private static void manage_logout(NetworkStream netStream)
         {
@@ -228,6 +334,10 @@ namespace SyncBox_Server
             Logging.WriteToLog("sent - " + login_r.ToString());
 
         }
+
+
+       
+
 
         public static string CalculateMD5Hash(string input)
         {

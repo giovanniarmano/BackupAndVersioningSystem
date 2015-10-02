@@ -15,7 +15,7 @@
                 <ColumnDefinition Width="97*"/>
                 <ColumnDefinition Width="420*"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="db_path_textbox" HorizontalAlignment="Left" Height="23" Margin="10,34,0,0" TextWrapping="Wrap" Text="e:\backup\db.db" VerticalAlignment="Top" Width="279" Grid.Column="1"/>
+            <TextBox x:Name="db_path_textbox" HorizontalAlignment="Left" Height="23" Margin="10,34,0,0" TextWrapping="Wrap" Text="c:\backup\db.db" VerticalAlignment="Top" Width="279" Grid.Column="1"/>
             <Label Content="DB Path" HorizontalContentAlignment="Right" Margin="31,31,0,0" Height="26" VerticalAlignment="Top" FontWeight="Bold"/>
         </Grid>
 

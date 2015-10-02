@@ -14,7 +14,7 @@ using System.Security.Cryptography;
 
 namespace SynchBox_Client
 {
-    enum CmdType : byte { Login, Register, Logout };
+    enum CmdType : byte { Login, Register, Logout, Test };
 
     public static class proto_client
     {
@@ -80,9 +80,113 @@ namespace SynchBox_Client
             }
         }
 
+        [ProtoContract]
+        public class myObj
+        {
+            [ProtoMember(1)]
+            public int int1;
+
+            [ProtoMember(2)]
+            public int int2;
+
+            [ProtoMember(3)]
+            public string s1;
+
+            [ProtoMember(4)]
+            public string s2;
+
+            public string ToString()
+            {
+                StringBuilder str = new StringBuilder("");
+                str.Append("|int1->");
+                str.Append(int1);
+                str.Append("|int2->");
+                str.Append(int2);
+                str.Append("|s1->");
+                str.Append(s2);
+                str.Append("|s2->");
+                str.Append(s2);
+                str.Append("|");
+                return str.ToString();
+            }
+
+        }
+
+
+        [ProtoContract]
+        public class test_c
+        {
+            [ProtoMember(1)]
+            public List<myObj> intlist;
+
+        }
+
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
 
+
+        public static void do_test(NetworkStream netStream, int n, CancellationToken ct)
+        {
+            myObj mobj = new myObj();
+            mobj.int1 = 1;
+            mobj.int2 = 2;
+            mobj.s1 = "Ciao Mamma";
+            mobj.s2 = "Protobuf HELP ME";
+
+            test_c tc = new test_c();
+            tc.intlist = new List<myObj>();
+
+            int i = 0;
+            for (i=0;i< n; i++)
+            {
+                tc.intlist.Add(mobj);
+            }
+
+            Logging.WriteToLog("------TESTING-----");
+            Logging.WriteToLog("list tostring");
+
+            for (i = 0; i < tc.intlist.Count; i++) {
+                Logging.WriteToLog(i.ToString()+ tc.intlist[i].ToString());
+            }
+
+            messagetype_c msgtype = new messagetype_c
+            {
+                msgtype = (byte)CmdType.Test,
+                accepted = false,
+            };
+
+            Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
+
+            //Logging.WriteToLog("Attempting reading data!");
+            //messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+            //if (msgtype_r.accepted == false)
+            //    throw new Exception("Message Type not Accepted by Server.\n" + msgtype_r.ToString());
+
+            /*
+            login_c login = new login_c
+            {
+                is_logged = false,
+                uid = -1,
+                username = _username,
+                password = _password
+            };
+            */
+            //MessageBox.Show("GOT CONNECTION Stream: sending data...");
+            Serializer.SerializeWithLengthPrefix(netStream, tc, PrefixStyle.Base128);
+
+            /*
+            //MessageBox.Show("Attempting reading data!");
+            login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
+
+
+            Logging.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
+            //Logging.WriteToLog("logging in: sending data...");
+
+
+            return login_r;
+            */
+        }
 
         public static void do_logout(NetworkStream netStream)
         {
