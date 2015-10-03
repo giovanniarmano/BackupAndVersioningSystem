@@ -72,10 +72,26 @@ namespace SyncBox_Server
             var connString = string.Format(@"Data Source={0}; Pooling=false; FailIfMissing=false;", dbPath);
             SQLiteConnection cnntodb = new SQLiteConnection(connString);
             cnntodb.Open();
-            
+
             //----------HERE INITIAL TABLES-------------------
-            string sql = @"CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);";
-         
+            //string sql = @"CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);";
+
+            string sql = @"CREATE TABLE [TEST_DATA] (
+                        [id] INTEGER  NOT NULL PRIMARY KEY,
+                        [data_raw] BLOB  NULL
+                        );
+
+                        CREATE TABLE [TEST_META] (
+                        [id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        [filename] TEXT  NULL,
+                        [path] TEXT  NULL,
+                        [md5] TEXT  NULL
+                        );
+
+                        CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);
+                        ";
+
+
             SQLiteCommand command = new SQLiteCommand(sql, cnntodb);
             command.ExecuteNonQuery();
             cnntodb.Close();

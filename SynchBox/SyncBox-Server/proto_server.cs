@@ -10,6 +10,7 @@ using System.Windows;
 using System.Data;
 using System.Security.Cryptography;
 using System.Threading;
+using System.IO;
 
 //TODO Logout method-> unset login_session
 namespace SyncBox_Server
@@ -196,14 +197,31 @@ namespace SyncBox_Server
             }
 
             //Il client mi manda una lista, vedo riesco a vederla!! Faigo!
+            
+            Logging.WriteToLog("Ora il SERVER interroga il server chiedendogli una DataTable");
 
-            /*
-            Logging.WriteToLog("received - " + login_r.ToString());
-
-            string sql = "select * from USERS where user = '" + login_r.username + "' ;";
+            string sql = @"  select TEST_META.id, filename,path,md5,data_raw
+                              from TEST_META, TEST_DATA
+                              where TEST_META.id = TEST_DATA.id; ";
 
             DataTable dt = db.GetDataTable(sql);
 
+            Logging.WriteToLog("dt.tostring->" + DataTableToString(dt));
+
+            dt.Rows[0][0] = 1000;
+            dt.Columns.Add("newColumn");
+            dt.Rows[0]["newColumn"] = "firts";
+
+            Logging.WriteToLog("dt.tostring->" + DataTableToString(dt));
+
+            //TRYING TO SERIALIZE A DATATABLE
+            Stream buffer = new MemoryStream();
+            var reader = dt.CreateDataReader();
+           // DataSerializer.Serialize(buffer, reader);
+
+            // var dtarray = dt.
+
+            /*
             if (dt.Rows.Count == 0)
             {
                 string md5pwd = CalculateMD5Hash(login_r.password);
@@ -351,6 +369,21 @@ namespace SyncBox_Server
             for (int i = 0; i < hash.Length; i++)
             {
                 sb.Append(hash[i].ToString("X2"));
+            }
+            return sb.ToString();
+        }
+
+        public static string DataTableToString(DataTable Table)
+        {
+            StringBuilder sb = new StringBuilder("");
+            foreach (DataRow dataRow in Table.Rows)
+            {
+                sb.Append("\n");
+                foreach (var item in dataRow.ItemArray)
+                {
+                    sb.Append(item + "|");
+                    //Console.WriteLine(item);
+                }
             }
             return sb.ToString();
         }
