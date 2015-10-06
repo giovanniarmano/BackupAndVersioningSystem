@@ -32,7 +32,7 @@ fid* int INDEX
 rev* int
 filename string			(HA SENSO TENERLI SEPARATI?)
 folder string
-modify_datetime datetime
+timestamp datetime
 md5 string
 deleted? boolean
 
@@ -40,7 +40,7 @@ FILES_DUMP:
 uid* int
 fid* int
 rev* int
-byte_array bytearray
+byte_array filedump
 
 
 

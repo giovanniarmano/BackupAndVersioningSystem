@@ -18,8 +18,8 @@ using ProtoBuf.Data;
 namespace SyncBox_Server
 {
     //TODO Synch with client!!
-    enum CmdType : byte { Login, Register, Logout, Test };
-   
+    enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add };
+
 
     //Tante istanze quanti sono i processi attivi sul server!
     public static class proto_server
@@ -280,48 +280,44 @@ namespace SyncBox_Server
         public static void manage(NetworkStream netStream,CancellationToken ct,ref bool exc)
         {
             //while da testare! Uso questo per mantenere come local var il login dell'utente che sto gestendo
-            
+            login_c currentUser = new login_c();
+            currentUser.is_logged = false;
+
             while (!exc && !ct.IsCancellationRequested) { 
             try
-            {
-                //magari si può mettere nella chiamata sopra!
+            {   //magari si può mettere nella chiamata sopra!
                 //NetworkStream netStream = new NetworkStream(s, false); ///false = not own the socket
-
                 //Logging.WriteToLog("sleeping ...");
                 //System.Threading.Thread.Sleep(5000);
                 //Logging.WriteToLog("sleeping DONE");
-
-                
-
-   
+                   
                 messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
-
 
                 //DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
                 //System.Threading.Thread.Sleep(500);
                 
-
                 switch (msgtype_r.msgtype)
                 {
                     case (byte)CmdType.Login:
                         Logging.WriteToLog("manage LOGIN CASE ...");
                         msgtype_r.accepted = true;
                         Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
-                        manage_login(netStream);
+                        manage_login(netStream,ref currentUser);
                         break;
 
                     case (byte)CmdType.Register:
                         Logging.WriteToLog("manage REGISTER CASE ...");
                         msgtype_r.accepted = true;
                         Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
-                        manage_register(netStream);
+                        manage_register(netStream, ref currentUser);
                         break;
 
                     case (byte)CmdType.Logout:
                         Logging.WriteToLog("manage LOGOUT CASE ...");
                         msgtype_r.accepted = true;
+                            //TODO ADAPT
                         //Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
-                        manage_logout(netStream);
+                        manage_logout(netStream,ref currentUser);
                         break;
 
                     case (byte)CmdType.Test:
@@ -331,7 +327,42 @@ namespace SyncBox_Server
                         manage_test(netStream);
                         break;
 
-                    default:
+                    case (byte)CmdType.ListRequest:
+                        Logging.WriteToLog("manage ListRequest CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_ListRequest(netStream, ref currentUser);
+                        break;
+
+                    case (byte)CmdType.GetList:
+                        Logging.WriteToLog("manage GetList CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_GetList(netStream, ref currentUser);
+                        break;
+
+                    case (byte)CmdType.Update:
+                        Logging.WriteToLog("manage Update CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_Update(netStream, ref currentUser);
+                        break;
+
+                    case (byte)CmdType.Delete:
+                        Logging.WriteToLog("manage Delete CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_Delete(netStream, ref currentUser);
+                        break;
+
+                    case (byte)CmdType.Add:
+                        Logging.WriteToLog("manage Add CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_Add(netStream, ref currentUser);
+                        break;
+
+                        default:
                         Logging.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
                         break;
                 }
@@ -342,6 +373,32 @@ namespace SyncBox_Server
             }
             }
         }
+
+        private static void manage_Add(NetworkStream netStream, ref login_c currentUser)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void manage_Delete(NetworkStream netStream, ref login_c currentUser)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void manage_Update(NetworkStream netStream, ref login_c currentUser)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void manage_GetList(NetworkStream netStream, ref login_c currentUser)
+        {
+            throw new NotImplementedException();
+        }
+
+        private static void manage_ListRequest(NetworkStream netStream, ref login_c currentUser)
+        {
+            throw new NotImplementedException();
+        }
+
 
         public static void manage_test(NetworkStream netStream)
         {
@@ -357,7 +414,7 @@ namespace SyncBox_Server
             }
 
             //Il client mi manda una lista, vedo riesco a vederla!! Faigo!
-            
+            /*
             Logging.WriteToLog("Ora il SERVER interroga il server chiedendogli una DataTable");
 
             string sql = @"  select TEST_META.id, filename,path,md5,data_raw
@@ -394,6 +451,7 @@ namespace SyncBox_Server
             Logging.WriteToLog("Trying to DESerialize dt.DataReader DONE");
 
             Logging.WriteToLog("dt2.tostring->" + DataTableToString(dt2));
+            */
             /*
             //SEND DATATABLE
             //netStream;
@@ -410,14 +468,14 @@ namespace SyncBox_Server
 
 
 
-        private static void manage_logout(NetworkStream netStream)
+        private static void manage_logout(NetworkStream netStream, ref login_c currentUser)
         {
             netStream.Close();
             throw new Exception("Logout msg received!");
         }
 
 
-        public static void manage_login(NetworkStream netStream){
+        public static void manage_login(NetworkStream netStream, ref login_c currentUser){
        
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
@@ -465,7 +523,7 @@ namespace SyncBox_Server
 
         }
 
-        public static void manage_register(NetworkStream netStream)
+        public static void manage_register(NetworkStream netStream, ref login_c currentUser)
         {
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 

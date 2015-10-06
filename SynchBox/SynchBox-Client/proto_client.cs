@@ -15,7 +15,7 @@ using ProtoBuf.Data;
 
 namespace SynchBox_Client
 {
-    enum CmdType : byte { Login, Register, Logout, Test };
+    enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add };
 
     public static class proto_client
     {

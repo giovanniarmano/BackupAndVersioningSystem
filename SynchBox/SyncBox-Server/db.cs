@@ -76,19 +76,48 @@ namespace SyncBox_Server
             //----------HERE INITIAL TABLES-------------------
             //string sql = @"CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);";
 
-            string sql = @"CREATE TABLE [TEST_DATA] (
-                        [id] INTEGER  NOT NULL PRIMARY KEY,
-                        [data_raw] BLOB  NULL
-                        );
+            string sql =  @"CREATE TABLE [FILES_DUMP] (
+                            [uid] INTEGER  NOT NULL,
+                            [fid] INTEGER  NOT NULL,
+                            [rev] INTEGER  NOT NULL,
+                            [filedump] BLOB  NULL,
+                            PRIMARY KEY ([uid],[fid],[rev])
+                            );
 
-                        CREATE TABLE [TEST_META] (
-                        [id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        [filename] TEXT  NULL,
-                        [path] TEXT  NULL,
-                        [md5] TEXT  NULL
-                        );
+                            CREATE TABLE [HISTORY] (
+                            [uid] INTEGER  NOT NULL,
+                            [fid] INTEGER  NOT NULL,
+                            [rev] INTEGER  NOT NULL,
+                            [filename] TEXT  NULL,
+                            [folder] TEXT  NULL,
+                            [timestamp] TIMESTAMP  NULL,
+                            [md5] TEXT  NULL,
+                            [deleted] BOOLEAN  NULL,
+                            PRIMARY KEY ([uid],[fid],[rev])
+                            );
 
-                        CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);
+                            CREATE TABLE [SANPSHOT] (
+                            [uid] INTEGER  NOT NULL,
+                            [fid] INTEGER  NOT NULL,
+                            [rev] INTEGER  NULL,
+                            [syncid] INTEGER  NULL,
+                            PRIMARY KEY ([uid],[fid])
+                            );
+
+                            CREATE TABLE [TEST_DATA] (
+                            [id] INTEGER  NOT NULL PRIMARY KEY,
+                            [data_raw] BLOB  NULL
+                            );
+
+                            CREATE TABLE [TEST_META] (
+                            [id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            [filename] TEXT  NULL,
+                            [path] TEXT  NULL,
+                            [md5] TEXT  NULL
+                            );
+
+                            CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);
+
                         ";
 
 
