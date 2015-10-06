@@ -145,9 +145,15 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
-                    <CheckBox Content="CheckBox" HorizontalAlignment="Left" Margin="336,124,0,0" VerticalAlignment="Top"/>
-                    <ListBox HorizontalAlignment="Left" Height="100" Margin="96,170,0,0" VerticalAlignment="Top" Width="100"/>
-                    <Button x:Name="button" Content="Test List" HorizontalAlignment="Left" Margin="111,53,0,0" VerticalAlignment="Top" Width="75" Click="button_Click_2"/>
+                    <Button x:Name="button" Content="Test List" HorizontalAlignment="Left" Margin="33,10,0,0" VerticalAlignment="Top" Width="75" Click="button_Click_2"/>
+                    <TreeView x:Name="treeView" HorizontalAlignment="Left" Height="330" Margin="10,34,0,0" VerticalAlignment="Top" Width="152"/>
+                    <ListView x:Name="listView" HorizontalAlignment="Left" Height="330" Margin="167,34,0,0" VerticalAlignment="Top" Width="192">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
                 </Grid>
             </TabItem>
             <TabItem  >
@@ -158,8 +164,8 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid >
-                    <CheckBox Content="CheckBox" HorizontalAlignment="Left" Margin="336,124,0,0" VerticalAlignment="Top"/>
-                    <ListBox HorizontalAlignment="Left" Height="100" Margin="96,170,0,0" VerticalAlignment="Top" Width="100"/>
+                    <CheckBox Content="CheckBox" HorizontalAlignment="Left" Margin="483,10,0,0" VerticalAlignment="Top"/>
+
                 </Grid>
             </TabItem>
         </TabControl>

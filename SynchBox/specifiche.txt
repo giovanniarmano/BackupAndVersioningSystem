@@ -1,0 +1,96 @@
+﻿SyncBox Client+Server
+Bertrone Matteo
+06/10/2015
+
+DB Sqlite sul server
+
+USERS:
+uid int pk
+user string
+md5 string
+
+//SUPERFLUO SE SI PENSA AD UN PROTOCOLLO DI SYNC IN CUI IL CLIENT CHIEDE OGNI SINGOLO FILE AL SERVER ONE-PER-ONE
+/*
+SYNC:
+uid*
+syncid*
+timestamp
+n_items
+succesfull
+*/
+
+SNAPSHOT: (mantiene i puntatori ai file presenti nell'ultimo snapshot. Se aggiorno un file cancello rev precendente e inserisco quella nuova)
+uid* int INDEX
+fid* int
+rev int
+syncid int (numero crescente che tiene traccia dell'ultima sincronizzazione con modifiche.)
+//se seleziono il max syncid di un uid e lo comparo con quello del client so se devo ripetere la sync o meno
+
+HISTORY: (mantiene la history dei file) - INDEX (UID,FID,REV) ??
+uid* int INDEX
+fid* int INDEX
+rev* int
+filename string			(HA SENSO TENERLI SEPARATI?)
+folder string
+modify_datetime datetime
+md5 string
+deleted? boolean
+
+FILES_DUMP:
+uid* int
+fid* int
+rev* int
+byte_array bytearray
+
+
+
+PROTOCOLLO:
+
+//LOGIN LOGOUT REGISTER
+
+
+
+
+//DATA SYNC
+
+SERVER--------------------------CLIENT
+			
+			ListRequest(listReqType[Last, All, DateInterval, Filename])
+<<-----------------------------------
+(Richiede la versione più aggiornata sul server)
+
+			ListResponse(List<FileListItem>)
+            int fid;int rev;string filename;string folder;DateTime datetime;string md5;Boolean deleted;
+--------------------------------->>
+(manda una lista con lo snapshot)
+
+
+
+		GetList(int n, List<FileToGet[int fid,int rev]>)
+<<--------------------------------
+
+		GetResponse(FileToGet, int syncid, Byte[] filedump)
+		MANDA UN SOLO FILE
+------------------------------->>
+
+
+		Update(fid,Byte[]fileDump)
+<<-------------------------------
+
+		UpdateOk(fid,rev,syncid)
+------------------------------->>
+
+
+		Delete(fid) 
+<<------------------------------
+
+		DeleteOk(fid,syncid)
+------------------------------->>
+
+
+		Add(filename, folder, fileDump)
+<<-----------------------------
+
+		AddOkk(fid, rev, syncid)
+------------------------------->>
+

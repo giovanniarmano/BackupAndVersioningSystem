@@ -11,12 +11,15 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Threading;
 using System.IO;
+using ProtoBuf.Data;
+
 
 //TODO Logout method-> unset login_session
 namespace SyncBox_Server
 {
     //TODO Synch with client!!
     enum CmdType : byte { Login, Register, Logout, Test };
+   
 
     //Tante istanze quanti sono i processi attivi sul server!
     public static class proto_server
@@ -105,7 +108,6 @@ namespace SyncBox_Server
                 str.Append("|");
                 return str.ToString();
             }
-
         }
 
 
@@ -114,8 +116,162 @@ namespace SyncBox_Server
         {
             [ProtoMember(1)]
             public List<myObj> intlist;
-            
         }
+
+
+        [ProtoContract]
+        public class FileListItem
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public int rev;
+
+            [ProtoMember(3)]
+            public string filename;
+
+            [ProtoMember(4)]
+            public string folder;
+
+            [ProtoMember(5)]
+            public DateTime datetime;
+
+            [ProtoMember(6)]
+            public string md5;
+
+            [ProtoMember(7)]
+            public Boolean deleted;
+        }
+
+        enum ListRequestType : byte { Last, All, DateInterval, Filename };
+
+        //LIST_REQUEST Richiede una versione al server di tipo enum listReqType
+        [ProtoContract]
+        public class ListRequest
+        {
+            [ProtoMember(1)]
+            public byte listReqType;
+        }
+
+        [ProtoContract]
+        public class ListResponse
+        {
+            [ProtoMember(1)]
+            public List<FileListItem> fileList;
+        }
+
+
+        [ProtoContract]
+        public class FileToGet
+        {
+            [ProtoMember(1)]
+            public int fid;
+        
+            [ProtoMember(2)]
+            public int rev;
+    }
+
+    //GET_LIST richiede al server una lista di n file(DUMP FILE) 
+    [ProtoContract]
+        public class GetList
+        {
+            [ProtoMember(1)]
+            public int n;
+
+            [ProtoMember(1)]
+            public List<FileToGet> fileList;
+
+        }
+
+        [ProtoContract]
+        public class GetResponse
+        {
+            [ProtoMember(1)]
+            public FileToGet fileInfo;
+
+            [ProtoMember(2)]
+            public int syncid;
+
+            [ProtoMember(3)]
+            public Byte[] fileDump;
+        }
+
+        //DELETE_FILE ON SERVER
+
+        [ProtoContract]
+        public class Delete
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+        }
+
+        [ProtoContract]
+        public class DeleteOk
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public int syncid;
+        }
+
+        //UPDATE_FILE ON SERVER
+
+        [ProtoContract]
+        public class Update
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public byte[] fileDump;
+
+
+        }
+
+        [ProtoContract]
+        public class UpdateOk
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public int rev;
+
+            [ProtoMember(3)]
+            public int syncid;
+        }
+
+
+        //ADD A FILE NOT PRESENT IN LOCAL 
+        [ProtoContract]
+        public class Add
+        {
+            [ProtoMember(1)]
+            public string filename;
+
+            [ProtoMember(2)]
+            public string folder;
+
+            [ProtoMember(3)]
+            public byte[] fileDump;
+        }
+
+        [ProtoContract]
+        public class AddOk
+        {
+            [ProtoMember(1)]
+            public string fid;
+
+            [ProtoMember(2)]
+            public int rev;
+
+            [ProtoMember(3)]
+            public int syncid;
+        }
+
 
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
@@ -123,6 +279,9 @@ namespace SyncBox_Server
 
         public static void manage(NetworkStream netStream,CancellationToken ct,ref bool exc)
         {
+            //while da testare! Uso questo per mantenere come local var il login dell'utente che sto gestendo
+            
+            while (!exc && !ct.IsCancellationRequested) { 
             try
             {
                 //magari si può mettere nella chiamata sopra!
@@ -139,7 +298,7 @@ namespace SyncBox_Server
 
 
                 //DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
-                System.Threading.Thread.Sleep(500);
+                //System.Threading.Thread.Sleep(500);
                 
 
                 switch (msgtype_r.msgtype)
@@ -181,6 +340,7 @@ namespace SyncBox_Server
                 exc = true;
                 Logging.WriteToLog(ex.ToString());
             }
+            }
         }
 
         public static void manage_test(NetworkStream netStream)
@@ -214,44 +374,38 @@ namespace SyncBox_Server
 
             Logging.WriteToLog("dt.tostring->" + DataTableToString(dt));
 
+            Logging.WriteToLog("Trying to Serialize dt.DataReader ...");
+
             //TRYING TO SERIALIZE A DATATABLE
             Stream buffer = new MemoryStream();
             var reader = dt.CreateDataReader();
-           // DataSerializer.Serialize(buffer, reader);
+            DataSerializer.Serialize(buffer, dt);
 
-            // var dtarray = dt.
+            Logging.WriteToLog("Trying to Serialize dt.DataReader DONE");
 
+            Logging.WriteToLog("Trying to DESerialize dt.DataReader ...");
+            
+            //DataTable dt2 = new DataTable();
+            buffer.Seek(0, SeekOrigin.Begin);
+            DataTable dt2 = DataSerializer.DeserializeDataTable(buffer);
+            //{
+            //    dt2.Load(reader2);
+            //}
+            Logging.WriteToLog("Trying to DESerialize dt.DataReader DONE");
+
+            Logging.WriteToLog("dt2.tostring->" + DataTableToString(dt2));
             /*
-            if (dt.Rows.Count == 0)
+            //SEND DATATABLE
+            //netStream;
+            Logging.WriteToLog("SERVER is SENDING DATATABLE...");
+            using (IDataReader reader_ = dt2.CreateDataReader())
             {
-                string md5pwd = CalculateMD5Hash(login_r.password);
-                string sqlupdate = "insert into USERS (user,md5) values ('" + login_r.username + "','" + md5pwd + "');";
-
-                int row_updated = db.ExecuteNonQuery(sqlupdate);
-
-                string sql_ = "select * from USERS where user = '" + login_r.username + "' ;";
-
-                DataTable dt_ = db.GetDataTable(sql_);
-
-                login_r.uid = int.Parse(dt_.Rows[0]["uid"].ToString());
-                login_r.is_logged = true;
-
+                DataSerializer.Serialize(netStream, reader_);
             }
-            else if (dt.Rows.Count >= 1)
-            {
-                login_r.is_logged = false;
-            }
-
-            login_r.password = null;
-
-            //salvo nella sessione utente login! 
-            //login_session = login_r;
-
-            //   MessageBox.Show("GOT CONNECTION Stream: sneding data...");
-            Serializer.SerializeWithLengthPrefix(netStream, login_r, PrefixStyle.Base128);
-
-            Logging.WriteToLog("sent - " + login_r.ToString());
+            Logging.WriteToLog("SERVER is SENDING DATATABLE... SENT !!!!");
+            Logging.WriteToLog("dt->\n" + DataTableToString(dt2));
             */
+         
         }
 
 

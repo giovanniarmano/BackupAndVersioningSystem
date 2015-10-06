@@ -11,6 +11,7 @@ using System.Threading;
 using System.Data;
 using System.IO;
 using System.Security.Cryptography;
+using ProtoBuf.Data;
 
 namespace SynchBox_Client
 {
@@ -28,8 +29,8 @@ namespace SynchBox_Client
         ///////////STRUCT DEFINITIONS /////////////////
 
         [ProtoContract]
-        public class messagetype_c {
-
+        public class messagetype_c
+        {
             [ProtoMember(1)]
             public byte msgtype;
 
@@ -48,16 +49,15 @@ namespace SynchBox_Client
             }
         }
 
-        
         [ProtoContract]
-        public class login_c {
-            
+        public class login_c
+        {
             [ProtoMember(1)]
             public bool is_logged;
-            
+
             [ProtoMember(2)]
             public int uid;
-            
+
             [ProtoMember(3)]
             public string username;
 
@@ -109,7 +109,6 @@ namespace SynchBox_Client
                 str.Append("|");
                 return str.ToString();
             }
-
         }
 
 
@@ -118,8 +117,162 @@ namespace SynchBox_Client
         {
             [ProtoMember(1)]
             public List<myObj> intlist;
+        }
+
+
+        [ProtoContract]
+        public class FileListItem
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public int rev;
+
+            [ProtoMember(3)]
+            public string filename;
+
+            [ProtoMember(4)]
+            public string folder;
+
+            [ProtoMember(5)]
+            public DateTime datetime;
+
+            [ProtoMember(6)]
+            public string md5;
+
+            [ProtoMember(7)]
+            public Boolean deleted;
+        }
+
+        enum ListRequestType : byte { Last, All, DateInterval, Filename };
+
+        //LIST_REQUEST Richiede una versione al server di tipo enum listReqType
+        [ProtoContract]
+        public class ListRequest
+        {
+            [ProtoMember(1)]
+            public byte listReqType;
+        }
+
+        [ProtoContract]
+        public class ListResponse
+        {
+            [ProtoMember(1)]
+            public List<FileListItem> fileList;
+        }
+
+
+        [ProtoContract]
+        public class FileToGet
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public int rev;
+        }
+
+        //GET_LIST richiede al server una lista di n file(DUMP FILE) 
+        [ProtoContract]
+        public class GetList
+        {
+            [ProtoMember(1)]
+            public int n;
+
+            [ProtoMember(1)]
+            public List<FileToGet> fileList;
 
         }
+
+        [ProtoContract]
+        public class GetResponse
+        {
+            [ProtoMember(1)]
+            public FileToGet fileInfo;
+
+            [ProtoMember(2)]
+            public int syncid;
+
+            [ProtoMember(3)]
+            public Byte[] fileDump;
+        }
+
+        //DELETE_FILE ON SERVER
+
+        [ProtoContract]
+        public class Delete
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+        }
+
+        [ProtoContract]
+        public class DeleteOk
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public int syncid;
+        }
+
+        //UPDATE_FILE ON SERVER
+
+        [ProtoContract]
+        public class Update
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public byte[] fileDump;
+
+
+        }
+
+        [ProtoContract]
+        public class UpdateOk
+        {
+            [ProtoMember(1)]
+            public int fid;
+
+            [ProtoMember(2)]
+            public int rev;
+
+            [ProtoMember(3)]
+            public int syncid;
+        }
+
+
+        //ADD A FILE NOT PRESENT IN LOCAL 
+        [ProtoContract]
+        public class Add
+        {
+            [ProtoMember(1)]
+            public string filename;
+
+            [ProtoMember(2)]
+            public string folder;
+
+            [ProtoMember(3)]
+            public byte[] fileDump;
+        }
+
+        [ProtoContract]
+        public class AddOk
+        {
+            [ProtoMember(1)]
+            public string fid;
+
+            [ProtoMember(2)]
+            public int rev;
+
+            [ProtoMember(3)]
+            public int syncid;
+        }
+
 
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
@@ -157,34 +310,19 @@ namespace SynchBox_Client
 
             Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
 
-            //Logging.WriteToLog("Attempting reading data!");
-            //messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
-
-            //if (msgtype_r.accepted == false)
-            //    throw new Exception("Message Type not Accepted by Server.\n" + msgtype_r.ToString());
-
-            /*
-            login_c login = new login_c
-            {
-                is_logged = false,
-                uid = -1,
-                username = _username,
-                password = _password
-            };
-            */
-            //MessageBox.Show("GOT CONNECTION Stream: sending data...");
+            
             Serializer.SerializeWithLengthPrefix(netStream, tc, PrefixStyle.Base128);
-
             /*
-            //MessageBox.Show("Attempting reading data!");
-            login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
+            //READ DATATABLE
+            Logging.WriteToLog("Trying Reading DT prom netStream ...");
+            DataTable datat = new DataTable();
 
-
-            Logging.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
-            //Logging.WriteToLog("logging in: sending data...");
-
-
-            return login_r;
+            using (IDataReader reader = DataSerializer.Deserialize(netStream))
+            {
+                datat.Load(reader);
+            }
+            Logging.WriteToLog("Trying Reading DT prom netStream ... DONE");
+            Logging.WriteToLog("Dt received->\n" + DataTableToString(datat));
             */
         }
 
@@ -288,8 +426,8 @@ namespace SynchBox_Client
         }
 
         //public void my_sender(enum CmdType, )
-        
-        
+
+
         /*
         public static void do_sync(NetworkStream netStream, SessionVars vars, CancellationToken ct)
         {
@@ -302,7 +440,7 @@ namespace SynchBox_Client
 
             //HO filesystem_server
 
-            //se no
+            //se no 
             {
                 //foreach item in list
                 { 
@@ -360,10 +498,12 @@ namespace SynchBox_Client
     
         }
         */
-        
+
         /*
         //compare filesystems
         {   
+            //ADD A FAST METHOD TO RECOGNISE nochange CASE- for example id sync
+
             //request changeset #
             //begin new changeset state = not finished!
 
@@ -388,6 +528,24 @@ namespace SynchBox_Client
             
         }
          */
+
+
+
+
+        public static string DataTableToString(DataTable Table)
+        {
+            StringBuilder sb = new StringBuilder("");
+            foreach (DataRow dataRow in Table.Rows)
+            {
+                sb.Append("\n");
+                foreach (var item in dataRow.ItemArray)
+                {
+                    sb.Append(item + "|");
+                    //Console.WriteLine(item);
+                }
+            }
+            return sb.ToString();
+        }
     }
         
 }
