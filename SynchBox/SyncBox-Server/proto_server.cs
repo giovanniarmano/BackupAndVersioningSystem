@@ -13,6 +13,8 @@ using System.Threading;
 using System.IO;
 using ProtoBuf.Data;
 
+//TODO save login info in all register login logout methods
+
 
 //TODO Logout method-> unset login_session
 namespace SyncBox_Server
@@ -396,7 +398,30 @@ namespace SyncBox_Server
 
         private static void manage_ListRequest(NetworkStream netStream, ref login_c currentUser)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            ListRequest listRequest = Serializer.DeserializeWithLengthPrefix<ListRequest>(netStream, PrefixStyle.Base128);
+            //TODO Switch case
+            switch (listRequest.listReqType)
+            {
+                case (byte)ListRequestType.Last:
+                    Logging.WriteToLog("LIST REQUEST (Last) ...");
+
+                    //DataTable<<--interrogo db chiedo il last list
+
+                    //Trasformo in struct-> serializzo e mando
+
+                    ListResponse listResponse = new ListResponse();
+                    //for ... listResponse.Add FileListItem
+                    
+                    Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
+
+                    break;
+
+
+                    default:
+                    Logging.WriteToLog("LIST REQUEST Default case ... (panic!!!)");
+                    break;
+            }
         }
 
 
