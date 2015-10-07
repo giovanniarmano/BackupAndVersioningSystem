@@ -16,11 +16,12 @@ namespace SyncBox_Server
     public static partial class db
     {
 
-        public static proto_server.ListResponse ListResponseLast()
+        public static proto_server.ListResponse ListResponseLast(int uid)
         {
             string sql = @"SELECT HISTORY.fid, HISTORY.rev,HISTORY.filename, HISTORY.folder, HISTORY.timestamp,HISTORY.md5,HISTORY.deleted
                             FROM HISTORY, SNAPSHOT
                             WHERE HISTORY.fid=SNAPSHOT.fid and HISTORY.uid=SNAPSHOT.uid and HISTORY.rev=SNAPSHOT.rev
+                            AND HISTORY.uid = "+uid+@"
                             ;";
 
             DataTable dt = db.GetDataTable(sql);

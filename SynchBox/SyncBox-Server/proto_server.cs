@@ -150,7 +150,7 @@ namespace SyncBox_Server
             {
                 case (byte)ListRequestType.Last:
                     Logging.WriteToLog("LIST REQUEST (Last) ...");
-                    ListResponse listResponse = db.ListResponseLast();
+                    ListResponse listResponse = db.ListResponseLast(currentUser.uid);
                     Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
                     break;
 
@@ -195,7 +195,7 @@ namespace SyncBox_Server
                 Logging.WriteToLog(tc.intlist[i].ToString());
             }
 
-            var aus = db.ListResponseLast();
+           // var aus = db.ListResponseLast();
 
             //Il client mi manda una lista, vedo riesco a vederla!! Faigo!
             /*
@@ -255,6 +255,9 @@ namespace SyncBox_Server
         private static void manage_logout(NetworkStream netStream, ref login_c currentUser)
         {
             netStream.Close();
+            currentUser.uid = -1;
+            currentUser.username = "";
+            currentUser.is_logged = false;
             throw new Exception("Logout msg received!");
         }
 
@@ -297,8 +300,9 @@ namespace SyncBox_Server
                 login_r.is_logged = false;
             }
             login_r.password = null;
-            
-            //salvo nella sessione utente login! 
+
+            //salvo nella sessione utente login!
+            currentUser = login_r; 
             //login_session = login_r;
 
             Serializer.SerializeWithLengthPrefix(netStream, login_r, PrefixStyle.Base128);
@@ -339,7 +343,8 @@ namespace SyncBox_Server
             
             login_r.password = null;
 
-            //salvo nella sessione utente login! 
+            //salvo nella sessione utente login!
+            currentUser = login_r; 
             //login_session = login_r;
 
             //   MessageBox.Show("GOT CONNECTION Stream: sneding data...");
