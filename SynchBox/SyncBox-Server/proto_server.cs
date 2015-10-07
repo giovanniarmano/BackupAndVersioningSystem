@@ -150,20 +150,32 @@ namespace SyncBox_Server
             {
                 case (byte)ListRequestType.Last:
                     Logging.WriteToLog("LIST REQUEST (Last) ...");
-                    //DataTable<<--interrogo db chiedo il last list
-                    String sql = "";
-                    DataTable dt = db.GetDataTable(sql);
-                    //Trasformo in struct-> serializzo e mando
-                    
-                    ListResponse listResponse = new ListResponse();
-                    //for ... listResponse.Add FileListItem
-                    
+                    ListResponse listResponse = db.ListResponseLast();
                     Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
-
                     break;
 
+                case (byte)ListRequestType.All:
+                    Logging.WriteToLog("LIST REQUEST (All) ...");
+                    throw new NotImplementedException();
+                   // ListResponse listResponse;// = db.ListResponseLast();
+                    Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
+                    break;
 
-                    default:
+                case (byte)ListRequestType.DateInterval:
+                    Logging.WriteToLog("LIST REQUEST (DateInterval) ...");
+                    throw new NotImplementedException();
+                    //ListResponse listResponse = db.ListResponseLast();
+                    Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
+                    break;
+
+                case (byte)ListRequestType.Filename:
+                    Logging.WriteToLog("LIST REQUEST (filename) ...");
+                    throw new NotImplementedException();
+                   // ListResponse listResponse = db.ListResponseLast();
+                    Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
+                    break;
+
+                default:
                     Logging.WriteToLog("LIST REQUEST Default case ... (panic!!!)");
                     break;
             }
@@ -182,6 +194,8 @@ namespace SyncBox_Server
             {
                 Logging.WriteToLog(tc.intlist[i].ToString());
             }
+
+            var aus = db.ListResponseLast();
 
             //Il client mi manda una lista, vedo riesco a vederla!! Faigo!
             /*

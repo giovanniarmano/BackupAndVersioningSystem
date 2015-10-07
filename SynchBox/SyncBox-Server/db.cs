@@ -13,7 +13,7 @@ namespace SyncBox_Server
 {
 
     //use lock to execute query??
-    public static class  db
+    public static partial class  db
     {
         static string dbConnection; 
         static string dbPath;

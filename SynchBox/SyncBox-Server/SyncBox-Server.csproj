@@ -80,6 +80,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="db_helper.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="proto_server.cs" />
     <Compile Include="proto_server_definitions.cs" />

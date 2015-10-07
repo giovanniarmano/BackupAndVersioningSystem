@@ -1,17 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Net;
-using System.Net.Sockets;
-using System.Windows;
 using ProtoBuf;
-using System.Threading;
-using System.Data;
-using System.IO;
-using System.Security.Cryptography;
-using ProtoBuf.Data;
 
 namespace SynchBox_Client
 {
