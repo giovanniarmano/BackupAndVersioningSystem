@@ -96,7 +96,7 @@ namespace SyncBox_Server
                             PRIMARY KEY ([uid],[fid],[rev])
                             );
 
-                            CREATE TABLE [SANPSHOT] (
+                            CREATE TABLE [SNAPSHOT] (
                             [uid] INTEGER  NOT NULL,
                             [fid] INTEGER  NOT NULL,
                             [rev] INTEGER  NULL,

@@ -82,6 +82,7 @@
     </ApplicationDefinition>
     <Compile Include="Logging.cs" />
     <Compile Include="proto_server.cs" />
+    <Compile Include="proto_server_definitions.cs" />
     <Compile Include="SyncSocketListener.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
