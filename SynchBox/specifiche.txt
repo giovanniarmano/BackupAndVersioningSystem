@@ -69,7 +69,7 @@ SERVER--------------------------CLIENT
 		GetList(int n, List<FileToGet[int fid,int rev]>)
 <<--------------------------------
 
-		GetResponse(FileToGet, int syncid, Byte[] filedump)
+		GetResponse(FileToGet, Byte[] filedump)
 		MANDA UN SOLO FILE
 ------------------------------->>
 
@@ -77,7 +77,7 @@ SERVER--------------------------CLIENT
 		Update(fid,Byte[]fileDump)
 <<-------------------------------
 
-		UpdateOk(fid,rev,syncid)
+		UpdateOk(fid,rev)
 ------------------------------->>
 
 
@@ -93,4 +93,38 @@ SERVER--------------------------CLIENT
 
 		AddOkk(fid, rev, syncid)
 ------------------------------->>
+
+
+
+sync diventa monitor
+
+idea:
+-------------------------------------
+client Monitor
+
+il client si accende e richiede l'ultima versione! (se è la prima volta fa anche restore last server version)
+
+si salva in locale la struttura che contiene dati server, dati client
+
+timer: 30 secondi
+
+inizio a comparare client e server,
+ADD
+DELETE
+UPDATE
+
+va avanti così in loop
+-------------------------------------
+client Restore (By File, By Last Snapshot @ server)
+(prima di fare restore, faccio un getSyncID se uguali sono sincronizzato con il server!)
+
+fa una list request all al server, e ottine i metadati di tutte le versioni
+
+seleziono un file e posso farne il restore sul fs locale con
+GetList (singolo file in lista)
+----------------------------------------
+
+SERVER
+
+
 

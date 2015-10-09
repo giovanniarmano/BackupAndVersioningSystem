@@ -236,10 +236,10 @@ namespace SyncBox_Server
             [ProtoMember(1)]
             public FileToGet fileInfo;
 
-            [ProtoMember(2)]
-            public int syncid;
+            //[ProtoMember(2)]
+            //public int syncid;
 
-            [ProtoMember(3)]
+            [ProtoMember(2)]
             public Byte[] fileDump;
 
             public string ToString()
@@ -247,9 +247,9 @@ namespace SyncBox_Server
                 StringBuilder str = new StringBuilder("GetResponse");
                 str.Append("|fileInfo->");
                 str.Append(fileInfo.ToString());
-                str.Append("|syncid->");
-                str.Append(syncid);
-                //NO PRINT BYTEARRAY BLOB
+                //str.Append("|syncid->");
+                //str.Append(syncid);
+                ////NO PRINT BYTEARRAY BLOB
                 str.Append("|");
                 return str.ToString();
             }
@@ -279,16 +279,16 @@ namespace SyncBox_Server
             [ProtoMember(1)]
             public int fid;
 
-            [ProtoMember(2)]
-            public int syncid;
+            //[ProtoMember(2)]
+            //public int syncid;
 
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("DeleteOk");
                 str.Append("|fid->");
                 str.Append(fid);
-                str.Append("|syncid->");
-                str.Append(syncid);
+                //str.Append("|syncid->");
+                //str.Append(syncid);
                 str.Append("|");
                 return str.ToString();
             }
@@ -325,8 +325,8 @@ namespace SyncBox_Server
             [ProtoMember(2)]
             public int rev;
 
-            [ProtoMember(3)]
-            public int syncid;
+            //[ProtoMember(3)]
+            //public int syncid;
 
             public string ToString()
             {
@@ -335,8 +335,8 @@ namespace SyncBox_Server
                 str.Append(fid);
                 str.Append("|rev");
                 str.Append(rev);
-                str.Append("|syncid");
-                str.Append(syncid);
+                //str.Append("|syncid");
+                //str.Append(syncid);
                 str.Append("|");
                 return str.ToString();
             }
@@ -379,8 +379,8 @@ namespace SyncBox_Server
             [ProtoMember(2)]
             public int rev;
 
-            [ProtoMember(3)]
-            public int syncid;
+            //[ProtoMember(3)]
+            //public int syncid;
 
 
             public string ToString()
@@ -390,8 +390,8 @@ namespace SyncBox_Server
                 str.Append(fid);
                 str.Append("|rev");
                 str.Append(rev);
-                str.Append("|syncid");
-                str.Append(syncid);
+                //str.Append("|syncid");
+                //str.Append(syncid);
                 str.Append("|");
                 return str.ToString();
             }

@@ -123,7 +123,9 @@ namespace SyncBox_Server
 
         private static void manage_Add(NetworkStream netStream, ref login_c currentUser)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            Add add = Serializer.DeserializeWithLengthPrefix<Add>(netStream, PrefixStyle.Base128);
+             db.Add(ref add, currentUser.uid);
         }
 
         private static void manage_Delete(NetworkStream netStream, ref login_c currentUser)
@@ -138,7 +140,24 @@ namespace SyncBox_Server
 
         private static void manage_GetList(NetworkStream netStream, ref login_c currentUser)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            GetList getList = Serializer.DeserializeWithLengthPrefix<GetList>(netStream, PrefixStyle.Base128);
+            Logging.WriteToLog("GET LIST request ...\n"+getList.ToString());
+            int i = 0;
+            for (i = 0; i < getList.fileList.Count; i++)
+            {
+                GetResponse getResponse = db.GetResponse(getList.fileList[i].fid, getList.fileList[i].rev,currentUser.uid);
+                if (getResponse == null)
+                {
+                    Logging.WriteToLog("No file found ... PAnic //TODO manage");
+                }
+                else
+                {
+                    Serializer.SerializeWithLengthPrefix(netStream, getResponse, PrefixStyle.Base128);
+                }
+                
+            }
+
         }
 
         private static void manage_ListRequest(NetworkStream netStream, ref login_c currentUser)
@@ -358,12 +377,30 @@ namespace SyncBox_Server
        
 
 
+
+
         public static string CalculateMD5Hash(string input)
         {
             // step 1, calculate MD5 hash from input
             MD5 md5 = System.Security.Cryptography.MD5.Create();
             byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
             byte[] hash = md5.ComputeHash(inputBytes);
+
+            // step 2, convert byte array to hex string
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < hash.Length; i++)
+            {
+                sb.Append(hash[i].ToString("X2"));
+            }
+            return sb.ToString();
+        }
+
+        public static string CalculateMD5Hash(byte[] byteArray)
+        {
+            // step 1, calculate MD5 hash from input
+            MD5 md5 = System.Security.Cryptography.MD5.Create();
+            //byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            byte[] hash = md5.ComputeHash(byteArray);
 
             // step 2, convert byte array to hex string
             StringBuilder sb = new StringBuilder();
