@@ -374,7 +374,7 @@ namespace SyncBox_Server
         public class AddOk
         {
             [ProtoMember(1)]
-            public string fid;
+            public int fid;
 
             [ProtoMember(2)]
             public int rev;

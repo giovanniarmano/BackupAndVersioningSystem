@@ -71,7 +71,7 @@ namespace SyncBox_Server
                         Logging.WriteToLog("manage TEST CASE ...");
                         msgtype_r.accepted = true;
                         //Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
-                        manage_test(netStream);
+                        manage_test(netStream, ref currentUser);
                         break;
 
                     case (byte)CmdType.ListRequest:
@@ -201,7 +201,7 @@ namespace SyncBox_Server
         }
 
 
-        public static void manage_test(NetworkStream netStream)
+        public static void manage_test(NetworkStream netStream, ref login_c currentUser)
         {
             test_c tc = Serializer.DeserializeWithLengthPrefix<test_c>(netStream, PrefixStyle.Base128);
 
@@ -214,62 +214,47 @@ namespace SyncBox_Server
                 Logging.WriteToLog(tc.intlist[i].ToString());
             }
 
-           // var aus = db.ListResponseLast();
+            try
+            {   
+                string filename = RandomString(5) + ".txt";
+                string folder = "\\temp\\" + filename;
+                string filePath = "C:\\backup\\temp\\" + filename;
+                var fileStream = File.Create(filePath);
+                fileStream.Close();
+                Logging.WriteToLog("Writing on file " + filePath);
+                string text = RandomString(20);
+                Logging.WriteToLog("Text__>" + text);
+                File.WriteAllText(filePath,text);
 
-            //Il client mi manda una lista, vedo riesco a vederla!! Faigo!
-            /*
-            Logging.WriteToLog("Ora il SERVER interroga il server chiedendogli una DataTable");
 
-            string sql = @"  select TEST_META.id, filename,path,md5,data_raw
-                              from TEST_META, TEST_DATA
-                              where TEST_META.id = TEST_DATA.id; ";
+                Add add = new Add();
+                add.filename = filename;
+                add.folder = folder;
+                add.fileDump = File.ReadAllBytes(filePath);
 
-            DataTable dt = db.GetDataTable(sql);
+                var addOk = db.Add(ref add, currentUser.uid);
 
-            Logging.WriteToLog("dt.tostring->" + DataTableToString(dt));
 
-            dt.Rows[0][0] = 1000;
-            dt.Columns.Add("newColumn");
-            dt.Rows[0]["newColumn"] = "firts";
-
-            Logging.WriteToLog("dt.tostring->" + DataTableToString(dt));
-
-            Logging.WriteToLog("Trying to Serialize dt.DataReader ...");
-
-            //TRYING TO SERIALIZE A DATATABLE
-            Stream buffer = new MemoryStream();
-            var reader = dt.CreateDataReader();
-            DataSerializer.Serialize(buffer, dt);
-
-            Logging.WriteToLog("Trying to Serialize dt.DataReader DONE");
-
-            Logging.WriteToLog("Trying to DESerialize dt.DataReader ...");
-            
-            //DataTable dt2 = new DataTable();
-            buffer.Seek(0, SeekOrigin.Begin);
-            DataTable dt2 = DataSerializer.DeserializeDataTable(buffer);
-            //{
-            //    dt2.Load(reader2);
-            //}
-            Logging.WriteToLog("Trying to DESerialize dt.DataReader DONE");
-
-            Logging.WriteToLog("dt2.tostring->" + DataTableToString(dt2));
-            */
-            /*
-            //SEND DATATABLE
-            //netStream;
-            Logging.WriteToLog("SERVER is SENDING DATATABLE...");
-            using (IDataReader reader_ = dt2.CreateDataReader())
-            {
-                DataSerializer.Serialize(netStream, reader_);
             }
-            Logging.WriteToLog("SERVER is SENDING DATATABLE... SENT !!!!");
-            Logging.WriteToLog("dt->\n" + DataTableToString(dt2));
-            */
-         
+            catch (Exception e)
+            {
+                Logging.WriteToLog(e.ToString());
+            }
+
+            // Provo ad aprire un file di test random
+
+            //genero random text
+
+            //aggiungo in db
         }
 
-
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
 
         private static void manage_logout(NetworkStream netStream, ref login_c currentUser)
         {

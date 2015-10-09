@@ -28,7 +28,9 @@ namespace SyncBox_Server
             SQLiteConnection cnn = new SQLiteConnection(dbConnection);
             cnn.Open();
             using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
-            {   //BEGIN TRANSACTION
+            {
+                try { 
+                //BEGIN TRANSACTION
                 using (var transaction = cnn.BeginTransaction())
                 {
                     //controllo se filename folder not present
@@ -109,19 +111,51 @@ namespace SyncBox_Server
                     mycommand.Parameters.AddWithValue("@folder", add.folder);
                     mycommand.Parameters.AddWithValue("@timestamp", timestamp);
                     mycommand.Parameters.AddWithValue("@deleted", false);
-
+                    
+                        //DEBUG HERE!!!
                     int nUpdated = mycommand.ExecuteNonQuery();
                     if (nUpdated != 1)
                         throw new Exception("No Row updated! Rollback");
 
                     //SNAPSHOT INSERT
+                    //HISTORY INSERT
+                    mycommand.CommandText = @"INSERT INTO SNAPSHOT(uid,fid,rev,syncid)
+                                            VALUES (@uid,@fid,@rev,@syncid)
+                                            ;";
+                    mycommand.Prepare();
+                    mycommand.Parameters.AddWithValue("@uid", uid);
+                    mycommand.Parameters.AddWithValue("@fid", fid);
+                    mycommand.Parameters.AddWithValue("@rev", 1);
+                    mycommand.Parameters.AddWithValue("@syncid", syncId);
+
+                    nUpdated = mycommand.ExecuteNonQuery();
+                    if (nUpdated != 1)
+                        throw new Exception("No Row updated! Rollback");
 
                     //FILEDUMP INSERT
+                    mycommand.CommandText = @"INSERT INTO FILES_DUMP(uid,fid,rev,filedump)
+                                            VALUES (@uid,@fid,@rev,@filedump)
+                                            ;";
+                    mycommand.Prepare();
+                    mycommand.Parameters.AddWithValue("@uid", uid);
+                    mycommand.Parameters.AddWithValue("@fid", fid);
+                    mycommand.Parameters.AddWithValue("@rev", 1);
+                    mycommand.Parameters.AddWithValue("@filedump", add.fileDump);
 
+                    nUpdated = mycommand.ExecuteNonQuery();
+                    if (nUpdated != 1)
+                        throw new Exception("No Row updated! Rollback");
 
                     //END TRANSACTION
                     transaction.Commit();
                 }
+                }catch (Exception e)
+                {
+                    Logging.WriteToLog(e.ToString());
+                    addOk.fid = -1 ;
+                    return addOk;
+                }
+                //manage try catch transaction commit
             }
             return addOk;
         }
