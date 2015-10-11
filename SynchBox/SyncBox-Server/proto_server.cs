@@ -14,12 +14,13 @@ using System.IO;
 using ProtoBuf.Data;
 
 //TODO save login info in all register login logout methods
-
+//TODO add a xontrol con il cancellation token
+//TODO prova a portare il multithreading al livello superiore, salvando il current user nel ciclo che gestisce i task
+//-> e testa le prestazioni a confronto!
 
 //TODO Logout method-> unset login_session
 namespace SyncBox_Server
 {
-    
     //Tante istanze quanti sono i processi attivi sul server!
     public static partial class proto_server
     {
@@ -125,7 +126,8 @@ namespace SyncBox_Server
         {
             //throw new NotImplementedException();
             Add add = Serializer.DeserializeWithLengthPrefix<Add>(netStream, PrefixStyle.Base128);
-             db.Add(ref add, currentUser.uid);
+            AddOk addOk = db.Add(ref add, currentUser.uid);
+            Serializer.SerializeWithLengthPrefix<AddOk>(netStream, addOk, PrefixStyle.Base128);
         }
 
         private static void manage_Delete(NetworkStream netStream, ref login_c currentUser)
@@ -140,24 +142,15 @@ namespace SyncBox_Server
 
         private static void manage_GetList(NetworkStream netStream, ref login_c currentUser)
         {
-            //throw new NotImplementedException();
             GetList getList = Serializer.DeserializeWithLengthPrefix<GetList>(netStream, PrefixStyle.Base128);
             Logging.WriteToLog("GET LIST request ...\n"+getList.ToString());
             int i = 0;
             for (i = 0; i < getList.fileList.Count; i++)
             {
                 GetResponse getResponse = db.GetResponse(getList.fileList[i].fid, getList.fileList[i].rev,currentUser.uid);
-                if (getResponse == null)
-                {
-                    Logging.WriteToLog("No file found ... PAnic //TODO manage");
-                }
-                else
-                {
-                    Serializer.SerializeWithLengthPrefix(netStream, getResponse, PrefixStyle.Base128);
-                }
-                
+                Serializer.SerializeWithLengthPrefix(netStream, getResponse, PrefixStyle.Base128);
+                Logging.WriteToLog("Managed "+ i + 1 + " of "+ getList.fileList.Count + " \n" +getResponse.ToString());
             }
-
         }
 
         private static void manage_ListRequest(NetworkStream netStream, ref login_c currentUser)
@@ -179,6 +172,8 @@ namespace SyncBox_Server
                    // ListResponse listResponse;// = db.ListResponseLast();
                     Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
                     break;
+/*
+//IO NON IMPLEMENTEREI QUESTE COSE BRUTTE xS
 
                 case (byte)ListRequestType.DateInterval:
                     Logging.WriteToLog("LIST REQUEST (DateInterval) ...");
@@ -193,7 +188,7 @@ namespace SyncBox_Server
                    // ListResponse listResponse = db.ListResponseLast();
                     Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
                     break;
-
+*/
                 default:
                     Logging.WriteToLog("LIST REQUEST Default case ... (panic!!!)");
                     break;
@@ -233,6 +228,12 @@ namespace SyncBox_Server
                 add.fileDump = File.ReadAllBytes(filePath);
 
                 var addOk = db.Add(ref add, currentUser.uid);
+
+                var getResponse = db.GetResponse(addOk.fid, addOk.rev, currentUser.uid);
+                Logging.WriteToLog(getResponse.ToString());
+
+                proto_server.ListResponse listResponse = db.ListResponseLast(currentUser.uid);
+                Logging.WriteToLog(listResponse.ToString());
 
 
             }

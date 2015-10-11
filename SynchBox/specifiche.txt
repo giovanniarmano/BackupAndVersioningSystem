@@ -55,7 +55,7 @@ PROTOCOLLO:
 
 SERVER--------------------------CLIENT
 			
-			ListRequest(listReqType[Last, All, DateInterval, Filename])
+			ListRequest(listReqType[Last, All /*, DateInterval, Filename */])
 <<-----------------------------------
 (Richiede la versione più aggiornata sul server)
 
@@ -126,3 +126,8 @@ GetList (singolo file in lista)
 ----------------------------------------
 
 SERVER
+
+
+
+//TODO
+CHiedersi se vale la pensa gestire tutto con eccezioni in dbhelper!!!
