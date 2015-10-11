@@ -132,7 +132,9 @@ namespace SyncBox_Server
 
         private static void manage_Delete(NetworkStream netStream, ref login_c currentUser)
         {
-            throw new NotImplementedException();
+            Delete delete = Serializer.DeserializeWithLengthPrefix<Delete>(netStream, PrefixStyle.Base128);
+            DeleteOk deleteOk = Add.Delete(ref delete, currentUser.uid);
+            Serializer.SerializeWithLengthPrefix<DeleteOk>(netStream, deleteOk, PrefixStyle.Base128);
         }
 
         private static void manage_Update(NetworkStream netStream, ref login_c currentUser)
@@ -162,15 +164,15 @@ namespace SyncBox_Server
             {
                 case (byte)ListRequestType.Last:
                     Logging.WriteToLog("LIST REQUEST (Last) ...");
-                    ListResponse listResponse = db.ListResponseLast(currentUser.uid);
-                    Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
+                    ListResponse listResponseLast = db.ListResponseLast(currentUser.uid);
+                    Serializer.SerializeWithLengthPrefix(netStream, listResponseLast, PrefixStyle.Base128);
                     break;
 
                 case (byte)ListRequestType.All:
                     Logging.WriteToLog("LIST REQUEST (All) ...");
-                    throw new NotImplementedException();
-                   // ListResponse listResponse;// = db.ListResponseLast();
-                    Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
+                    //throw new NotImplementedException();
+                    ListResponse listResponseAll = db.ListResponseAll(currentUser.uid);
+                    Serializer.SerializeWithLengthPrefix(netStream, listResponseAll, PrefixStyle.Base128);
                     break;
 /*
 //IO NON IMPLEMENTEREI QUESTE COSE BRUTTE xS
@@ -235,6 +237,8 @@ namespace SyncBox_Server
                 proto_server.ListResponse listResponse = db.ListResponseLast(currentUser.uid);
                 Logging.WriteToLog(listResponse.ToString());
 
+                listResponse = db.ListResponseAll(currentUser.uid);
+                Logging.WriteToLog(listResponse.ToString());
 
             }
             catch (Exception e)
