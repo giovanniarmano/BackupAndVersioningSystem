@@ -22,7 +22,7 @@ namespace SyncBox_Server
 
             //calcolo md5 & campi timestamp
             string md5 = proto_server.CalculateMD5Hash(add.fileDump);
-            string timestamp = DateTime.Today.ToString();
+            string timestamp = DateTime.Now.ToString();
 
             
             SQLiteConnection cnn = new SQLiteConnection(dbConnection);
@@ -65,15 +65,24 @@ namespace SyncBox_Server
                     mycommand.Parameters.AddWithValue("@uid", uid);
                     value = mycommand.ExecuteScalar();
                     int maxsyncId = -1;
-                    if (value == null)
+                    try
                     {
-                        maxsyncId = 0;
-                    }
-                    else {
                         maxsyncId = int.Parse(value.ToString());
                     }
+                    catch (Exception e) {
+                        Logging.WriteToLog("User not still present in history, snapshot, filedump!\n e-> "+e.ToString());
+                        maxsyncId = 0;
+                    }
+                    //int maxsyncId = -1;
+                    //if (value == null)
+                    //{
+                    //    maxsyncId = 0;
+                    //}
+                    //else {
+                    //    maxsyncId = int.Parse(value.ToString());
+                    //}
                     //syncId
-                    int syncId = maxsyncId++;
+                    int syncId = maxsyncId +1;
 
                     //seleziono  max fid tra uid
                     mycommand.CommandText = @"SELECT MAX(HISTORY.fid)
@@ -84,16 +93,16 @@ namespace SyncBox_Server
                     mycommand.Parameters.AddWithValue("@uid", uid);
                     value = mycommand.ExecuteScalar();
                     int maxfid = -1;
-                    if (value == null)
-                    {
-                        maxfid = 0;
-                    }
-                    else
+                    
+                    try
                     {
                         maxfid = int.Parse(value.ToString());
                     }
+                    catch (Exception e) {
+                        maxfid = 0;
+                    }
                     //fid
-                    int fid = maxfid++;
+                    int fid = maxfid + 1;
 
 
 
@@ -110,9 +119,10 @@ namespace SyncBox_Server
                     mycommand.Parameters.AddWithValue("@filename", add.filename);
                     mycommand.Parameters.AddWithValue("@folder", add.folder);
                     mycommand.Parameters.AddWithValue("@timestamp", timestamp);
+                    mycommand.Parameters.AddWithValue("@md5", md5);
                     mycommand.Parameters.AddWithValue("@deleted", false);
                     
-                        //DEBUG HERE!!!
+                    //DEBUG HERE!!!
                     int nUpdated = mycommand.ExecuteNonQuery();
                     if (nUpdated != 1)
                         throw new Exception("No Row updated! Rollback");
@@ -145,6 +155,9 @@ namespace SyncBox_Server
                     nUpdated = mycommand.ExecuteNonQuery();
                     if (nUpdated != 1)
                         throw new Exception("No Row updated! Rollback");
+
+                    addOk.fid = fid;
+                    addOk.rev = 1;
 
                     //END TRANSACTION
                     transaction.Commit();

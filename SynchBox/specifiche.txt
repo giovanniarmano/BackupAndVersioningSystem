@@ -102,7 +102,7 @@ idea:
 -------------------------------------
 client Monitor
 
-il client si accende e richiede l'ultima versione! (se è la prima volta fa anche restore last server version)
+il client si accende e richiede l'ultima versione! (se è la prima volta fa anche restore last server version, magari prima chiede conferma)
 
 si salva in locale la struttura che contiene dati server, dati client
 
@@ -114,6 +114,7 @@ DELETE
 UPDATE
 
 va avanti così in loop
+
 -------------------------------------
 client Restore (By File, By Last Snapshot @ server)
 (prima di fare restore, faccio un getSyncID se uguali sono sincronizzato con il server!)
@@ -125,6 +126,3 @@ GetList (singolo file in lista)
 ----------------------------------------
 
 SERVER
-
-
-

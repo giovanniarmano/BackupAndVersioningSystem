@@ -5,7 +5,6 @@ using ProtoBuf;
 
 namespace SynchBox_Client
 {
-
     public static partial class proto_client
     {
         ///////////////--BEGIN--///////////////////////
@@ -13,7 +12,6 @@ namespace SynchBox_Client
 
         //TODO Synch with client!!
         enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add };
-
 
         [ProtoContract]
         public class messagetype_c
@@ -169,7 +167,6 @@ namespace SynchBox_Client
                 str.Append("|");
                 return str.ToString();
             }
-
         }
 
         [ProtoContract]
@@ -381,7 +378,6 @@ namespace SynchBox_Client
             //[ProtoMember(3)]
             //public int syncid;
 
-
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("AddOk");
@@ -395,8 +391,7 @@ namespace SynchBox_Client
                 return str.ToString();
             }
         }
-
-
+        
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
     }
