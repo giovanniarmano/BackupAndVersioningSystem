@@ -76,47 +76,57 @@ namespace SyncBox_Server
             //----------HERE INITIAL TABLES-------------------
             //string sql = @"CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);";
 
-            string sql =  @"CREATE TABLE [FILES_DUMP] (
-                            [uid] INTEGER  NOT NULL,
-                            [fid] INTEGER  NOT NULL,
-                            [rev] INTEGER  NOT NULL,
-                            [filedump] BLOB  NULL,
-                            PRIMARY KEY ([uid],[fid],[rev])
-                            );
+            string sql = @"
+                            --
+                            -- File generated with SQLiteStudio v3.0.6 on lun ott 12 20:45:25 2015
+                            --
+                            -- Text encoding used: windows-1252
+                            --
+                            PRAGMA foreign_keys = off;
+                            BEGIN TRANSACTION;
 
-                            CREATE TABLE [HISTORY] (
-                            [uid] INTEGER  NOT NULL,
-                            [fid] INTEGER  NOT NULL,
-                            [rev] INTEGER  NOT NULL,
-                            [filename] TEXT  NULL,
-                            [folder] TEXT  NULL,
-                            [timestamp] TIMESTAMP  NULL,
-                            [md5] TEXT  NULL,
-                            [deleted] BOOLEAN  NULL,
-                            PRIMARY KEY ([uid],[fid],[rev])
-                            );
+                            -- Table: HISTORY
+                            CREATE TABLE HISTORY (uid INTEGER NOT NULL, fid INTEGER NOT NULL, rev INTEGER NOT NULL, filename TEXT, folder TEXT, timestamp DATETIME, md5 TEXT, deleted BOOLEAN, synchsessionid INTEGER, PRIMARY KEY (uid, fid, rev));
 
-                            CREATE TABLE [SNAPSHOT] (
-                            [uid] INTEGER  NOT NULL,
-                            [fid] INTEGER  NOT NULL,
-                            [rev] INTEGER  NULL,
-                            [syncid] INTEGER  NULL,
-                            PRIMARY KEY ([uid],[fid])
-                            );
-
-                            CREATE TABLE [TEST_DATA] (
-                            [id] INTEGER  NOT NULL PRIMARY KEY,
-                            [data_raw] BLOB  NULL
-                            );
-
-                            CREATE TABLE [TEST_META] (
-                            [id] INTEGER  PRIMARY KEY AUTOINCREMENT NOT NULL,
-                            [filename] TEXT  NULL,
-                            [path] TEXT  NULL,
-                            [md5] TEXT  NULL
-                            );
-
+                            -- Table: USERS
                             CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);
+
+                            -- Table: FILES_DUMP
+                            CREATE TABLE [FILES_DUMP] (
+
+                                                        [uid] INTEGER  NOT NULL,
+
+                                                        [fid] INTEGER  NOT NULL,
+
+                                                        [rev] INTEGER  NOT NULL,
+
+                                                        [filedump] BLOB  NULL,
+
+                                                        PRIMARY KEY ([uid],[fid],[rev])
+
+                                                        );
+
+                            -- Table: SNAPSHOT
+                            CREATE TABLE [SNAPSHOT] (
+
+                                                        [uid] INTEGER  NOT NULL,
+
+                                                        [fid] INTEGER  NOT NULL,
+
+                                                        [rev] INTEGER  NULL,
+
+                                                        [syncid] INTEGER  NULL,
+
+                                                        PRIMARY KEY ([uid],[fid])
+
+                                                        );
+
+                            -- Table: SYNCH_SESSION
+                            CREATE TABLE SYNCH_SESSION (uid INTEGER NOT NULL, synchsessionid INTEGER NOT NULL, timestamp DATETIME, n_added INTEGER, n_updated INTEGER, n_deleted INTEGER, PRIMARY KEY (uid, synchsessionid));
+
+                            COMMIT TRANSACTION;
+                            PRAGMA foreign_keys = on;
+
 
                         ";
 

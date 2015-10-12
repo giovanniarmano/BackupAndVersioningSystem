@@ -15,7 +15,71 @@ namespace SyncBox_Server
     //use lock to execute query??
     public static partial class db
     {
-        public static proto_server.AddOk Add(ref proto_server.Add add, int uid)
+
+        public static int BeginSession(int uid)
+        {
+            int synchsessionid;
+            SQLiteConnection cnn = new SQLiteConnection(dbConnection);
+            cnn.Open();
+            using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
+            {
+                try
+                {
+                    //BEGIN TRANSACTION
+                    using (var transaction = cnn.BeginTransaction())
+                    {
+                        //seleziono massimo sessionsynchid per uid
+                        mycommand.CommandText = @"SELECT MAX(SYNCH_SESSION.synchsessionid) AS maxsynchsessionid
+                                                FROM SYNCH_SESSION
+                                                WHERE SYNCH_SESSION.uid = @uid
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", uid);
+
+                        object value = mycommand.ExecuteScalar();
+                        int maxsynchsessionid;
+                        try
+                        {
+                            maxsynchsessionid = int.Parse(value.ToString());
+                        }
+                        catch (Exception e)
+                        {
+                            maxsynchsessionid = 0;
+                        }
+
+                        synchsessionid = maxsynchsessionid + 1;
+
+                        //inserisco la synchSession
+                        mycommand.CommandText = @"INSERT INTO SYNCH_SESSION(uid,synchsessionid,timestamp,n_added,n_updated,n_deleted)
+                                                VALUES (@uid,@synchsessionid,datetime('NOW'),0,0,0)
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", uid);
+                        mycommand.Parameters.AddWithValue("@synchsessionid", synchsessionid);
+                        
+                        int nUpdated = mycommand.ExecuteNonQuery();
+                        if (nUpdated != 1)
+                            throw new Exception("No Row updated! Rollback");
+                        
+                        //END TRANSACTION
+                        transaction.Commit();
+
+
+                        return synchsessionid;
+
+                    }
+                }
+                catch
+                {
+                    throw;
+                }
+
+            }
+            
+        }
+
+        //TODO Add verifica se il file era presente come cancellato e a questo punto può aggiungerlo!!!
+        public static proto_server.AddOk Add(ref proto_server.Add add, ref proto_server.login_c currentUser)
         {
             //add.filename;add.folder;add.fileDump; uid;
             proto_server.AddOk addOk = new proto_server.AddOk();
@@ -44,7 +108,7 @@ namespace SyncBox_Server
                                             AND HISTORY.folder = @folder
                                             ; ";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         mycommand.Parameters.AddWithValue("@filename", add.filename);
                         mycommand.Parameters.AddWithValue("@folder", add.folder);
                         object value = mycommand.ExecuteScalar();
@@ -64,7 +128,7 @@ namespace SyncBox_Server
                                                 WHERE SNAPSHOT.uid = @uid
                                                 ;";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         value = mycommand.ExecuteScalar();
                         int maxsyncId = -1;
                         try
@@ -93,7 +157,7 @@ namespace SyncBox_Server
                                                 WHERE HISTORY.uid = @uid
                                                 ;";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         value = mycommand.ExecuteScalar();
                         int maxfid = -1;
 
@@ -113,11 +177,11 @@ namespace SyncBox_Server
                         //inserisco in HISTORY SNAPSJOT  e FILE_DUMP
                         //Add vuol dire che non ho da fare update ma solo insert
                         //HISTORY INSERT
-                        mycommand.CommandText = @"INSERT INTO HISTORY(uid,fid,rev,filename,folder,timestamp,md5,deleted)
-                                            VALUES (@uid,@fid,@rev,@filename,@folder,DATETIME('NOW'),@md5,@deleted)
+                        mycommand.CommandText = @"INSERT INTO HISTORY(uid,fid,rev,filename,folder,timestamp,md5,deleted,synchsessionid)
+                                            VALUES (@uid,@fid,@rev,@filename,@folder,DATETIME('NOW'),@md5,@deleted,@synchsessionid)
                                                 ; ";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         mycommand.Parameters.AddWithValue("@fid", fid);
                         mycommand.Parameters.AddWithValue("@rev", 1);
                         mycommand.Parameters.AddWithValue("@filename", add.filename);
@@ -125,6 +189,7 @@ namespace SyncBox_Server
                         //mycommand.Parameters.AddWithValue("@timestamp", timestamp);
                         mycommand.Parameters.AddWithValue("@md5", md5);
                         mycommand.Parameters.AddWithValue("@deleted", false);
+                        mycommand.Parameters.AddWithValue("@synchsessionid", currentUser.synchsessionid);
 
                         //DEBUG HERE!!!
                         int nUpdated = mycommand.ExecuteNonQuery();
@@ -137,7 +202,7 @@ namespace SyncBox_Server
                                             VALUES (@uid,@fid,@rev,@syncid)
                                             ;";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         mycommand.Parameters.AddWithValue("@fid", fid);
                         mycommand.Parameters.AddWithValue("@rev", 1);
                         mycommand.Parameters.AddWithValue("@syncid", syncId);
@@ -145,13 +210,28 @@ namespace SyncBox_Server
                         nUpdated = mycommand.ExecuteNonQuery();
                         if (nUpdated != 1)
                             throw new Exception("No Row updated! Rollback");
+                        
+                        //update # added
+                        mycommand.CommandText = @"UPDATE SYNCH_SESSION
+                                                SET n_added = n_added +1
+                                                WHERE uid = @uid
+                                                AND synchsessionid = @synchsessionid
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@syncsessionid", currentUser.synchsessionid);
+
+                        nUpdated = mycommand.ExecuteNonQuery();
+                        if (nUpdated != 1)
+                            throw new Exception("No Row updated! Rollback");
+                        
 
                         //FILEDUMP INSERT
                         mycommand.CommandText = @"INSERT INTO FILES_DUMP(uid,fid,rev,filedump)
                                             VALUES (@uid,@fid,@rev,@filedump)
                                             ;";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         mycommand.Parameters.AddWithValue("@fid", fid);
                         mycommand.Parameters.AddWithValue("@rev", 1);
                         mycommand.Parameters.AddWithValue("@filedump", add.fileDump);
@@ -181,23 +261,32 @@ namespace SyncBox_Server
 
         //UPDATE
 
-            //Molto simile ad add
-            //Crea nuova entry in HISTORY con rev++
-            //Update entry in snapshot con uid,fid   syncid= newsyncid AND rev = newrev
-            //NEW Entry in filedump
+        //Molto simile ad add
+        //cerco fid -> max(rev)
+        //Crea nuova entry in HISTORY con rev+1
+        //Update entry in snapshot con uid,fid   syncid= newsyncid AND rev = newrev
+        //NEW Entry in filedump
 
-        public static proto_server.DeleteOk Delete(ref proto_server.Delete delete, int uid)
+        
+
+        //DELETE
+        //???? Un file cancellato può essere restored ? 
+        //rm from snapshot NO! Mi serve synchid -> faccio update in snapshot ----> ma quando poi faccio una getlist considero anche quelli deleted!
+        //add new revision in HISTORY deleted = true
+        //update SYNCHSESSION
+        
+        public static proto_server.DeleteOk Delete(ref proto_server.Delete delete, ref proto_server.login_c currentUser)
         {
             //add.filename;add.folder;add.fileDump; uid;
-            proto_server.DeleteOk  deleteOk = new proto_server.DeleteOk();
+            proto_server.DeleteOk deleteOk = new proto_server.DeleteOk();
 
-            
+
             //verifica se presente, già incluso in remove
 
             //crea una nuova versione con flag deleted = true
 
             //remove from snapshot
-            
+
             SQLiteConnection cnn = new SQLiteConnection(dbConnection);
             cnn.Open();
             using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
@@ -215,7 +304,7 @@ namespace SyncBox_Server
                                                 AND HISTORY.fid = @fid
                                                 ; ";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         mycommand.Parameters.AddWithValue("@fid", delete.fid);
                         object value = mycommand.ExecuteScalar();
 
@@ -341,7 +430,7 @@ namespace SyncBox_Server
                 }
                 //manage try catch transaction commit
             }
-            //return addOk;
+            return deleteOk;
         }
 
 
@@ -490,6 +579,7 @@ namespace SyncBox_Server
                             var values = row.ItemArray;
                             var fileListItem = new proto_server.FileListItem()
                             {
+                                //TODO Capire come gestire un eccezione di parsing... ha senso farla in modo diverso?
                                 fid = int.Parse(values[0].ToString()),
                                 rev = int.Parse(values[1].ToString()),
                                 filename = values[2].ToString(),

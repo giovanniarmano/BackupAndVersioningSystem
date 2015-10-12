@@ -32,7 +32,7 @@ HISTORY: (mantiene la history dei file) - INDEX (UID,FID,REV) ??
 uid* int INDEX
 fid* int INDEX
 rev* int
-synchsessionid
+synchsessionid			//new just added
 filename string			(HA SENSO TENERLI SEPARATI?)
 folder string
 timestamp datetime
@@ -171,3 +171,18 @@ SERVER
 //TODO
 CHiedersi se vale la pensa gestire tutto con eccezioni in dbhelper!!!
 
+//TODO sarebbe MOLTO MOLTISSIMO comodo scrivere nel client dei wrapper tipo
+/////QUESTO per ogni messaggio di protocollo!
+my_BeginSession{
+	serializzano msgtype
+	deserializzano msgtype
+	(qui throw exception se qualcosa non va)
+
+	mandano BeginTransaction
+	ricevono Bgin Trnsaction e ritornano al chiamante!
+
+}
+
+//TROvARE un logger + efficente
+
+//O riutilizzare il logger sul multilevel

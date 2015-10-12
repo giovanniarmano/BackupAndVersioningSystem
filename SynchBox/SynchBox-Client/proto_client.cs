@@ -11,7 +11,7 @@ using System.Threading;
 using System.Data;
 using System.IO;
 using System.Security.Cryptography;
-using ProtoBuf.Data;
+//using ProtoBuf.Data;
 
 namespace SynchBox_Client
 {
@@ -26,7 +26,7 @@ namespace SynchBox_Client
         //public proto_client(NetworkStream s) { netStream = s; }
 
         public static void do_test(NetworkStream netStream, int n, CancellationToken ct)
-        {
+        {/*
             myObj mobj = new myObj();
             mobj.int1 = 1;
             mobj.int2 = 2;
@@ -59,6 +59,90 @@ namespace SynchBox_Client
 
             
             Serializer.SerializeWithLengthPrefix(netStream, tc, PrefixStyle.Base128);
+            */
+
+            try
+            {
+                
+
+                //BeginSession
+                BeginSession beginSession = new BeginSession();
+                beginSession.sessionid = -1;
+
+                messagetype_c mt = new messagetype_c();
+                mt.msgtype = (Byte)CmdType.BeginSession;
+
+                Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+                mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+                Serializer.SerializeWithLengthPrefix<BeginSession>(netStream, beginSession, PrefixStyle.Base128);
+                beginSession = Serializer.DeserializeWithLengthPrefix<BeginSession>(netStream, PrefixStyle.Base128);
+                
+                AddOk addOk;
+                //Add
+                int hh = 0;
+                for (hh = 0; hh<5; hh++) {
+
+                    string filename = RandomString(5) + ".txt";
+                    string folder = "\\temp\\" + filename;
+                    string filePath = "C:\\backup\\temp\\" + filename;
+                    var fileStream = File.Create(filePath);
+                    fileStream.Close();
+                    Logging.WriteToLog("Writing on file " + filePath);
+                    string text = RandomString(20);
+                    Logging.WriteToLog("Text__>" + text);
+                    File.WriteAllText(filePath, text);
+
+                    Add add = new Add();
+                add.filename = filename;
+                add.folder = folder;
+                add.fileDump = File.ReadAllBytes(filePath);
+
+                mt.msgtype = (Byte)CmdType.Add;
+
+                Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+                mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+                Serializer.SerializeWithLengthPrefix<Add>(netStream, add, PrefixStyle.Base128);
+                addOk = Serializer.DeserializeWithLengthPrefix<AddOk>(netStream, PrefixStyle.Base128);
+
+                }
+
+
+                //EndSession
+                mt.msgtype = (Byte)CmdType.EndSession;
+
+                Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+                mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+                EndSession endSession = new EndSession();
+                endSession.sessionid = beginSession.sessionid;
+                endSession.succesful = false;
+
+                Serializer.SerializeWithLengthPrefix<EndSession>(netStream, endSession, PrefixStyle.Base128);
+                endSession = Serializer.DeserializeWithLengthPrefix<EndSession>(netStream, PrefixStyle.Base128);
+
+
+
+                /*
+                var addOk = db.Add(ref add, currentUser.uid);
+
+                var getResponse = db.GetResponse(addOk.fid, addOk.rev, currentUser.uid);
+                Logging.WriteToLog(getResponse.ToString());
+
+                proto_server.ListResponse listResponse = db.ListResponseLast(currentUser.uid);
+                Logging.WriteToLog(listResponse.ToString());
+
+                listResponse = db.ListResponseAll(currentUser.uid);
+                Logging.WriteToLog(listResponse.ToString());
+                */
+            }
+            catch (Exception e)
+            {
+                Logging.WriteToLog(e.ToString());
+            }
+
+
             /*
             //READ DATATABLE
             Logging.WriteToLog("Trying Reading DT prom netStream ...");
@@ -71,6 +155,14 @@ namespace SynchBox_Client
             Logging.WriteToLog("Trying Reading DT prom netStream ... DONE");
             Logging.WriteToLog("Dt received->\n" + DataTableToString(datat));
             */
+        }
+
+        public static string RandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
         public static void do_logout(NetworkStream netStream)

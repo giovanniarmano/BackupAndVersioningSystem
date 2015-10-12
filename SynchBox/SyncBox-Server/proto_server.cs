@@ -11,7 +11,7 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Threading;
 using System.IO;
-using ProtoBuf.Data;
+//using ProtoBuf.Data;
 
 //TODO save login info in all register login logout methods
 //TODO add a xontrol con il cancellation token
@@ -110,6 +110,20 @@ namespace SyncBox_Server
                         manage_Add(netStream, ref currentUser);
                         break;
 
+                    case (byte)CmdType.BeginSession:
+                        Logging.WriteToLog("manage BeginSession CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_BeginSession(netStream, ref currentUser);
+                        break;
+
+                    case (byte)CmdType.EndSession:
+                        Logging.WriteToLog("manage EndSession CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_EndSession(netStream, ref currentUser);
+                        break;
+
                         default:
                         Logging.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
                         break;
@@ -122,23 +136,46 @@ namespace SyncBox_Server
             }
         }
 
+        private static void manage_EndSession(NetworkStream netStream, ref login_c currentUser)
+        {
+            EndSession endSession = Serializer.DeserializeWithLengthPrefix<EndSession>(netStream, PrefixStyle.Base128);
+            if(currentUser.synchsessionid == endSession.sessionid) { 
+                currentUser.synchsessionid = -1;
+                endSession.succesful = true;
+            }
+            Serializer.SerializeWithLengthPrefix<EndSession>(netStream, endSession, PrefixStyle.Base128);
+
+        }
+
+        private static void manage_BeginSession(NetworkStream netStream, ref login_c currentUser)
+        {
+            BeginSession beginSession = Serializer.DeserializeWithLengthPrefix<BeginSession>(netStream, PrefixStyle.Base128);
+            currentUser.synchsessionid = db.BeginSession(currentUser.uid);
+            beginSession.sessionid = currentUser.synchsessionid;
+            Serializer.SerializeWithLengthPrefix<BeginSession>(netStream, beginSession, PrefixStyle.Base128);
+
+        }
+
         private static void manage_Add(NetworkStream netStream, ref login_c currentUser)
         {
             //throw new NotImplementedException();
             Add add = Serializer.DeserializeWithLengthPrefix<Add>(netStream, PrefixStyle.Base128);
-            AddOk addOk = db.Add(ref add, currentUser.uid);
+            if (currentUser.synchsessionid == -1) throw new Exception("Add out of SynchSession");
+            AddOk addOk = db.Add(ref add, ref currentUser);
             Serializer.SerializeWithLengthPrefix<AddOk>(netStream, addOk, PrefixStyle.Base128);
         }
 
         private static void manage_Delete(NetworkStream netStream, ref login_c currentUser)
         {
             Delete delete = Serializer.DeserializeWithLengthPrefix<Delete>(netStream, PrefixStyle.Base128);
-            DeleteOk deleteOk = Add.Delete(ref delete, currentUser.uid);
-            Serializer.SerializeWithLengthPrefix<DeleteOk>(netStream, deleteOk, PrefixStyle.Base128);
+            if (currentUser.synchsessionid == -1) throw new Exception("Delete out of SynchSession");
+            // DeleteOk deleteOk = Add.Delete(ref delete, currentUser.uid);
+            // Serializer.SerializeWithLengthPrefix<DeleteOk>(netStream, deleteOk, PrefixStyle.Base128);
         }
 
         private static void manage_Update(NetworkStream netStream, ref login_c currentUser)
         {
+            if (currentUser.synchsessionid == -1) throw new Exception("Update out of SynchSession");
             throw new NotImplementedException();
         }
 
@@ -175,7 +212,7 @@ namespace SyncBox_Server
                     Serializer.SerializeWithLengthPrefix(netStream, listResponseAll, PrefixStyle.Base128);
                     break;
 /*
-//IO NON IMPLEMENTEREI QUESTE COSE BRUTTE xS
+//IO NON IMPLEMENTEREI QUESTE COSE BRUTTE xS Ma qualcosa è da fare
 
                 case (byte)ListRequestType.DateInterval:
                     Logging.WriteToLog("LIST REQUEST (DateInterval) ...");
@@ -229,7 +266,7 @@ namespace SyncBox_Server
                 add.folder = folder;
                 add.fileDump = File.ReadAllBytes(filePath);
 
-                var addOk = db.Add(ref add, currentUser.uid);
+                var addOk = db.Add(ref add, ref currentUser);
 
                 var getResponse = db.GetResponse(addOk.fid, addOk.rev, currentUser.uid);
                 Logging.WriteToLog(getResponse.ToString());

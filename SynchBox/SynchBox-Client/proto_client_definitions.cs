@@ -11,7 +11,8 @@ namespace SynchBox_Client
         ///////////STRUCT DEFINITIONS /////////////////
 
         //TODO Synch with client!!
-        enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add };
+        enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add, BeginSession, EndSession };
+
 
         [ProtoContract]
         public class messagetype_c
@@ -48,6 +49,8 @@ namespace SynchBox_Client
 
             [ProtoMember(4)]
             public string password;
+
+            public int synchsessionid;
 
             public string ToString()
             {
@@ -167,6 +170,7 @@ namespace SynchBox_Client
                 str.Append("|");
                 return str.ToString();
             }
+
         }
 
         [ProtoContract]
@@ -246,6 +250,59 @@ namespace SynchBox_Client
                 //str.Append("|syncid->");
                 //str.Append(syncid);
                 ////NO PRINT BYTEARRAY BLOB
+                str.Append("|");
+                return str.ToString();
+            }
+        }
+
+        [ProtoContract]
+        public class BeginSession
+        {
+            [ProtoMember(1)]
+            public int sessionid;
+
+            public string ToString()
+            {
+                StringBuilder str = new StringBuilder("BeginSession");
+                str.Append("|sessionid->");
+                str.Append(sessionid);
+                str.Append("|");
+                return str.ToString();
+            }
+        }
+
+        [ProtoContract]
+        public class EndSession
+        {
+            [ProtoMember(1)]
+            public int sessionid;
+
+            [ProtoMember(2)]
+            public bool succesful;
+
+            public string ToString()
+            {
+                StringBuilder str = new StringBuilder("EndSession");
+                str.Append("|sessionid->");
+                str.Append(sessionid);
+                str.Append("|successful->");
+                str.Append(succesful);
+                str.Append("|");
+                return str.ToString();
+            }
+        }
+
+        [ProtoContract]
+        public class GetSynchid
+        {
+            [ProtoMember(1)]
+            public int synchid;
+
+            public string ToString()
+            {
+                StringBuilder str = new StringBuilder("GetSynchid");
+                str.Append("|synchid->");
+                str.Append(synchid);
                 str.Append("|");
                 return str.ToString();
             }
@@ -378,6 +435,7 @@ namespace SynchBox_Client
             //[ProtoMember(3)]
             //public int syncid;
 
+
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("AddOk");
@@ -391,7 +449,8 @@ namespace SynchBox_Client
                 return str.ToString();
             }
         }
-        
+
+
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
     }
