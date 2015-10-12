@@ -9,15 +9,17 @@ uid int pk
 user string
 md5 string
 
-//SUPERFLUO SE SI PENSA AD UN PROTOCOLLO DI SYNC IN CUI IL CLIENT CHIEDE OGNI SINGOLO FILE AL SERVER ONE-PER-ONE
-/*
-SYNC:
+/*tiene traccia delle sessioni di sincronizzazione in maniera incrementale! */
+/*ciò vuol dire che l'atomicità viene spostata sul singolo add, update, delete mentre se una sessione di sincronizzazione non viene terminata
+completamente, vengono comunque mantenuti i file salvati fino a quel punto*/
+SYNCH_SESSION:
 uid*
-syncid*
+synchsessionid*
 timestamp
-n_items
-succesfull
-*/
+n_updated
+n_deleted
+n_added
+//succesfull
 
 SNAPSHOT: (mantiene i puntatori ai file presenti nell'ultimo snapshot. Se aggiorno un file cancello rev precendente e inserisco quella nuova)
 uid* int INDEX
@@ -30,11 +32,13 @@ HISTORY: (mantiene la history dei file) - INDEX (UID,FID,REV) ??
 uid* int INDEX
 fid* int INDEX
 rev* int
+synchsessionid
 filename string			(HA SENSO TENERLI SEPARATI?)
 folder string
 timestamp datetime
 md5 string
 deleted? boolean
+
 
 FILES_DUMP:
 uid* int
@@ -49,8 +53,6 @@ PROTOCOLLO:
 //LOGIN LOGOUT REGISTER
 
 
-
-
 //DATA SYNC
 
 SERVER--------------------------CLIENT
@@ -58,6 +60,7 @@ SERVER--------------------------CLIENT
 			ListRequest(listReqType[Last, All /*, DateInterval, Filename */])
 <<-----------------------------------
 (Richiede la versione più aggiornata sul server)
+
 
 			ListResponse(List<FileListItem>)
             int fid;int rev;string filename;string folder;DateTime datetime;string md5;Boolean deleted;
@@ -73,6 +76,24 @@ SERVER--------------------------CLIENT
 		MANDA UN SOLO FILE
 ------------------------------->>
 
+//////////INIZIO SESSIONE
+
+		BeginSession(synchsessionid = -1)
+<<-------------------------
+		BeginSession(syncsessionid = X)
+-------------------------->>
+
+il server salva in una variabile di stato la synchsessionid corrente e lo usa per tutte le update, add, delete successive!
+
+//////////FINE SESSIONE
+
+		EndSession(synchsessionid = X, succesfull = null or false)
+<<--------------------------------
+		EndSession(syncsessionid = X, succesful = true)
+--------------------------------->
+
+
+//////////INSIDE SESSION
 
 		Update(fid,Byte[]fileDump)
 <<-------------------------------
@@ -94,6 +115,13 @@ SERVER--------------------------CLIENT
 		AddOkk(fid, rev, syncid)
 ------------------------------->>
 
+///CONTROLLO DI SINCRONIZZAZIONE
+
+		GetSynchId(int synchid= -1)
+<<-------------------------
+		GetSynchId(int synchid= Y)
+------------------------->>
+
 
 
 sync diventa monitor
@@ -109,25 +137,37 @@ si salva in locale la struttura che contiene dati server, dati client
 timer: 30 secondi
 
 inizio a comparare client e server,
+BEGIN SESSION
+
 ADD
 DELETE
 UPDATE
 
+END SESSION
+
 va avanti così in loop
 
 -------------------------------------
-client Restore (By File, By Last Snapshot @ server)
+(INTERFACCIA FRIZZATA SE è IN CORSO UNA SYNC)
+
+client Restore (By File, By Last Snapshot @ server, /*OR BY A SPECIFIC SYNCSESSION*/)
 (prima di fare restore, faccio un getSyncID se uguali sono sincronizzato con il server!)
 
 fa una list request all al server, e ottine i metadati di tutte le versioni
 
 seleziono un file e posso farne il restore sul fs locale con
 GetList (singolo file in lista)
+
+
+<//TODO 
+idee per le interfacce grafiche
+due treeview con differenze in blu update rosso deleted verde added nero uguale
+
+binding (chiedere a cisco detto ciccio)
 ----------------------------------------
 
 SERVER
 
-
-
 //TODO
 CHiedersi se vale la pensa gestire tutto con eccezioni in dbhelper!!!
+
