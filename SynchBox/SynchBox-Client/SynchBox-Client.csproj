@@ -67,6 +67,7 @@
     <Compile Include="Logging.cs" />
     <Compile Include="proto_client.cs" />
     <Compile Include="proto_client_definitions.cs" />
+    <Compile Include="proto_client_wrapper.cs" />
     <Compile Include="SyncSocketClient.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

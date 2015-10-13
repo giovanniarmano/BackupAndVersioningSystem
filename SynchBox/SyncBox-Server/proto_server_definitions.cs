@@ -13,7 +13,7 @@ namespace SyncBox_Server
         ///////////STRUCT DEFINITIONS /////////////////
 
         //TODO Synch with client!!
-        enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add, BeginSession, EndSession };
+        enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add, BeginSession, EndSession , GetSynchId};
 
 
         [ProtoContract]

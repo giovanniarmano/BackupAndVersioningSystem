@@ -124,6 +124,13 @@ namespace SyncBox_Server
                         manage_EndSession(netStream, ref currentUser);
                         break;
 
+                    case (byte)CmdType.GetSynchId:
+                        Logging.WriteToLog("manage GetSynchId CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_GetSynchId(netStream, ref currentUser);
+                        break;
+
                         default:
                         Logging.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
                         break;
@@ -134,6 +141,14 @@ namespace SyncBox_Server
                 Logging.WriteToLog(ex.ToString());
             }
             }
+        }
+
+        private static void manage_GetSynchId(NetworkStream netStream, ref login_c currentUser)
+        {
+            GetSynchid getSynchId = Serializer.DeserializeWithLengthPrefix<GetSynchid>(netStream, PrefixStyle.Base128);
+            getSynchId.synchid = db.GetSynchId(currentUser.uid);
+            Serializer.SerializeWithLengthPrefix<GetSynchid>(netStream, getSynchId, PrefixStyle.Base128);
+            //throw new NotImplementedException();
         }
 
         private static void manage_EndSession(NetworkStream netStream, ref login_c currentUser)
@@ -169,14 +184,17 @@ namespace SyncBox_Server
         {
             Delete delete = Serializer.DeserializeWithLengthPrefix<Delete>(netStream, PrefixStyle.Base128);
             if (currentUser.synchsessionid == -1) throw new Exception("Delete out of SynchSession");
-            // DeleteOk deleteOk = Add.Delete(ref delete, currentUser.uid);
-            // Serializer.SerializeWithLengthPrefix<DeleteOk>(netStream, deleteOk, PrefixStyle.Base128);
+            DeleteOk deleteOk = db.Delete(ref delete, ref currentUser);
+            Serializer.SerializeWithLengthPrefix<DeleteOk>(netStream, deleteOk, PrefixStyle.Base128);
         }
 
         private static void manage_Update(NetworkStream netStream, ref login_c currentUser)
         {
-            if (currentUser.synchsessionid == -1) throw new Exception("Update out of SynchSession");
-            throw new NotImplementedException();
+            Update update = Serializer.DeserializeWithLengthPrefix<Update>(netStream, PrefixStyle.Base128);
+            if (currentUser.synchsessionid == -1) throw new Exception("Delete out of SynchSession");
+            UpdateOk updateOk = db.Update(ref update, ref currentUser);
+            Serializer.SerializeWithLengthPrefix<UpdateOk>(netStream, updateOk, PrefixStyle.Base128);
+            //throw new NotImplementedException();
         }
 
         private static void manage_GetList(NetworkStream netStream, ref login_c currentUser)

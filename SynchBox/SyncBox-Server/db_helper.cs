@@ -113,6 +113,7 @@ namespace SyncBox_Server
                         mycommand.Parameters.AddWithValue("@folder", add.folder);
                         object value = mycommand.ExecuteScalar();
 
+                        //TODO IMPROVEEEE
                         if (value == null)
                         {
                             throw new Exception("Querydb: count(*) if filename is present in the folder for uid. RETURN NULL. PANIC");
@@ -266,26 +267,14 @@ namespace SyncBox_Server
         //Crea nuova entry in HISTORY con rev+1
         //Update entry in snapshot con uid,fid   syncid= newsyncid AND rev = newrev
         //NEW Entry in filedump
-
-        
-
-        //DELETE
-        //???? Un file cancellato può essere restored ? 
-        //rm from snapshot NO! Mi serve synchid -> faccio update in snapshot ----> ma quando poi faccio una getlist considero anche quelli deleted!
-        //add new revision in HISTORY deleted = true
-        //update SYNCHSESSION
-        
-        public static proto_server.DeleteOk Delete(ref proto_server.Delete delete, ref proto_server.login_c currentUser)
+        public static proto_server.UpdateOk Update(ref proto_server.Update update, ref proto_server.login_c currentUser)
         {
             //add.filename;add.folder;add.fileDump; uid;
-            proto_server.DeleteOk deleteOk = new proto_server.DeleteOk();
+            proto_server.UpdateOk updateOk = new proto_server.UpdateOk();
+            updateOk.fid = -1;
+            updateOk.rev = -1;
 
-
-            //verifica se presente, già incluso in remove
-
-            //crea una nuova versione con flag deleted = true
-
-            //remove from snapshot
+            string md5 = proto_server.CalculateMD5Hash(update.fileDump);
 
             SQLiteConnection cnn = new SQLiteConnection(dbConnection);
             cnn.Open();
@@ -296,128 +285,300 @@ namespace SyncBox_Server
                     //BEGIN TRANSACTION
                     using (var transaction = cnn.BeginTransaction())
                     {
-
-                        //Use a datatable onlyonequery
-                        mycommand.CommandText = @"SELECT MAX(HISTORY.rev)
+                        //GET HISTORY INFORMATION
+                        mycommand.CommandText = @"SELECT HISTORY.fid,MAX( HISTORY.rev) AS maxrev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp
                                                 FROM HISTORY
-                                                WHERE HISTORY.uid = @uid
-                                                AND HISTORY.fid = @fid
+                                                WHERE HISTORY.fid=@fid 
+                                                AND HISTORY.uid=@uid 
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@fid", update.fid);
+
+
+                        SQLiteDataReader reader = mycommand.ExecuteReader();
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+
+                        DataRow row = dt.Rows[0];
+
+                        int maxrev; string filename; string folder; DateTime timestamp;
+
+                        try
+                        {
+                            var values = row.ItemArray;
+
+                            maxrev = int.Parse(values[1].ToString());
+                            filename = values[2].ToString();
+                            folder = values[3].ToString();
+                            timestamp = DateTime.Parse(values[4].ToString());
+                        }
+                        catch (Exception e)
+                        {
+                            Logging.WriteToLog("ERROR PARSING!in Delete method" + e.ToString());
+                            throw;
+                        }
+                        int rev = maxrev + 1;
+
+                        //INSERT IN HISTORY
+
+                        mycommand.CommandText = @"INSERT INTO HISTORY(uid, fid, rev, filename, folder, timestamp, md5 ,deleted, synchsessionid)
+                                                VALUES(@uid, @fid, @rev, @filename, @folder ,DATETIME('NOW'),@md5,@deleted,@synchsessionid)
                                                 ; ";
                         mycommand.Prepare();
                         mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
-                        mycommand.Parameters.AddWithValue("@fid", delete.fid);
-                        object value = mycommand.ExecuteScalar();
+                        mycommand.Parameters.AddWithValue("@fid", update.fid);
+                        mycommand.Parameters.AddWithValue("@rev", rev);
+                        mycommand.Parameters.AddWithValue("@filename", filename);
+                        mycommand.Parameters.AddWithValue("@folder", folder);
+                        mycommand.Parameters.AddWithValue("@md5", md5);
+                        mycommand.Parameters.AddWithValue("@deleted", false);
+                        mycommand.Parameters.AddWithValue("@synchsessionid", currentUser.synchsessionid);
 
-                        int maxrev = int.Parse(value.ToString());
-                        int rev = maxrev + 1;
+                        //UPDATE SNAPSHOT
 
-                        /*
-
-                        //seleziono  max syncid tra uid
-                        mycommand.CommandText = @"SELECT MAX(SNAPSHOT.syncid)
+                        mycommand.CommandText = @"SELECT MAX(syncid)
                                                 FROM SNAPSHOT
                                                 WHERE SNAPSHOT.uid = @uid
                                                 ;";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
-                        value = mycommand.ExecuteScalar();
-                        int maxsyncId = -1;
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+
+                        object value = mycommand.ExecuteScalar();
+                        int maxsynchid;
                         try
                         {
-                            maxsyncId = int.Parse(value.ToString());
+                            maxsynchid = int.Parse(value.ToString());
                         }
                         catch (Exception e)
                         {
-                            Logging.WriteToLog("User not still present in history, snapshot, filedump!\n e-> " + e.ToString());
-                            maxsyncId = 0;
+                            Logging.WriteToLog("EXception parsing synchid" + e.ToString());
+                            throw;
                         }
-                        //int maxsyncId = -1;
-                        //if (value == null)
-                        //{
-                        //    maxsyncId = 0;
-                        //}
-                        //else {
-                        //    maxsyncId = int.Parse(value.ToString());
-                        //}
-                        //syncId
-                        int syncId = maxsyncId + 1;
+                        int synchid = maxsynchid + 1;
 
-                        //seleziono  max fid tra uid
-                        mycommand.CommandText = @"SELECT MAX(HISTORY.fid)
-                                                FROM HISTORY
-                                                WHERE HISTORY.uid = @uid
+                        //UPDATE SNAPSHOT
+                        mycommand.CommandText = @"UPDATE SNAPSHOT
+                                                SET rev = @rev AND syncid = @synchid
+                                                WHERE uid = @uid
+                                                AND fid = @fid
                                                 ;";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
-                        value = mycommand.ExecuteScalar();
-                        int maxfid = -1;
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@fid", update.fid);
+                        mycommand.Parameters.AddWithValue("@rev", rev);
+                        mycommand.Parameters.AddWithValue("@synchid", synchid);
 
-                        try
-                        {
-                            maxfid = int.Parse(value.ToString());
-                        }
-                        catch (Exception e)
-                        {
-                            maxfid = 0;
-                        }
-                        //fid
-                        int fid = maxfid + 1;
-
-
-
-                        //inserisco in HISTORY SNAPSJOT  e FILE_DUMP
-                        //Add vuol dire che non ho da fare update ma solo insert
-                        //HISTORY INSERT
-                        mycommand.CommandText = @"INSERT INTO HISTORY(uid,fid,rev,filename,folder,timestamp,md5,deleted)
-                                            VALUES (@uid,@fid,@rev,@filename,@folder,DATETIME('NOW'),@md5,@deleted)
-                                                ; ";
-                        mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
-                        mycommand.Parameters.AddWithValue("@fid", fid);
-                        mycommand.Parameters.AddWithValue("@rev", 1);
-                        mycommand.Parameters.AddWithValue("@filename", add.filename);
-                        mycommand.Parameters.AddWithValue("@folder", add.folder);
-                        //mycommand.Parameters.AddWithValue("@timestamp", timestamp);
-                        mycommand.Parameters.AddWithValue("@md5", md5);
-                        mycommand.Parameters.AddWithValue("@deleted", false);
-
-                        //DEBUG HERE!!!
                         int nUpdated = mycommand.ExecuteNonQuery();
                         if (nUpdated != 1)
                             throw new Exception("No Row updated! Rollback");
 
-                        //SNAPSHOT INSERT
-                        //HISTORY INSERT
-                        mycommand.CommandText = @"INSERT INTO SNAPSHOT(uid,fid,rev,syncid)
-                                            VALUES (@uid,@fid,@rev,@syncid)
-                                            ;";
+                        //UPDATE SYNCHSESSION
+                        //update # updated
+                        mycommand.CommandText = @"UPDATE SYNCH_SESSION
+                                                SET n_updated = n_updated +1
+                                                WHERE uid = @uid
+                                                AND synchsessionid = @synchsessionid
+                                                ;";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
-                        mycommand.Parameters.AddWithValue("@fid", fid);
-                        mycommand.Parameters.AddWithValue("@rev", 1);
-                        mycommand.Parameters.AddWithValue("@syncid", syncId);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@syncsessionid", currentUser.synchsessionid);
 
                         nUpdated = mycommand.ExecuteNonQuery();
                         if (nUpdated != 1)
                             throw new Exception("No Row updated! Rollback");
 
+                        //insert FILEDUMP
                         //FILEDUMP INSERT
                         mycommand.CommandText = @"INSERT INTO FILES_DUMP(uid,fid,rev,filedump)
                                             VALUES (@uid,@fid,@rev,@filedump)
                                             ;";
                         mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", uid);
-                        mycommand.Parameters.AddWithValue("@fid", fid);
-                        mycommand.Parameters.AddWithValue("@rev", 1);
-                        mycommand.Parameters.AddWithValue("@filedump", add.fileDump);
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@fid", update.fid);
+                        mycommand.Parameters.AddWithValue("@rev", rev);
+                        mycommand.Parameters.AddWithValue("@filedump", update.fileDump);
 
                         nUpdated = mycommand.ExecuteNonQuery();
                         if (nUpdated != 1)
                             throw new Exception("No Row updated! Rollback");
 
-                        addOk.fid = fid;
-                        addOk.rev = 1;
-                        */
+
+                        updateOk.fid = update.fid;
+                        updateOk.rev = rev;
+
+                        //END TRANSACTION
+                        transaction.Commit();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logging.WriteToLog(e.ToString());
+                    //addOk.fid = -1;
+                    //return addOk;
+                }
+                //manage try catch transaction commit
+            }
+            return updateOk;
+        }
+
+
+        public static int GetSynchId(int uid) {
+            int synchid = -1;
+            SQLiteConnection cnn = new SQLiteConnection(dbConnection);
+            cnn.Open();
+            using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
+            {
+                //GET MAX SYNCHID for my user
+                mycommand.CommandText = @"SELECT MAX(syncid)
+                                                FROM SNAPSHOT
+                                                WHERE SNAPSHOT.uid = @uid
+                                                ;";
+                mycommand.Prepare();
+                mycommand.Parameters.AddWithValue("@uid", uid);
+
+                object value = mycommand.ExecuteScalar();
+                
+                try
+                {
+                    synchid = int.Parse(value.ToString());
+                }
+                catch (Exception e)
+                {
+                    Logging.WriteToLog("EXception parsing synchid" + e.ToString());
+                    throw;
+                }
+            }
+
+            return synchid;
+        }
+
+
+        //DELETE
+        //???? Un file cancellato può essere restored ? 
+        //rm from snapshot NO! Mi serve synchid -> faccio update in snapshot ----> ma quando poi faccio una getlist considero anche quelli deleted!
+        //add new revision in HISTORY deleted = true
+        //update SYNCHSESSION
+
+        public static proto_server.DeleteOk Delete(ref proto_server.Delete delete, ref proto_server.login_c currentUser)
+        {
+            //add.filename;add.folder;add.fileDump; uid;
+            proto_server.DeleteOk deleteOk = new proto_server.DeleteOk();
+            deleteOk.fid = -1;
+            
+            SQLiteConnection cnn = new SQLiteConnection(dbConnection);
+            cnn.Open();
+            using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
+            {
+                try
+                {
+                    //BEGIN TRANSACTION
+                    using (var transaction = cnn.BeginTransaction())
+                    {
+                        //GET HISTORY INFORMATION
+                        mycommand.CommandText = @"SELECT HISTORY.fid,MAX( HISTORY.rev) AS maxrev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp
+                                                FROM HISTORY
+                                                WHERE HISTORY.fid=@fid 
+                                                AND HISTORY.uid=@uid 
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@fid", delete.fid);
+
+
+                        SQLiteDataReader reader = mycommand.ExecuteReader();
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+
+                        DataRow row = dt.Rows[0];
+
+                        int maxrev; string filename; string folder; DateTime timestamp;
+
+                        try
+                        {
+                            var values = row.ItemArray;
+                            
+                            maxrev = int.Parse(values[1].ToString());
+                            filename = values[2].ToString();
+                            folder = values[3].ToString();
+                            timestamp = DateTime.Parse(values[4].ToString());
+                        }
+                        catch (Exception e)
+                        {
+                            Logging.WriteToLog("ERROR PARSING!in Delete method"+e.ToString());
+                            throw;
+                        }
+                        int rev = maxrev + 1;
+
+                        //INSERT IN HISTORY
+
+                        mycommand.CommandText = @"INSERT INTO HISTORY(uid, fid, rev, filename, folder, timestamp, deleted, synchsessionid)
+                                                VALUES(@uid, @fid, @rev, @filename, @folder ,DATETIME('NOW'),@deleted,@synchsessionid)
+                                                ; ";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@fid", delete.fid);
+                        mycommand.Parameters.AddWithValue("@rev", rev);
+                        mycommand.Parameters.AddWithValue("@filename", filename);
+                        mycommand.Parameters.AddWithValue("@folder", folder);
+                        mycommand.Parameters.AddWithValue("@deleted", true);
+                        mycommand.Parameters.AddWithValue("@synchsessionid", currentUser.synchsessionid);
+                        
+                        //UPDATE SNAPSHOT
+
+                        mycommand.CommandText = @"SELECT MAX(syncid)
+                                                FROM SNAPSHOT
+                                                WHERE SNAPSHOT.uid = @uid
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+
+                        object value = mycommand.ExecuteScalar();
+                        int maxsynchid;
+                        try
+                        {
+                            maxsynchid = int.Parse(value.ToString());
+                        }
+                        catch (Exception e)
+                        {
+                            Logging.WriteToLog("EXception parsing synchid" + e.ToString());
+                            throw;                           
+                        }
+                        int synchid = maxsynchid + 1;
+
+                        //UPDATE SNAPSHOT
+                        mycommand.CommandText = @"UPDATE SNAPSHOT
+                                                SET rev = @rev AND syncid = @synchid
+                                                WHERE uid = @uid
+                                                AND fid = @fid
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@fid", delete.fid);
+                        mycommand.Parameters.AddWithValue("@rev", rev);
+                        mycommand.Parameters.AddWithValue("@synchid", synchid);
+
+                        int nUpdated = mycommand.ExecuteNonQuery();
+                        if (nUpdated != 1)
+                            throw new Exception("No Row updated! Rollback");
+
+                        //UPDATE SYNCHSESSION
+                        //update # deleted
+                        mycommand.CommandText = @"UPDATE SYNCH_SESSION
+                                                SET n_deleted = n_deleted +1
+                                                WHERE uid = @uid
+                                                AND synchsessionid = @synchsessionid
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@syncsessionid", currentUser.synchsessionid);
+
+                        nUpdated = mycommand.ExecuteNonQuery();
+                        if (nUpdated != 1)
+                            throw new Exception("No Row updated! Rollback");
+
+                        deleteOk.fid = delete.fid;
+
                         //END TRANSACTION
                         transaction.Commit();
                     }
