@@ -122,7 +122,8 @@ namespace SynchBox_Client
                 Serializer.SerializeWithLengthPrefix<EndSession>(netStream, endSession, PrefixStyle.Base128);
                 endSession = Serializer.DeserializeWithLengthPrefix<EndSession>(netStream, PrefixStyle.Base128);
 
-
+                Logging.WriteToLog(ListRequestAllWrapper(netStream).ToString());
+                Logging.WriteToLog(ListRequestLastWrapper(netStream).ToString());
 
                 /*
                 var addOk = db.Add(ref add, currentUser.uid);

@@ -68,6 +68,7 @@ SERVER--------------------------CLIENT
 (manda una lista con lo snapshot)
 
 
+//TODO capire come farne il wrapper
 
 		GetList(int n, List<FileToGet[int fid,int rev]>)
 <<--------------------------------
