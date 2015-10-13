@@ -63,21 +63,23 @@ namespace SynchBox_Client
 
             try
             {
-                
 
-                //BeginSession
-                BeginSession beginSession = new BeginSession();
-                beginSession.sessionid = -1;
 
-                messagetype_c mt = new messagetype_c();
-                mt.msgtype = (Byte)CmdType.BeginSession;
+                ////BeginSession
+                //BeginSession beginSession = new BeginSession();
+                //beginSession.sessionid = -1;
 
-                Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
-                mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+                //messagetype_c mt = new messagetype_c();
+                //mt.msgtype = (Byte)CmdType.BeginSession;
 
-                Serializer.SerializeWithLengthPrefix<BeginSession>(netStream, beginSession, PrefixStyle.Base128);
-                beginSession = Serializer.DeserializeWithLengthPrefix<BeginSession>(netStream, PrefixStyle.Base128);
-                
+                //Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+                //mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+                //Serializer.SerializeWithLengthPrefix<BeginSession>(netStream, beginSession, PrefixStyle.Base128);
+                //beginSession = Serializer.DeserializeWithLengthPrefix<BeginSession>(netStream, PrefixStyle.Base128);
+
+                int sessionid = BeginSessionWrapper(netStream);
+
                 AddOk addOk;
                 //Add
                 int hh = 0;
@@ -94,36 +96,44 @@ namespace SynchBox_Client
                     File.WriteAllText(filePath, text);
 
                     Add add = new Add();
-                add.filename = filename;
-                add.folder = folder;
-                add.fileDump = File.ReadAllBytes(filePath);
 
-                mt.msgtype = (Byte)CmdType.Add;
+                    add.filename = filename;
+                    add.folder = folder;
+                    add.fileDump = File.ReadAllBytes(filePath);
 
-                Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
-                mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+                    addOk =  AddWrapper(netStream, ref add);
+                    Logging.WriteToLog(addOk.ToString());
 
-                Serializer.SerializeWithLengthPrefix<Add>(netStream, add, PrefixStyle.Base128);
-                addOk = Serializer.DeserializeWithLengthPrefix<AddOk>(netStream, PrefixStyle.Base128);
+                //mt.msgtype = (Byte)CmdType.Add;
+
+                //Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+                //mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+                //Serializer.SerializeWithLengthPrefix<Add>(netStream, add, PrefixStyle.Base128);
+                //addOk = Serializer.DeserializeWithLengthPrefix<AddOk>(netStream, PrefixStyle.Base128);
 
                 }
 
+                EndSessionWrapper(netStream, sessionid);
+
 
                 //EndSession
-                mt.msgtype = (Byte)CmdType.EndSession;
+                //mt.msgtype = (Byte)CmdType.EndSession;
 
-                Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
-                mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+                //Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+                //mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
 
-                EndSession endSession = new EndSession();
-                endSession.sessionid = beginSession.sessionid;
-                endSession.succesful = false;
+                //EndSession endSession = new EndSession();
+                //endSession.sessionid = beginSession.sessionid;
+                //endSession.succesful = false;
 
-                Serializer.SerializeWithLengthPrefix<EndSession>(netStream, endSession, PrefixStyle.Base128);
-                endSession = Serializer.DeserializeWithLengthPrefix<EndSession>(netStream, PrefixStyle.Base128);
+                //Serializer.SerializeWithLengthPrefix<EndSession>(netStream, endSession, PrefixStyle.Base128);
+                //endSession = Serializer.DeserializeWithLengthPrefix<EndSession>(netStream, PrefixStyle.Base128);
 
                 Logging.WriteToLog(ListRequestAllWrapper(netStream).ToString());
                 Logging.WriteToLog(ListRequestLastWrapper(netStream).ToString());
+
+                Logging.WriteToLog("SyncId ="+GetSynchIdWrapper(netStream).ToString());
 
                 /*
                 var addOk = db.Add(ref add, currentUser.uid);

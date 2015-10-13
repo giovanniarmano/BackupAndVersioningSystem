@@ -131,14 +131,47 @@ idea:
 -------------------------------------
 client Monitor
 
-il client si accende e richiede l'ultima versione! (se è la prima volta fa anche restore last server version, magari prima chiede conferma)
+il client si accende e richiede l'ultima versione!(ListLast) (se è la prima volta fa anche restore last server version, magari prima chiede conferma)
 
 si salva in locale la struttura che contiene dati server, dati client
-
+------------------------------------------------------------
 timer: 30 secondi
 
-inizio a comparare client e server,
-BEGIN SESSION
+client---->server 
+GetSynchId dhiede al server se la versione corrente che conosce il client del server è aggiornata.
+
+inizio a comparare client e server
+
+(1 per la complessità md5, prima compare data ultima modifica. //tralasciarlo per ora)
+(dizionario <key, value>
+dizionario <string path concat root folder filename "\tmp\file.txt", md5> questo per la lastVersion che mi ha dato il server.)
+
+LISTA <<---->>DIZIONARIO (HASH TABLE!!!)
+(Queste due per me DEVONO ESSERE SYNCH)
+
+//begin session
+
+scanzione ricorsiva filesystem client
+
+ricerca in dizionario on-fly
+
+ogni add, up, delete salvo le modifiche effettutate sia in dizionario che in lista (oltre occiamente ad essermele salvate sul server.)
+se i synchid sono SUCCESSIVI sono tranquillo che la versione locale (client) e la versione server del db o delle strutture che lo rappresentano sono sincronizzate
+
+se ciò non si verifica, richiedo al server ListLast
+
+!!(evitare che due client con stesso user si sicronizzino contemporaneamente) XXXXXXXXX
+!!()XXXXXXXX
+
+n add
+n up
+n delete
+
+
+//end session
+(metodo che velocemente mi dica se ci sono state variazioni rispetto alla precedente.)
+
+BEGIN SESSION (la prima volta che incontromodifica)
 
 ADD
 DELETE
@@ -147,6 +180,8 @@ UPDATE
 END SESSION
 
 va avanti così in loop
+
+//STRUTTURE DATI
 
 -------------------------------------
 (INTERFACCIA FRIZZATA SE è IN CORSO UNA SYNC)
