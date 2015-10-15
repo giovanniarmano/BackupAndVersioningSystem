@@ -222,3 +222,6 @@ my_BeginSession{
 //TROvARE un logger + efficiente
 
 //O riutilizzare il logger sul multilevel
+
+//TODO
+Valutare un task che si occupi di teneresincronizzate cose sul client.

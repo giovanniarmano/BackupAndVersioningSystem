@@ -194,8 +194,38 @@ namespace SynchBox_Client
         }
 
         //GetListWrapper
+        //TODO Potrebbe
 
-        //GetresponseWrapper
+        /// <summary>
+        /// ATTENZIONE. DA Usare con con GetResponseWrapper n volte!
+        /// </summary>
+        /// <param name="netStream"></param>
+        /// <param name="getList"></param>
+        public static void GetListWrapper(NetworkStream netStream, ref GetList getList)
+        {
+            messagetype_c mt = new messagetype_c();
+            mt.msgtype = (Byte)CmdType.GetList;
 
+            Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+            mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+            if (mt.accepted == false) throw new Exception("Message type not accepted");
+
+            Serializer.SerializeWithLengthPrefix<GetList>(netStream, getList, PrefixStyle.Base128);
+           
+            return;
+        }
+
+        /// <summary>
+        /// DA CHIAMARE N Volte solo dopo GetListWrapper. La GetResponse deve essere passata per riferimento dal chiamante(anche vuota)
+        /// </summary>
+        /// <param name="netStream"></param>
+        /// <param name="getResponse">Passata by ref dal chiamante!</param>
+        public static void GetResponseWrapper(NetworkStream netStream, ref GetResponse getResponse)
+        {
+            getResponse = Serializer.DeserializeWithLengthPrefix<GetResponse>(netStream, PrefixStyle.Base128);
+            return;
+        }
+        
     }
 }
