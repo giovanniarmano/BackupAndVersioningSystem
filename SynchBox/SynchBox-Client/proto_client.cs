@@ -29,12 +29,14 @@ namespace SynchBox_Client
         {
             try
             {
+                /*
                 int sessionid = BeginSessionWrapper(netStream);
 
                 AddOk addOk;
-               
+
                 int hh = 0;
-                for (hh = 0; hh<5; hh++) {
+                for (hh = 0; hh < 5; hh++)
+                {
 
                     string filename = RandomString(5) + ".txt";
                     string folder = "\\temp\\" + filename;
@@ -52,22 +54,22 @@ namespace SynchBox_Client
                     add.folder = folder;
                     add.fileDump = File.ReadAllBytes(filePath);
 
-                    addOk =  AddWrapper(netStream, ref add);
+                    addOk = AddWrapper(netStream, ref add);
                     Logging.WriteToLog(addOk.ToString());
 
-        
+
 
                 }
 
                 EndSessionWrapper(netStream, sessionid);
 
-                
+
 
                 Logging.WriteToLog(ListRequestAllWrapper(netStream).ToString());
                 Logging.WriteToLog(ListRequestLastWrapper(netStream).ToString());
 
-                Logging.WriteToLog("SyncId ="+GetSynchIdWrapper(netStream).ToString());
-
+                Logging.WriteToLog("SyncId =" + GetSynchIdWrapper(netStream).ToString());
+                */
 
                 //TODO
 
@@ -76,29 +78,151 @@ namespace SynchBox_Client
                 //GetSync id
 
                 string basepath = "C:\\backup\\temp";
-                string rand = 
+                string rand = RandomString(4);
+
+                string temp_rand = "\\" + rand + "\\";
+                string temp_rand_restore = "\\" + rand + "_restore\\";
+
+                Directory.CreateDirectory(basepath + temp_rand);
+                Directory.CreateDirectory(basepath + temp_rand_restore);
 
                 //folder /temp/RAND/
-
+                int session = BeginSessionWrapper(netStream);
                 //Begin Session
-                    //Add 15 01_RAND.txt 15_RAND.txt Files
-                    
+                //Add 15 01_RAND.txt 15_RAND.txt Files
+                int i = 0;
+                string filename;
+                string text;
+                string bff;
+                //basepath
+                //folder
+                //filename
+
+                //bff (basepath+folder+filename)
+                AddOk addOk;
+                string folder = temp_rand;
+
+                FileListItem[] fileItemList = new FileListItem[16];
+                for (i = 0; i < 16; i++)
+                    fileItemList[i] = new FileListItem();
+
+                for (i = 1; i <= 15; i++)
+                {
+                    //create file
+                    filename = i.ToString() + "_" + rand + ".txt";
+                    bff = basepath + folder + filename;
+                    var fileStream = File.Create(bff);
+                    fileStream.Close();
+
+                    //write random string
+                    text = RandomString(20);
+                    File.WriteAllText(bff, text);
+                    //create add struct & populate
+                    Add add = new Add();
+
+                    add.filename = filename;
+                    add.folder = folder;
+                    add.fileDump = File.ReadAllBytes(bff);
+
+                    addOk = AddWrapper(netStream, ref add);
+                    fileItemList[i].fid = addOk.fid;
+                    fileItemList[i].rev = addOk.rev;
+                    Logging.WriteToLog(addOk.ToString());
+
+                }
+
                 //end session
+                EndSessionWrapper(netStream, session);
 
+                session = BeginSessionWrapper(netStream);
                 //begin session
-                    //update 03-07_RAND.txt
+                //update 03-07_RAND.txt
+                UpdateOk updateOk;
+                for (i = 3; i < 8; i++)
+                {
+                    //create file
+                    filename = i.ToString() + "_" + rand + ".txt";
+                    bff = basepath + folder + filename;
+                    //write random string
+                    text = RandomString(20);
+                    File.WriteAllText(bff, text);
+                    //create add struct & populate
 
-                    //delete 11-14_RAND.txt
+                    Update update = new Update();
+
+                    update.fid = fileItemList[i].fid;
+                    update.fileDump = File.ReadAllBytes(bff);
+
+                    updateOk = UpdateWrapper(netStream, ref update);
+                    fileItemList[i].rev = updateOk.rev;
+                    Logging.WriteToLog(updateOk.ToString());
+                }
+
+
+
+                //delete 11-14_RAND.txt
+
+                DeleteOk deleteOk;
+                for (i = 11; i <= 14; i++)
+                {
+                    //create file
+                    filename = i.ToString() + "_" + rand + ".txt";
+                    bff = basepath + folder + filename;
+                    //write random string
+                    //text = RandomString(20);
+                    //File.WriteAllText(bff, text);
+                    //create add struct & populate
+
+                    Delete delete = new Delete();
+
+
+                    delete.fid = fileItemList[i].fid;
+
+                    deleteOk = DeleteWrapper(netStream, ref delete);
+                    fileItemList[i].fid = -1;
+                    Logging.WriteToLog(deleteOk.ToString());
+                }
+
+                EndSessionWrapper(netStream, session);
 
                 //end session
 
                 //folder /temp/RAND_restore/
-                    //getlastlist
+                //getlastlist
+                Logging.WriteToLog(ListRequestLastWrapper(netStream).ToString());
+                Logging.WriteToLog(ListRequestAllWrapper(netStream).ToString());
 
-                    //GetList
+                GetList getList = new GetList();
+                getList.fileList = new List<FileToGet>();
+                n = 0;
+                for (i = 1; i <= 15; i++)
+                {
+                    FileToGet fileToGet = new FileToGet();
+                    if (fileItemList[i].fid > 0)
+                    {
+                        n++;
+                        fileToGet.fid = fileItemList[i].fid;
+                        fileToGet.rev = fileItemList[i].rev;
+                        getList.fileList.Add(fileToGet);
+                    }
+                }
+                getList.n = n;
+                                
+                GetListWrapper(netStream, ref getList);
+                GetResponse getResponse = new GetResponse();
+                folder = temp_rand_restore;
+                for (i = 0; i <n ; i++)
+                {
+                    GetResponseWrapper(netStream, ref getResponse);
 
-                //end!!
-                
+                    filename = getResponse.fileInfo.fid + "_" + rand + ".txt";
+                    bff = basepath + folder + filename;
+                    var fileStream = File.Create(bff);
+                    fileStream.Close();
+                    
+                    File.WriteAllBytes(bff, getResponse.fileDump);
+                }
+
             }
             catch (Exception e)
             {

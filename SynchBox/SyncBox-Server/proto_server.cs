@@ -206,7 +206,7 @@ namespace SyncBox_Server
             {
                 GetResponse getResponse = db.GetResponse(getList.fileList[i].fid, getList.fileList[i].rev,currentUser.uid);
                 Serializer.SerializeWithLengthPrefix(netStream, getResponse, PrefixStyle.Base128);
-                Logging.WriteToLog("Managed "+ i + 1 + " of "+ getList.fileList.Count + " \n" +getResponse.ToString());
+                Logging.WriteToLog("Managed "+ (i + 1).ToString() + " of "+ getList.fileList.Count + " \n" +getResponse.ToString());
             }
         }
 

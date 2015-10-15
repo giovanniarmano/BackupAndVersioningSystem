@@ -219,7 +219,7 @@ namespace SyncBox_Server
             [ProtoMember(1)]
             public int n;
 
-            [ProtoMember(1)]
+            [ProtoMember(2)]
             public List<FileToGet> fileList;
 
             public string ToString()
