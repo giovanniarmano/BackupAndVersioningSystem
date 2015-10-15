@@ -19,6 +19,7 @@ namespace SynchBox_Client
 
     public static partial class proto_client
     {
+        
         //private NetworkStream netStream= null;
         //Logging log;
 
@@ -443,8 +444,6 @@ namespace SynchBox_Client
          */
 
 
-
-
         public static string DataTableToString(DataTable Table)
         {
             StringBuilder sb = new StringBuilder("");
@@ -459,6 +458,54 @@ namespace SynchBox_Client
             }
             return sb.ToString();
         }
+
+        public static void populate_dictionary(string path)
+        {
+            Dictionary<string, string> localFiles = new Dictionary<string, string>();
+            DirSearch(path,localFiles);
+            //string[] directories = Directory.GetDirectories(path);
+
+        }
+
+        private static void DirSearch(string sDir, Dictionary<string, string>  localFiles)
+        {
+            try
+            {
+                var md5 = MD5.Create();
+                foreach (string d in Directory.GetDirectories(sDir))
+                {
+                    foreach (string f in Directory.GetFiles(d))
+                    {
+                        using (var stream = File.OpenRead(f))
+                        {
+                            localFiles.Add(f,System.Convert.ToBase64String(md5.ComputeHash(stream)));
+                        }
+                    }
+                    DirSearch(d,localFiles);
+                }
+            }
+            catch (System.Exception excpt)
+            {
+                Console.WriteLine(excpt.Message);
+            }
+        }
+
+        public static string CalculateMD5Hash(byte[] byteArray)
+        {
+            // step 1, calculate MD5 hash from input
+            MD5 md5 = System.Security.Cryptography.MD5.Create();
+            //byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+            byte[] hash = md5.ComputeHash(byteArray);
+
+            // step 2, convert byte array to hex string
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < hash.Length; i++)
+            {
+                sb.Append(hash[i].ToString("X2"));
+            }
+            return sb.ToString();
+        }
+
     }
         
 }

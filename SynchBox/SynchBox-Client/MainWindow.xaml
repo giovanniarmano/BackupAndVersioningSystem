@@ -117,19 +117,24 @@
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal" Height="60" Width="130">
                         <Image Source="/images/home.png" Width="61" />
-                        <TextBlock Text="Home" VerticalAlignment="Center"/>
+                        <TextBlock Text="Sync" VerticalAlignment="Center"/>
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
-                    <GroupBox Header="Folder Monitoring" HorizontalAlignment="Left" Margin="10,113,0,0" VerticalAlignment="Top" Height="103" Width="265">
+                    <GroupBox Header="Folder Monitoring" HorizontalAlignment="Left" Margin="16,22,0,0" VerticalAlignment="Top" Height="103" Width="265">
                         <Grid Margin="0,0,-2,-12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="180*"/>
+                                <ColumnDefinition Width="15*"/>
+                                <ColumnDefinition Width="59*"/>
+                            </Grid.ColumnDefinitions>
 
-                            <TextBox Height="23" Margin="10,10,9,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="E:\backup_monitoring"/>
-                            <Button Content="Sfoglia" HorizontalAlignment="Right" Margin="0,49,9,0" Width="75" Height="22" VerticalAlignment="Top"/>
+                            <TextBox x:Name="local_path" Height="23" Margin="10,10,8.4,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="E:\backup_monitoring" Grid.ColumnSpan="3"/>
+                            <Button Click="Button_click_sfoglia" Content="Sfoglia" HorizontalAlignment="Right" Margin="0,49,9.4,0" Width="75" Height="22" VerticalAlignment="Top" Grid.ColumnSpan="3"/>
                         </Grid>
                     </GroupBox>
-                    <Button x:Name="b_start_sync" Content="Start" HorizontalAlignment="Left" Margin="112,14,0,0" VerticalAlignment="Top" Width="73" Click="Button_Click_1"/>
-                    <Label Content="Syncronization" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top"/>
+                    <Button x:Name="b_start_sync" Content="Start" HorizontalAlignment="Left" Margin="188,268,0,0" VerticalAlignment="Top" Width="73" Click="Button_Click_1"/>
+                    <Label Content="Syncronization" HorizontalAlignment="Left" Margin="24,262,0,0" VerticalAlignment="Top"/>
 
 
 
@@ -146,8 +151,15 @@
                 </TabItem.Header>
                 <Grid>
                     <Button x:Name="button" Content="Test List" HorizontalAlignment="Left" Margin="33,10,0,0" VerticalAlignment="Top" Width="75" Click="button_Click_2"/>
-                    <TreeView x:Name="treeView" HorizontalAlignment="Left" Height="330" Margin="10,34,0,0" VerticalAlignment="Top" Width="152"/>
-                    <ListView x:Name="listView" HorizontalAlignment="Left" Height="330" Margin="167,34,0,0" VerticalAlignment="Top" Width="192">
+                    <TreeView x:Name="treeView" HorizontalAlignment="Left" Height="330" Margin="10,34,0,0" VerticalAlignment="Top" Width="162"/>
+                    <ListView x:Name="listView" HorizontalAlignment="Left" Height="330" Margin="177,34,0,0" VerticalAlignment="Top" Width="236">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <ListView x:Name="listView_Copy" HorizontalAlignment="Left" Height="330" Margin="418,34,0,0" VerticalAlignment="Top" Width="160">
                         <ListView.View>
                             <GridView>
                                 <GridViewColumn/>

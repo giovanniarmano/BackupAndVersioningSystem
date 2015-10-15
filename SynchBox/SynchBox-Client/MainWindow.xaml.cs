@@ -15,6 +15,8 @@ using System.Windows.Shapes;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.IO;
+using System.Windows.Forms;
 //using System.Windows;
 
 namespace SynchBox_Client
@@ -195,7 +197,7 @@ namespace SynchBox_Client
             }
             catch (Exception exc)
             {
-                MessageBox.Show(exc.Message);                
+                //MessageBox.Show(exc.Message);                
                 Logging.WriteToLog("not possible to login or connect to server! Error : " + exc.ToString());
                 end_login_register_ui();
             }
@@ -354,8 +356,22 @@ namespace SynchBox_Client
             
         }
 
+        private void Button_click_sfoglia(object sender, System.EventArgs e)
+        {
+            FolderBrowserDialog FolderBrowserDialog1 = new FolderBrowserDialog();
+            FolderBrowserDialog1.Description = "Select a Folder";
+
+            if (FolderBrowserDialog1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+           {
+               local_path.Text = FolderBrowserDialog1.SelectedPath;
+           }
+        }
+
         private async Task StartSyncAsync()
         {
+            proto_client.populate_dictionary(local_path.Text);
+
+
             //cur_client.getStream();
             //cts.Token;
 
@@ -365,6 +381,8 @@ namespace SynchBox_Client
            // proto_client.do_sync();
 
         }
+
+
 
         private void button_Click_2(object sender, RoutedEventArgs e)
         {
