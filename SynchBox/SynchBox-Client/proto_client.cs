@@ -26,62 +26,13 @@ namespace SynchBox_Client
         //public proto_client(NetworkStream s) { netStream = s; }
 
         public static void do_test(NetworkStream netStream, int n, CancellationToken ct)
-        {/*
-            myObj mobj = new myObj();
-            mobj.int1 = 1;
-            mobj.int2 = 2;
-            mobj.s1 = "Ciao Mamma";
-            mobj.s2 = "Protobuf HELP ME";
-
-            test_c tc = new test_c();
-            tc.intlist = new List<myObj>();
-
-            int i = 0;
-            for (i=0;i< n; i++)
-            {
-                tc.intlist.Add(mobj);
-            }
-
-            Logging.WriteToLog("------TESTING-----");
-            Logging.WriteToLog("list tostring");
-
-            for (i = 0; i < tc.intlist.Count; i++) {
-                Logging.WriteToLog(i.ToString()+ tc.intlist[i].ToString());
-            }
-
-            messagetype_c msgtype = new messagetype_c
-            {
-                msgtype = (byte)CmdType.Test,
-                accepted = false,
-            };
-
-            Serializer.SerializeWithLengthPrefix(netStream, msgtype, PrefixStyle.Base128);
-
-            
-            Serializer.SerializeWithLengthPrefix(netStream, tc, PrefixStyle.Base128);
-            */
-
+        {
             try
             {
-
-
-                ////BeginSession
-                //BeginSession beginSession = new BeginSession();
-                //beginSession.sessionid = -1;
-
-                //messagetype_c mt = new messagetype_c();
-                //mt.msgtype = (Byte)CmdType.BeginSession;
-
-                //Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
-                //mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
-
-                //Serializer.SerializeWithLengthPrefix<BeginSession>(netStream, beginSession, PrefixStyle.Base128);
-                //beginSession = Serializer.DeserializeWithLengthPrefix<BeginSession>(netStream, PrefixStyle.Base128);
-
                 int sessionid = BeginSessionWrapper(netStream);
 
                 AddOk addOk;
-                //Add
+               
                 int hh = 0;
                 for (hh = 0; hh<5; hh++) {
 
@@ -104,68 +55,56 @@ namespace SynchBox_Client
                     addOk =  AddWrapper(netStream, ref add);
                     Logging.WriteToLog(addOk.ToString());
 
-                //mt.msgtype = (Byte)CmdType.Add;
-
-                //Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
-                //mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
-
-                //Serializer.SerializeWithLengthPrefix<Add>(netStream, add, PrefixStyle.Base128);
-                //addOk = Serializer.DeserializeWithLengthPrefix<AddOk>(netStream, PrefixStyle.Base128);
+        
 
                 }
 
                 EndSessionWrapper(netStream, sessionid);
 
-
-                //EndSession
-                //mt.msgtype = (Byte)CmdType.EndSession;
-
-                //Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
-                //mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
-
-                //EndSession endSession = new EndSession();
-                //endSession.sessionid = beginSession.sessionid;
-                //endSession.succesful = false;
-
-                //Serializer.SerializeWithLengthPrefix<EndSession>(netStream, endSession, PrefixStyle.Base128);
-                //endSession = Serializer.DeserializeWithLengthPrefix<EndSession>(netStream, PrefixStyle.Base128);
+                
 
                 Logging.WriteToLog(ListRequestAllWrapper(netStream).ToString());
                 Logging.WriteToLog(ListRequestLastWrapper(netStream).ToString());
 
                 Logging.WriteToLog("SyncId ="+GetSynchIdWrapper(netStream).ToString());
 
-                /*
-                var addOk = db.Add(ref add, currentUser.uid);
 
-                var getResponse = db.GetResponse(addOk.fid, addOk.rev, currentUser.uid);
-                Logging.WriteToLog(getResponse.ToString());
+                //TODO
 
-                proto_server.ListResponse listResponse = db.ListResponseLast(currentUser.uid);
-                Logging.WriteToLog(listResponse.ToString());
+                //ListLast
+                //ListAll
+                //GetSync id
 
-                listResponse = db.ListResponseAll(currentUser.uid);
-                Logging.WriteToLog(listResponse.ToString());
-                */
+                string basepath = "C:\\backup\\temp";
+                string rand = 
+
+                //folder /temp/RAND/
+
+                //Begin Session
+                    //Add 15 01_RAND.txt 15_RAND.txt Files
+                    
+                //end session
+
+                //begin session
+                    //update 03-07_RAND.txt
+
+                    //delete 11-14_RAND.txt
+
+                //end session
+
+                //folder /temp/RAND_restore/
+                    //getlastlist
+
+                    //GetList
+
+                //end!!
+                
             }
             catch (Exception e)
             {
                 Logging.WriteToLog(e.ToString());
             }
 
-
-            /*
-            //READ DATATABLE
-            Logging.WriteToLog("Trying Reading DT prom netStream ...");
-            DataTable datat = new DataTable();
-
-            using (IDataReader reader = DataSerializer.Deserialize(netStream))
-            {
-                datat.Load(reader);
-            }
-            Logging.WriteToLog("Trying Reading DT prom netStream ... DONE");
-            Logging.WriteToLog("Dt received->\n" + DataTableToString(datat));
-            */
         }
 
         public static string RandomString(int length)
