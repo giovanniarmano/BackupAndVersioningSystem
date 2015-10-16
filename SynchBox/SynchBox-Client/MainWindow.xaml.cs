@@ -30,10 +30,12 @@ namespace SynchBox_Client
     /// </summary>
     public partial class MainWindow : Window
     {
-       // SyncSocketClient sender_SyncSocketClient;
+        // SyncSocketClient sender_SyncSocketClient;
         //NetworkStream sender_stream;
         //proto_client protoClient;
-        
+        SessionVars sessionVars;
+
+
         CancellationTokenSource cts;
         
         SyncSocketClient cur_client = null;
@@ -61,6 +63,7 @@ namespace SynchBox_Client
         public MainWindow()
         {
             InitializeComponent();
+            sessionVars = new SessionVars();
             Logging.WriteToLog("-----CLIENT STARTED------");
             initializeSessionParam();
             SessionVars vars = new SessionVars();
