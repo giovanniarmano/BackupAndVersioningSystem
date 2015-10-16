@@ -21,43 +21,42 @@ using System.Windows.Forms;
 
 namespace SynchBox_Client
 {
-    public class SessionVars { 
-        
-    }
+    
 
     /// <summary>
     /// Logica di interazione per MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        // SyncSocketClient sender_SyncSocketClient;
-        //NetworkStream sender_stream;
-        //proto_client protoClient;
-        SessionVars sessionVars;
-
-
-        CancellationTokenSource cts;
+        //L'unica istanza di MainWindow conosce e istanzia un riferimento alla classe SessionVars
+        //L'istanza si chiama sessionVars
+        //L'idea è quella di usare questa classe per tenere traccia dei parametri di sessione (unici e non duplicati in quanto siamo sul client!)
         
-        SyncSocketClient cur_client = null;
+        public class SessionVars
+        {
+            public CancellationTokenSource cts;
+            public SyncSocketClient socketClient = null;
+
+            public string ip_str = "";
+            public int port_int = -1;
+            public string port_str = "";
+
+            public bool connected = false;
+
+            public string username = "";
+            public string uid_str = "";
+        }
+
+        public SessionVars sessionVars;
         
-        string ip = "";
-        int int_port = -1;
-        string port = "";
-
-        bool connected = false;
-
-        string username = "";
-        string uid = "";
-       
         private void initializeSessionParam()
         {
-            username = "";
-            uid = "";
-            ip = "";
-            port = "";
-            int_port = -1;
-            connected = false;
-           
+            sessionVars.username = "";
+            sessionVars.uid_str = "";
+            sessionVars.ip_str = "";
+            sessionVars.port_str = "";
+            sessionVars.port_int = -1;
+            sessionVars.connected = false; 
         }
 
         public MainWindow()
@@ -66,7 +65,6 @@ namespace SynchBox_Client
             sessionVars = new SessionVars();
             Logging.WriteToLog("-----CLIENT STARTED------");
             initializeSessionParam();
-            SessionVars vars = new SessionVars();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -92,8 +90,12 @@ namespace SynchBox_Client
             Logging.WriteToLog("calling register async DONE");
         }
 
-        //login
-        //register
+        
+        /// <summary>
+        /// Effettua Login/Register a seconda della stringa {login | register} passata come parametro
+        /// </summary>
+        /// <param name="op"></param>
+        /// <returns></returns>
         private async Task loginRegisterAsync(string op) {
             try
             {   
@@ -101,17 +103,17 @@ namespace SynchBox_Client
                            
                 validateTextBoxes();
 
-                cts = new CancellationTokenSource();
+                sessionVars.cts = new CancellationTokenSource();
                 begin_login_ui();
 
                 Logging.WriteToLog("connecting ...");
                // sender_SyncSocketClient =
-                    await myStartAsync(ip_tb.Text, int.Parse(port_tb.Text),cts.Token);
+                    await myStartAsync(ip_tb.Text, int.Parse(port_tb.Text), sessionVars.cts.Token);
 
-                if (!connected)
+                if (!sessionVars.connected)
                     throw new Exception("Connection FAILED");
 
-                Logging.WriteToLog("connecting DONE  " + ip + ":" + int_port);
+                Logging.WriteToLog("connecting DONE  " + sessionVars.ip_str + ":" + sessionVars.port_int);
 
                //sender_stream = sender_SyncSocketClient.getStream();
                 //protoClient = new proto_client(sender_stream);
@@ -124,7 +126,7 @@ namespace SynchBox_Client
                         //HERE MULTITASK
 
                         Task<proto_client.login_c> t = Task.Factory.StartNew<proto_client.login_c>(()=>
-                        proto_client.do_login(cur_client.getStream(), usr, pwd, cts.Token)
+                        proto_client.do_login(sessionVars.socketClient.getStream(), usr, pwd, sessionVars.cts.Token)
                         );
                         
                         login_result = await t;
@@ -136,10 +138,10 @@ namespace SynchBox_Client
                         }
                         Logging.WriteToLog("logging in SUCCESSFULL");
 
-                        username = login_result.username;
-                        uid = login_result.uid.ToString();
+                        sessionVars.username = login_result.username;
+                        sessionVars.uid_str = login_result.uid.ToString();
 
-                        Logging.WriteToLog("user:" + username + " - uid:" + uid);
+                        Logging.WriteToLog("user:" + sessionVars.username + " - uid:" + sessionVars.uid_str);
                 
                         login_ui();
                     break;
@@ -147,7 +149,7 @@ namespace SynchBox_Client
                     case "register":
                         //HERE MULTITASK
                         Task<proto_client.login_c> t1 = Task.Factory.StartNew<proto_client.login_c>(()=>
-                        proto_client.do_register(cur_client.getStream(), usr, pwd, cts.Token)
+                        proto_client.do_register(sessionVars.socketClient.getStream(), usr, pwd, sessionVars.cts.Token)
                         );
                         
                         login_result = await t1;
@@ -160,10 +162,10 @@ namespace SynchBox_Client
                         Logging.WriteToLog("logging in SUCCESSFULL");
 
                         //set them to the calass params for login
-                        username = login_result.username;
-                        uid = login_result.uid.ToString();
+                        sessionVars.username = login_result.username;
+                        sessionVars.uid_str = login_result.uid.ToString();
 
-                        Logging.WriteToLog("user:" + username + " - uid:" + uid);
+                        Logging.WriteToLog("user:" + sessionVars.username + " - uid:" + sessionVars.uid_str);
                 
                         login_ui();
 
@@ -193,7 +195,7 @@ namespace SynchBox_Client
             catch (System.IO.IOException se)
             {
                 Logging.WriteToLog("Socket exception!" + se.ToString());
-                connected = false;
+                sessionVars.connected = false;
                 //TODO ??
                 b_login_login_Click(this, null);
                 end_login_register_ui();
@@ -211,43 +213,43 @@ namespace SynchBox_Client
         {
            // Thread.Sleep(3000);
             //throw new NotImplementedException();
-            if (connected)
+            if (sessionVars.connected)
             {
-                if (_ip.CompareTo(ip) == 0 && _port == int_port)
+                if (_ip.CompareTo(sessionVars.ip_str) == 0 && _port == sessionVars.port_int)
                 {
-                    return cur_client;
+                    return sessionVars.socketClient;
                 }
                 else
                 {
-                    if (cur_client != null) { 
+                    if (sessionVars.socketClient != null) {
                         //close client //open new one
-                        cur_client.Close();
-                        cur_client = null;
-                        ip = "";
-                        int_port = -1;
-                        connected = false;
+                        sessionVars.socketClient.Close();
+                        sessionVars.socketClient = null;
+                        sessionVars.ip_str = "";
+                        sessionVars.port_int = -1;
+                        sessionVars.connected = false;
                     }
                 }
             }
-            cur_client = new SyncSocketClient(_ip, _port,ct);
+            sessionVars.socketClient = new SyncSocketClient(_ip, _port,ct);
             
-            bool successful_connect = await cur_client.StartClientAsync();
+            bool successful_connect = await sessionVars.socketClient.StartClientAsync();
             if (!successful_connect)
             {
                 Logging.WriteToLog("Connecting FAILED");      
             }
-            else { 
-                connected = true;
-                ip = _ip;
-                int_port = _port;
+            else {
+                sessionVars.connected = true;
+                sessionVars.ip_str = _ip;
+                sessionVars.port_int = _port;
             }
-            return cur_client;
+            return sessionVars.socketClient;
         }
 
        
 
         private void setNameLogin() {
-            welcome_l.Content = "welcome, " + username + " @ " + ip + ":" + port;
+            welcome_l.Content = "welcome, " + sessionVars.username + " @ " + sessionVars.ip_str + ":" + sessionVars.port_str;
         }
 
         private void unsetNameLogin() {
@@ -341,11 +343,11 @@ namespace SynchBox_Client
         private void b_logout_login_Click(object sender, RoutedEventArgs e)
         {
             //do logout
-            username = "";
-            uid = "";
+            sessionVars.username = "";
+            sessionVars.uid_str = "";
             
-            proto_client.do_logout(cur_client.getStream());
-            cur_client.Close();
+            proto_client.do_logout(sessionVars.socketClient.getStream());
+            sessionVars.socketClient.Close();
             //.Close();
             initializeSessionParam();
             //ui logout
@@ -385,12 +387,26 @@ namespace SynchBox_Client
 
         }
 
+        //Ingresso in sincronizzazione
+        
+        private void startSyncButton() {
+              
+            //Controllare la validità dei campi (folder inserita)
+            //Eventualmente prima, al login di un nuovo user, mi salvo la cartella precedente!
+            //Ovvero: se primo login, controllo la cartella. Se secondo login carico da un file config la cartella e il massimo che concedo all'utente è un MOVE della cartella!
+
+            //chiamo la classe Synch_Client in maniera asincrona, la sgancio e solo il cancellation token si occuperà eventuamente di fermare la sincronizzazione
+            //nel dettaglio passo sessionParam
+
+
+            
+        }
 
 
         private void button_Click_2(object sender, RoutedEventArgs e)
         {
             //Test List protobuf
-            proto_client.do_test(cur_client.getStream(), 5, cts.Token);
+            proto_client.do_test(sessionVars.socketClient.getStream(), 5, sessionVars.cts.Token);
                         
 
         }
