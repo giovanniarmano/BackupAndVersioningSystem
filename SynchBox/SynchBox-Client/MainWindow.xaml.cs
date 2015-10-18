@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -15,8 +15,8 @@ using System.Windows.Shapes;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.IO;
 using System.Windows.Forms;
+using System.IO;
 //using System.Windows;
 
 namespace SynchBox_Client
@@ -357,7 +357,14 @@ namespace SynchBox_Client
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             Logging.WriteToLog("Begin syncronization ...");
-            StartSyncAsync();
+            string path = local_path.Text;
+            //StartSyncAsync();
+            if (!Directory.Exists(path))
+            {
+                Logging.WriteToLog("Invalid directory");
+                return;
+            }
+            ShowFileSystem(treeView_1, path);
             
         }
 
@@ -410,5 +417,30 @@ namespace SynchBox_Client
                         
 
         }
+
+        private TreeViewItem CreateDirectoryNode(DirectoryInfo di)
+        {
+            var directoryNode = new TreeViewItem() { Header = di.Name };
+            foreach (var directory in di.GetDirectories())
+            {
+                directoryNode.Items.Add(CreateDirectoryNode(directory));
+                
+            }
+            foreach (var file in di.GetFiles())
+            {
+                directoryNode.Items.Add(file.Name);
+            }
+
+            return directoryNode;
+        }
+
+        private void ShowFileSystem(System.Windows.Controls.TreeView treeView, string path)
+        {
+            treeView.Items.Clear();
+            var rootDirectoryInfo = new DirectoryInfo(path);
+
+            treeView.Items.Add(CreateDirectoryNode(rootDirectoryInfo));
+        }
+
     }
 }
