@@ -159,6 +159,7 @@
                             </GridView>
                         </ListView.View>
                     </ListView>
+                    <TreeView x:Name="treeView_2" HorizontalAlignment="Left" Height="330" Margin="177,34,0,0" VerticalAlignment="Top" Width="236"/>
                 </Grid>
             </TabItem>
             <TabItem  >

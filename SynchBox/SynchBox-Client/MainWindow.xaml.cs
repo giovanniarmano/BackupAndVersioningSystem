@@ -420,19 +420,37 @@ namespace SynchBox_Client
 
         private TreeViewItem CreateDirectoryNode(DirectoryInfo di)
         {
-            var directoryNode = new TreeViewItem() { Header = di.Name };
+            var directoryNode = new TreeViewItem() { Header = di.Name, Tag = di.FullName };
+            directoryNode.MouseLeftButtonUp += directoryTreeItem_Selected;
+
             foreach (var directory in di.GetDirectories())
             {
                 directoryNode.Items.Add(CreateDirectoryNode(directory));
                 
             }
+            /* // mostrare anche i file
             foreach (var file in di.GetFiles())
             {
                 directoryNode.Items.Add(file.Name);
-            }
+            }*/
 
             return directoryNode;
         }
+
+        private TreeViewItem CreateFileNode(DirectoryInfo di)
+        {
+            var fileNode = new TreeViewItem();
+            fileNode.MouseLeftButtonUp += treeItem_Selected;
+
+
+            foreach (var file in di.GetFiles())
+            {
+                fileNode.Items.Add(file.Name);
+            }
+
+            return fileNode;
+        }
+
 
         private void ShowFileSystem(System.Windows.Controls.TreeView treeView, string path)
         {
@@ -440,6 +458,30 @@ namespace SynchBox_Client
             var rootDirectoryInfo = new DirectoryInfo(path);
 
             treeView.Items.Add(CreateDirectoryNode(rootDirectoryInfo));
+        }
+
+        //ERRORE: viene riciamata a cascata e sovrascrive sempre con quelle della cartella root
+        private void directoryTreeItem_Selected(object sender, RoutedEventArgs e)
+        {
+            TreeViewItem item = sender as TreeViewItem;
+            string path = item.Tag.ToString();
+            var rootDirectoryInfo = new DirectoryInfo(path);
+
+            treeView_2.Items.Clear();
+
+            foreach (var file in rootDirectoryInfo.GetFiles())
+            {
+                var fileNode = new TreeViewItem() { Header = file.Name};
+                fileNode.MouseLeftButtonUp += treeItem_Selected;
+                treeView_2.Items.Add(fileNode);
+            }
+
+        }
+
+        //generare il terzo blocco con tutte le revisione di quel file
+        private void treeItem_Selected(object sender, MouseButtonEventArgs e)
+        {
+            //throw new NotImplementedException();
         }
 
     }
