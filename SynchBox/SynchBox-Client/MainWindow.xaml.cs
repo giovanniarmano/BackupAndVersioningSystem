@@ -45,9 +45,13 @@ namespace SynchBox_Client
 
             public string username = "";
             public string uid_str = "";
+
+            public string path = "";
+            public int lastSyncId = -1;
         }
 
         public SessionVars sessionVars;
+        public SynchClient synchClient;
         
         private void initializeSessionParam()
         {
@@ -56,7 +60,15 @@ namespace SynchBox_Client
             sessionVars.ip_str = "";
             sessionVars.port_str = "";
             sessionVars.port_int = -1;
-            sessionVars.connected = false; 
+            sessionVars.connected = false;
+            sessionVars.path = "";
+            sessionVars.lastSyncId = -1;
+        }
+
+        private void initializeSyncParam()
+        {
+            synchClient.remoteFiles.Clear();
+            synchClient.monitoredPath = "";
         }
 
         public MainWindow()
@@ -357,42 +369,32 @@ namespace SynchBox_Client
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             Logging.WriteToLog("Begin syncronization ...");
-            string path = local_path.Text;
-            //StartSyncAsync();
-            if (!Directory.Exists(path))
+            if (!Directory.Exists(local_path.Text))
             {
                 Logging.WriteToLog("Invalid directory");
                 return;
             }
-            ShowFileSystem(treeView_1, path);
+            sessionVars.path = local_path.Text;
+            initializeSyncParam();
+            synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
+
+            //ShowFileSystem(treeView_1, path);
             
         }
 
         private void Button_click_sfoglia(object sender, System.EventArgs e)
         {
             FolderBrowserDialog FolderBrowserDialog1 = new FolderBrowserDialog();
+            FolderBrowserDialog1.ShowNewFolderButton = true;
             FolderBrowserDialog1.Description = "Select a Folder";
 
             if (FolderBrowserDialog1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-           {
+            {
                local_path.Text = FolderBrowserDialog1.SelectedPath;
-           }
+            }
         }
 
-        private async Task StartSyncAsync()
-        {
-            proto_client.populate_dictionary(local_path.Text);
 
-
-            //cur_client.getStream();
-            //cts.Token;
-
-            //check campi
-
-           //TODO UNCOMMENT
-           // proto_client.do_sync();
-
-        }
 
         //Ingresso in sincronizzazione
         

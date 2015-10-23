@@ -155,7 +155,7 @@ scanzione ricorsiva filesystem client
 
 ricerca in dizionario on-fly
 
-ogni add, up, delete salvo le modifiche effettutate sia in dizionario che in lista (oltre occiamente ad essermele salvate sul server.)
+ogni add, up, delete salvo le modifiche effettutate sia in dizionario che in lista (oltre ovviamente ad essermele salvate sul server.)
 se i synchid sono SUCCESSIVI sono tranquillo che la versione locale (client) e la versione server del db o delle strutture che lo rappresentano sono sincronizzate
 
 se ciò non si verifica, richiedo al server ListLast
