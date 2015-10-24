@@ -51,7 +51,7 @@ namespace SynchBox_Client
         }
 
         public SessionVars sessionVars;
-        public SynchClient synchClient;
+        public SynchClient synchClient = new SynchClient();
         
         private void initializeSessionParam()
         {

@@ -52,11 +52,13 @@ namespace SynchBox_Client
                 }
             }
 
-            int session = proto_client.BeginSessionWrapper(netStream); // qui o nelle funzioni sul singolo file?
+            int session = proto_client.BeginSessionWrapper(netStream); // qui o nelle funzioni sul singolo file? SUL PRIMO FILE IN findDiffference
+            //Meglio iniziare la sessione alla prima modifica trovata! Altrimenti, se diff non produce risultati, ho una sessione di sincronizzazzione vuota in db
+            //In ogni caso, il workflow è BeginSession - N X (Add, Update, Delete) - EndSession      
 
             findDifference(netStream, sessionVars.path);
 
-            proto_client.EndSessionWrapper(netStream, session);// qui o nelle funzioni sul singolo file?
+            proto_client.EndSessionWrapper(netStream, session);// qui o nelle funzioni sul singolo file? QUI OK!
 
             //cur_client.getStream();
             //cts.Token;
