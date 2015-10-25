@@ -26,6 +26,7 @@ namespace SynchBox_Client
 
         public Dictionary<string, remoteFileInfos> remoteFiles = new Dictionary<string, remoteFileInfos>();
         public string monitoredPath = "";
+        public int sessionId = -1;
 
         public async Task StartSyncAsync(NetworkStream netStream, MainWindow.SessionVars sessionVars)
         {
@@ -52,21 +53,15 @@ namespace SynchBox_Client
                 }
             }
 
-            int session = proto_client.BeginSessionWrapper(netStream); // qui o nelle funzioni sul singolo file? SUL PRIMO FILE IN findDiffference
-            //Meglio iniziare la sessione alla prima modifica trovata! Altrimenti, se diff non produce risultati, ho una sessione di sincronizzazzione vuota in db
-            //In ogni caso, il workflow è BeginSession - N X (Add, Update, Delete) - EndSession      
-
+            sessionId = -1;
+            
             findDifference(netStream, sessionVars.path);
 
-            proto_client.EndSessionWrapper(netStream, session);// qui o nelle funzioni sul singolo file? QUI OK!
-
-            //cur_client.getStream();
-            //cts.Token;
-
-            //check campi
-
-            //TODO UNCOMMENT
-            // proto_client.do_sync();
+            if (sessionId != -1)
+            {
+                proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
+                sessionVars.lastSyncId = sessionId;
+            }
 
         }
 
@@ -78,11 +73,15 @@ namespace SynchBox_Client
             {
                 using (StreamReader sr = File.OpenText(path))
                 {
-                    string line = "";
-                    while ((line = sr.ReadLine()) != null)
+                    string buffer = "";
+                    while ((buffer = sr.ReadLine()) != null)
                     {
-                        var info = line.Split(' ');
-                        information[info[0]] = info[1];
+                        var line = buffer.Split(':');
+                        if (line[0].CompareTo(sessionVars.uid_str) != 0)
+                        {
+                            var info = line[1].Split(' ');
+                            information[info[0]] = info[1];
+                        }
                     }
                 }
                 if (information.ContainsKey("monitoredPath"))
@@ -94,7 +93,7 @@ namespace SynchBox_Client
             {
                 using (StreamWriter sw = File.CreateText(path))
                 {
-                    sw.WriteLine("monitoredPath " + sessionVars.path);
+                    sw.WriteLine(sessionVars.uid_str+":monitoredPath " + sessionVars.path);
                 }
             }
         }
@@ -168,6 +167,8 @@ namespace SynchBox_Client
 
         private void syncDeletefile(NetworkStream netStream, string path)
         {
+            checkBeginSession(netStream);
+
             proto_client.Delete delete = new proto_client.Delete();
             proto_client.DeleteOk deleteOk = new proto_client.DeleteOk();
 
@@ -177,17 +178,9 @@ namespace SynchBox_Client
             remoteFiles.Remove(path);
         }
 
-        private string computeFileHash(string file)
-        {
-            var md5 = MD5.Create();
-            var stream = File.OpenRead(file);
-            string hash = System.Convert.ToBase64String(md5.ComputeHash(stream));
-            return hash;
-        }
-
         private void syncUpdatefile(NetworkStream netStream, string path, string hash)
         {
-            //int session = proto_client.BeginSessionWrapper(netStream);
+            checkBeginSession(netStream);
 
             proto_client.Update Update = new proto_client.Update();
             proto_client.UpdateOk UpdateOk = new proto_client.UpdateOk();
@@ -198,12 +191,11 @@ namespace SynchBox_Client
 
             remoteFiles[path].hash = hash;
             remoteFiles[path].delete = false;
-            //proto_client.EndSessionWrapper(netStream, session);
         }
 
         private void syncNewfile(NetworkStream netStream, string path, string hash)
         {
-            //int session = proto_client.BeginSessionWrapper(netStream);
+            checkBeginSession(netStream);
 
             proto_client.Add add = new proto_client.Add();
             proto_client.AddOk addOk = new proto_client.AddOk();
@@ -218,19 +210,28 @@ namespace SynchBox_Client
             fileInfo.fid = addOk.fid;
             fileInfo.delete = false;
             remoteFiles.Add(path, fileInfo);
-            //proto_client.EndSessionWrapper(netStream, session);
 
+        }
+        private void checkBeginSession(NetworkStream netStream)
+        {
+            if (sessionId == -1)
+            {
+                sessionId = proto_client.BeginSessionWrapper(netStream);
+            }
+        }
+        private string computeFileHash(string file)
+        {
+            var md5 = MD5.Create();
+            var stream = File.OpenRead(file);
+            string hash = System.Convert.ToBase64String(md5.ComputeHash(stream));
+            return hash;
         }
 
         //funzione usata sul server.. controllare che torni lo stesso output
         public static string CalculateMD5Hash(byte[] byteArray)
         {
-            // step 1, calculate MD5 hash from input
             MD5 md5 = System.Security.Cryptography.MD5.Create();
-            //byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
             byte[] hash = md5.ComputeHash(byteArray);
-
-            // step 2, convert byte array to hex string
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < hash.Length; i++)
             {
