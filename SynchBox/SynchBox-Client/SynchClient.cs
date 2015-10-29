@@ -11,6 +11,8 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Threading;
 using System.IO;
+using Newtonsoft.Json;
+using System.Timers;
 
 namespace SynchBox_Client
 {
@@ -23,81 +25,200 @@ namespace SynchBox_Client
             public bool delete = true;
 
         }
-
         public Dictionary<string, remoteFileInfos> remoteFiles = new Dictionary<string, remoteFileInfos>();
-        public string monitoredPath = "";
-        public int sessionId = -1;
+
+        public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
+
+        NetworkStream netStream;
+        MainWindow.SessionVars sessionVars;
+
+        FileSystemWatcher watcher;
+
+        private static System.Timers.Timer aTimer;
 
         public async Task StartSyncAsync(NetworkStream netStream, MainWindow.SessionVars sessionVars)
         {
-            if (monitoredPath == "")
-            {
-                getInitInformation(sessionVars);
-            }
-            else
-            {
-                //se il monitoredPath e sessionVars.path sono diversi si cambiata la cartella ce si sta monitorando
-                //da vedere come gestire
-            }
+            this.sessionVars = sessionVars;
+            this.netStream = netStream;
+
             int syncIdServer = proto_client.GetSynchIdWrapper(netStream);
-            if (sessionVars.lastSyncId == -1 || sessionVars.lastSyncId < syncIdServer)
+            if (sessionVars.lastSyncId == -1 //se è la prima volta che sincronizzo questa cartella
+                || sessionVars.lastSyncId < syncIdServer) // oppure se la revisione che ho in locale non è la più nuova
             {
-                sessionVars.lastSyncId = syncIdServer;
-                remoteFiles = this.populate_dictionary(netStream);
-            }
-            else
-            {
-                foreach (KeyValuePair<string, remoteFileInfos> entry in remoteFiles)
+
+                sessionVars.lastSyncId = syncIdServer; //imposto come ultima sincronizzazione quella del server
+                remoteFiles = populate_dictionary(netStream); //scarico la struttura del server
+
+                findDifference(netStream, sessionVars.path); //
+
+                if (sessionVars.lastSyncId != -1) // se ho modificato qualcosa chiudo e aggiorno il lastSyncId
                 {
-                    entry.Value.delete = true;
+                    proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
+                }
+
+            }
+
+            watch(); // inizio il monitoraggio delle cartelle
+            aTimer = new System.Timers.Timer(30000); //30 secs interval
+            aTimer.Elapsed += new ElapsedEventHandler(Syncronize);
+            GC.KeepAlive(aTimer); 
+        }
+
+        private void Syncronize(object sender, ElapsedEventArgs e)
+        {
+            if(editedFiles.Count == 0){
+                return;
+            }
+            
+            remoteFiles = populate_dictionary(netStream);
+
+            foreach (KeyValuePair<string, string> entry in editedFiles)
+            {
+                if (entry.Value.CompareTo("DELETE") == 0)
+                {
+                    syncDeletefile(netStream, entry.Key);
+                }
+                else if (entry.Value.CompareTo("CREATE") == 0)
+                {
+                    syncFile(netStream, entry.Key, "CREATE");
+                }
+                else if (entry.Value.CompareTo("UPDATE") == 0)
+                {
+                    syncFile(netStream, entry.Key, "UPDATE");
                 }
             }
 
-            sessionId = -1;
-            
-            findDifference(netStream, sessionVars.path);
+            editedFiles.Clear();
 
-            if (sessionId != -1)
+            proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
+            writeChanges();
+        }
+
+        private void writeChanges()
+        {
+            int i = 0;
+            string json;
+
+            string filePath = ".\\conf.ini";
+            if (File.Exists(sessionVars.path + filePath))
             {
-                proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
-                sessionVars.lastSyncId = sessionId;
+                using (StreamReader r = new StreamReader(sessionVars.path + filePath))
+                {
+                    json = r.ReadToEnd();
+                    List<Item> items = JsonConvert.DeserializeObject<List<Item>>(json);
+                    for (i = 0; i < items.Count;i++)
+                    {
+                        if (sessionVars.uid_str.CompareTo(items[i].uid) == 0)
+                        {
+                            items[i].syncId = sessionVars.lastSyncId.ToString();
+
+                            json = JsonConvert.SerializeObject(items.ToArray());
+                            System.IO.File.WriteAllText(sessionVars.path + filePath, json);
+                            return;
+                        }
+
+                    }
+                }
             }
+            else
+            {
+                List<Item> _data = new List<Item>();
+                _data.Add(new Item()
+                {
+                    uid = sessionVars.uid_str,
+                    path = sessionVars.path,
+                    syncId = sessionVars.lastSyncId.ToString()
+                });
+                json = JsonConvert.SerializeObject(_data.ToArray());
+
+                //write string to file
+                System.IO.File.WriteAllText(sessionVars.path + filePath, json);
+            }
+        }
+
+        private void watch()
+        {
+            watcher = new FileSystemWatcher();
+            watcher.Path = sessionVars.path;
+            watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+            watcher.Filter = "*.*";
+            watcher.Changed += new FileSystemEventHandler(handlerChanged);
+            watcher.Created += new FileSystemEventHandler(handlerChanged);
+            watcher.Deleted += new FileSystemEventHandler(handlerChanged);
+            watcher.EnableRaisingEvents = true;
+        }
+
+        private void handlerChanged(object sender, FileSystemEventArgs e)
+        {
+            if (e.ChangeType.Equals(WatcherChangeTypes.Deleted))
+            {
+                editedFiles.Add(e.FullPath, "DELETE");
+                //syncDeletefile(netStream, e.FullPath);
+            }
+            else if (e.ChangeType.Equals(WatcherChangeTypes.Created))
+            {
+                editedFiles.Add(e.FullPath, "CREATE");
+                //syncFile(netStream, e.FullPath, "CREATE");
+            }
+            else if (e.ChangeType.Equals(WatcherChangeTypes.Changed) )
+            {
+                editedFiles.Add(e.FullPath, "UPDATE");
+                // syncFile(netStream, e.FullPath, "UPDATE");
+            }
+
+            proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
 
         }
 
-        private void getInitInformation(MainWindow.SessionVars sessionVars)
+        private void syncFile(NetworkStream netStream, string path, string action)
         {
-            string path = ".\\conf.ini";
-            Dictionary<string, string> information = new Dictionary<string, string>();
-            if (!File.Exists(path))
+            string hash = computeFileHash(path);
+            if (action.CompareTo("UPDATE")==0)
             {
-                using (StreamReader sr = File.OpenText(path))
+                syncUpdatefile(netStream, path, hash);
+            }
+            else if (action.CompareTo("CREATE")==0)
+            {
+                syncNewfile(netStream, path, hash);
+            }
+        }
+
+        public class Item
+        {
+            public string uid;
+            public string path;
+            public string syncId;
+        }
+
+        /*
+         * 0 --> directory corrente uguale a quella precedentemente sincronizzata
+         * 1 --> nuova directory di sincronizzazione 
+         */
+        public int getInitInformation(MainWindow.SessionVars sessionVars)
+        {
+            string filePath = ".\\conf.ini";
+            if (File.Exists(sessionVars.path + filePath))
+            {
+                using (StreamReader r = new StreamReader(sessionVars.path + filePath))
                 {
-                    string buffer = "";
-                    while ((buffer = sr.ReadLine()) != null)
+                    string json = r.ReadToEnd();
+                    List<Item> items = JsonConvert.DeserializeObject<List<Item>>(json);
+                    foreach (var item in items)
                     {
-                        var line = buffer.Split(':');
-                        if (line[0].CompareTo(sessionVars.uid_str) != 0)
+                        if (sessionVars.uid_str.CompareTo(item.uid) == 0)
                         {
-                            var info = line[1].Split(' ');
-                            information[info[0]] = info[1];
+                            sessionVars.lastSyncId = Int32.Parse(item.syncId); // copio le informazioni sull'ultima sincronizzazione contenute nel file conf.ini
+                            if (item.path.CompareTo(sessionVars.path) != 0)
+                            {
+                                return 1;
+                            }
+                            return 0;
                         }
                     }
                 }
-                if (information.ContainsKey("monitoredPath"))
-                {
-                    monitoredPath = information["monitoredPath"];
-                }
             }
-            else
-            {
-                using (StreamWriter sw = File.CreateText(path))
-                {
-                    sw.WriteLine(sessionVars.uid_str+":monitoredPath " + sessionVars.path);
-                }
-            }
+            return 1;
         }
-
 
         private Dictionary<string, remoteFileInfos> populate_dictionary(NetworkStream netStream)
         {
@@ -111,7 +232,7 @@ namespace SynchBox_Client
                 tmp.hash = fileInfo.md5;
                 tmp.fid = fileInfo.fid;
                 tmp.delete = false;
-                remoteFiles.Add(monitoredPath+fileInfo.folder + fileInfo.filename, tmp);
+                remoteFiles.Add(sessionVars.path + fileInfo.folder + fileInfo.filename, tmp);
             }
 
             return remoteFiles;
@@ -201,7 +322,7 @@ namespace SynchBox_Client
             proto_client.AddOk addOk = new proto_client.AddOk();
             remoteFileInfos fileInfo = new remoteFileInfos();
             add.filename = Path.GetFileName(path);
-            add.folder = Path.GetDirectoryName(path).Replace(monitoredPath, "")+"\\";
+            add.folder = Path.GetDirectoryName(path).Replace(sessionVars.path, "") + "\\";
             add.fileDump = File.ReadAllBytes(path);
 
             addOk = proto_client.AddWrapper(netStream, ref add);
@@ -212,11 +333,13 @@ namespace SynchBox_Client
             remoteFiles.Add(path, fileInfo);
 
         }
+
+
         private void checkBeginSession(NetworkStream netStream)
         {
-            if (sessionId == -1)
+            if (sessionVars.lastSyncId == -1)
             {
-                sessionId = proto_client.BeginSessionWrapper(netStream);
+                sessionVars.lastSyncId = proto_client.BeginSessionWrapper(netStream);
             }
         }
         private string computeFileHash(string file)
@@ -239,106 +362,5 @@ namespace SynchBox_Client
             }
             return sb.ToString();
         }
-
-        /*
-       public static void do_sync(NetworkStream netStream, SessionVars vars, CancellationToken ct)
-       {
-
-           //controllo se vars.uid ha già effettuato almeno una sincronizzazione!
-
-           //list last -> server
-
-           //list last response
-
-           //HO filesystem_server
-
-           //se no 
-           {
-               //foreach item in list
-               { 
-                   //get
-
-                   //get response
-
-                   //write on disk
-               }
-           }
-
-           while (!ct.IsCancellationRequested) { 
-               //update/populate filesystem struct
-               //HO filesystem_client
-
-               //compare_filesystems(server,client);
-
-               //sleep (timesleep)
-           }
-
-       }
-       */
-
-
-        /*
-        private static DataTable populateFS(ref DataTable dt, string rootFolder){
-                dt = new DataTable();
-                dt.Clear();
-                dt.Columns.Add("uid");   //user_id
-                dt.Columns.Add("fid");   //file id
-                dt.Columns.Add("cid");   //changeset id 
-                dt.Columns.Add("rev");   //revision
-                dt.Columns.Add("name");  //filename
-                dt.Columns.Add("folder_path");//path
-                dt.Columns.Add("md5");   //md5
-                
-                List<string> search = Directory.GetFiles(rootFolder, "*.*").ToList();
-
-                foreach(string item in search)
-                {
-                
-                        //calculate md5 in bytearray
-                        byte[] filehash;
-
-                        using (var md5 = MD5.Create())
-                        {
-                            using (var stream = File.OpenRead(item))
-                            {
-                                filehash =  md5.ComputeHash(stream);
-                            }
-                        }
-
-
-                }   
-    
-        }
-        */
-
-        /*
-        //compare filesystems
-        {   
-            //ADD A FAST METHOD TO RECOGNISE nochange CASE- for example id sync
-
-            //request changeset #
-            //begin new changeset state = not finished!
-
-            //foreach client file
-            {
-                //if present in the server
-                    //scegli il più recente!
-
-                    //se client + recente, update
-
-                    //se server + recente, get last version
-
-                //if not present in the server add
-
-                //if non ho dei file che sono sul server
-                    //get di tutti quei file
-             
-                //SEMPRE
-                //fai tipo un update del numero di modifiche apportate al changeset!
-                
-            }
-            
-        }
-         */
     }
 }

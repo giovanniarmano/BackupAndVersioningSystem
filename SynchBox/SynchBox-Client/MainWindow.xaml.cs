@@ -68,7 +68,6 @@ namespace SynchBox_Client
         private void initializeSyncParam()
         {
             synchClient.remoteFiles.Clear();
-            synchClient.monitoredPath = "";
         }
 
         public MainWindow()
@@ -371,11 +370,20 @@ namespace SynchBox_Client
             Logging.WriteToLog("Begin syncronization ...");
             if (!Directory.Exists(local_path.Text))
             {
-                Logging.WriteToLog("Invalid directory");
+                System.Windows.Forms.MessageBox.Show("Invalid directory");
                 return;
             }
             sessionVars.path = local_path.Text;
-            initializeSyncParam();
+            Logging.WriteToLog("Loading information ...");
+            int result = synchClient.getInitInformation(sessionVars);
+
+            if (Directory.EnumerateFileSystemEntries(local_path.Text).Any() && result==1)
+            {
+                System.Windows.Forms.MessageBox.Show("Impossible to sincronize a not empty directory");
+                return;
+            }
+
+            initializeSyncParam(); // forse inutile
             synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
 
             //ShowFileSystem(treeView_1, path);
