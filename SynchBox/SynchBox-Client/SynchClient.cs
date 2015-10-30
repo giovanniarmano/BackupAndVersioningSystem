@@ -244,15 +244,16 @@ namespace SynchBox_Client
             proto_client.ListResponse remoteFileList;
             //Potrebbe bastare una listRequestLast??
             remoteFileList = proto_client.ListRequestAllWrapper(netStream);
-            foreach (proto_client.FileListItem fileInfo in remoteFileList.fileList)
-            {
-                remoteFileInfos tmp = new remoteFileInfos();
-                tmp.hash = fileInfo.md5;
-                tmp.fid = fileInfo.fid;
-                tmp.delete = false;
-                remoteFiles.Add(sessionVars.path + fileInfo.folder + fileInfo.filename, tmp);
+            if (remoteFileList.fileList != null) { 
+                foreach (proto_client.FileListItem fileInfo in remoteFileList.fileList)
+                {
+                    remoteFileInfos tmp = new remoteFileInfos();
+                    tmp.hash = fileInfo.md5;
+                    tmp.fid = fileInfo.fid;
+                    tmp.delete = false;
+                    remoteFiles.Add(sessionVars.path + fileInfo.folder + fileInfo.filename, tmp);
+                }
             }
-
             return remoteFiles;
 
         }

@@ -188,7 +188,7 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<GetSynchid>(netStream, getSynchId, PrefixStyle.Base128);
             getSynchId = Serializer.DeserializeWithLengthPrefix<GetSynchid>(netStream, PrefixStyle.Base128);
 
-            if ((getSynchId.synchid < 0)) throw new Exception("Error in GetSynchId. symnchid < 0 ");
+            if ((getSynchId.synchid < -1)) throw new Exception("Error in GetSynchId. symnchid < -1 ");
 
             return getSynchId.synchid;
         }

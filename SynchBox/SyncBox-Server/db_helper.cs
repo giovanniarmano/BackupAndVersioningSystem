@@ -446,6 +446,7 @@ namespace SyncBox_Server
                 catch (Exception e)
                 {
                     Logging.WriteToLog("EXception parsing synchid" + e.ToString());
+                    return synchid;
                     throw;
                 }
             }

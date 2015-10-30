@@ -145,6 +145,7 @@ namespace SynchBox_Client
                         if (!login_result.is_logged)
                         {
                             Logging.WriteToLog("logging in FAILED");
+                            //System.Windows.MessageBox.Show("Login Failed");
                             throw new Exception("Login Failed!");    
                         }
                         Logging.WriteToLog("logging in SUCCESSFULL");
@@ -168,6 +169,7 @@ namespace SynchBox_Client
                         if (!login_result.is_logged)
                         {
                             Logging.WriteToLog("logging in FAILED");
+                           // System.Windows.MessageBox.Show("Registration Failed");
                             throw new Exception("Login Failed!");
                         }
                         Logging.WriteToLog("logging in SUCCESSFULL");
@@ -213,7 +215,7 @@ namespace SynchBox_Client
             }
             catch (Exception exc)
             {
-                //MessageBox.Show(exc.Message);                
+                System.Windows.MessageBox.Show(exc.Message);                
                 Logging.WriteToLog("not possible to login or connect to server! Error : " + exc.ToString());
                 end_login_register_ui();
             }
