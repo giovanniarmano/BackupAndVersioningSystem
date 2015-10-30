@@ -37,31 +37,47 @@ namespace SynchBox_Client
         private static System.Timers.Timer aTimer;
 
         public async Task StartSyncAsync(NetworkStream netStream, MainWindow.SessionVars sessionVars)
-        {
-            this.sessionVars = sessionVars;
-            this.netStream = netStream;
+        {   //trychatch perchè un metodo asincrono ritorna brutalmente senza che te ne accorgi se non catturi exception
+            try { 
+                this.sessionVars = sessionVars; //perchè qui si crea una copia delle sessionVars (non dovrebbero essere shared?)
+                //controllare che una richesta di cts venga passata anche qua dentro
+                this.netStream = netStream;
 
-            int syncIdServer = proto_client.GetSynchIdWrapper(netStream);
-            if (sessionVars.lastSyncId == -1 //se è la prima volta che sincronizzo questa cartella
-                || sessionVars.lastSyncId < syncIdServer) // oppure se la revisione che ho in locale non è la più nuova
-            {
+                //Mancava initialization
+                sessionVars.lastSyncId = -1; 
 
-                sessionVars.lastSyncId = syncIdServer; //imposto come ultima sincronizzazione quella del server
-                remoteFiles = populate_dictionary(netStream); //scarico la struttura del server
+                //qui da qualche parte metterei un while!
 
-                findDifference(netStream, sessionVars.path); //
-
-                if (sessionVars.lastSyncId != -1) // se ho modificato qualcosa chiudo e aggiorno il lastSyncId
+                int syncIdServer = proto_client.GetSynchIdWrapper(netStream);
+                if (sessionVars.lastSyncId == -1 //se è la prima volta che sincronizzo questa cartella
+                    || sessionVars.lastSyncId < syncIdServer) // oppure se la revisione che ho in locale non è la più nuova
                 {
-                    proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
+                    //SECONDO ME ha senso richiedere il synchid al server dopo le eventuali operazioni di sincronizzazione.
+                    //altrimenti ti ritrovi quello precendente e non quello aggiornato!
+                    sessionVars.lastSyncId = syncIdServer; //imposto come ultima sincronizzazione quella del server
+                    remoteFiles = populate_dictionary(netStream); //scarico la struttura del server
+
+                    findDifference(netStream, sessionVars.path); //
+
+                    if (/*sessionVars.lastSyncId != -1*/false) // se ho modificato qualcosa chiudo e aggiorno il lastSyncId
+                    {   //Sono molto dubbioso che funzioni così! devo essere sicuro di aver fatto begin session per poi chiuderla!
+                        //caso cartella vuota la prima volta: non faccio begin session ma end session
+                        //entro qui dentro sempre! Perchè 4 righe sopra chiedo al server il suo synchid che è sempre != -1
+                       
+                        proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
+                    }
+
+                
                 }
 
+                watch(); // inizio il monitoraggio delle cartelle
+                aTimer = new System.Timers.Timer(30000); //30 secs interval
+                aTimer.Elapsed += new ElapsedEventHandler(Syncronize);
+                GC.KeepAlive(aTimer);
+            }catch (Exception e)
+            {
+                Logging.WriteToLog(e.ToString());
             }
-
-            watch(); // inizio il monitoraggio delle cartelle
-            aTimer = new System.Timers.Timer(30000); //30 secs interval
-            aTimer.Elapsed += new ElapsedEventHandler(Syncronize);
-            GC.KeepAlive(aTimer); 
         }
 
         private void Syncronize(object sender, ElapsedEventArgs e)
@@ -165,8 +181,9 @@ namespace SynchBox_Client
                 editedFiles.Add(e.FullPath, "UPDATE");
                 // syncFile(netStream, e.FullPath, "UPDATE");
             }
-
-            proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
+            //SE NON SI INIZIA LA SESSIONE causa un eccezione terminarla brutalmente!
+            //quindi commento per ora
+            //proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
 
         }
 
@@ -225,6 +242,7 @@ namespace SynchBox_Client
             Dictionary<string, remoteFileInfos> remoteFiles = new Dictionary<string, remoteFileInfos>();
 
             proto_client.ListResponse remoteFileList;
+            //Potrebbe bastare una listRequestLast??
             remoteFileList = proto_client.ListRequestAllWrapper(netStream);
             foreach (proto_client.FileListItem fileInfo in remoteFileList.fileList)
             {

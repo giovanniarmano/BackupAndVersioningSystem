@@ -1,0 +1,12 @@
+-Controllare che non ci sia una BeginSynchSession se non c'è nessun file modificato/aggiunto/eliminato in quella sessione
+-Gestire le proprietà IsEnabled dei bottoni quando si clikkano
+-On startup disabilitare tutto  tranne il login
+-on Login abilitare tutto
+-on logout riportarsi allo stato iniziale
+
+-on login caricare il file config.ini per l'utente corrente. Se non presente gestire la cosa!
+
+Non ho rivisto tutto il codice, specie per la parte di fileSystemWatcher, ma provo a scriverti la mia opinione
+Dato che il fileSystemWatcher è un casino (ovvero ad esempio quando crei unfile magari lui ti invia 3 eventi, uno added, uno deleted, uno added di nuovo... ed altre situzaioni simili)
+pensavo: si lancia un thread che metta in un set, la lista dei file dai quali ha ricevuto un evento (di qualsiasi tipo).
+Ai 30 secondi vado a lokkare e ad analizzare questa lista.
