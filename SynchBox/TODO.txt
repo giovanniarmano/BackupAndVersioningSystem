@@ -10,3 +10,6 @@ Non ho rivisto tutto il codice, specie per la parte di fileSystemWatcher, ma pro
 Dato che il fileSystemWatcher è un casino (ovvero ad esempio quando crei unfile magari lui ti invia 3 eventi, uno added, uno deleted, uno added di nuovo... ed altre situzaioni simili)
 pensavo: si lancia un thread che metta in un set, la lista dei file dai quali ha ricevuto un evento (di qualsiasi tipo).
 Ai 30 secondi vado a lokkare e ad analizzare questa lista.
+
+--POSSIBILI PROBLEMI
+se faccio una get di un file cancellato che succede? (nei file dump non ci sono entry per i file cancellati)

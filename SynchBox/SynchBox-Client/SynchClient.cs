@@ -32,6 +32,7 @@ namespace SynchBox_Client
         MainWindow.SessionVars sessionVars;
         int syncIdServer; // TODO: da finire di valorizzare
         int syncSessionId = -1;
+        bool flagSession = false;
 
         FileSystemWatcher watcher;
         private static System.Timers.Timer aTimer;
@@ -79,6 +80,7 @@ namespace SynchBox_Client
             if (syncSessionId != syncSessionIdTemporaneo) // se ho modificato qualcosa chiudo e aggiorno il lastSyncId
             {
                 proto_client.EndSessionWrapper(netStream, syncSessionId);
+                flagSession = false;
             }
             syncIdServer = proto_client.GetSynchIdWrapper(netStream);
             sessionVars.lastSyncId = syncIdServer;
@@ -97,21 +99,22 @@ namespace SynchBox_Client
 
             foreach (KeyValuePair<string, string> entry in editedFiles)
             {
-                if (remoteFiles.ContainsKey(entry.Key)) // se contiene la chiave non è un nuovo file
-                {
-                    if (File.Exists(entry.Key)) // se esiste nel fs, allora vuol dire che è stato modificato
+                if(Directory.Exists(entry.Key)){
+                    foreach (string d in Directory.GetDirectories(entry.Key))
                     {
-                        //TODO: controllare md5
-                        syncFile(netStream, entry.Key, "UPDATE");
+                        foreach (string f in Directory.GetFiles(d))
+                        {
+                            selectSyncAction(f);
+                        }
                     }
-                    else // file eliminato
+                    foreach (string f in Directory.GetFiles(entry.Key))
                     {
-                        syncDeletefile(netStream, entry.Key);
+                        selectSyncAction(f);
                     }
                 }
                 else
                 {
-                    syncFile(netStream, entry.Key, "CREATE");
+                    selectSyncAction(entry.Key);
                 }
             }
 
@@ -119,12 +122,33 @@ namespace SynchBox_Client
 
             //potrebbe non essere aperta la sessione
             proto_client.EndSessionWrapper(netStream, syncSessionId);
+            flagSession = false;
 
             syncIdServer = proto_client.GetSynchIdWrapper(netStream);
             sessionVars.lastSyncId = syncIdServer;
 
             writeChanges();
             aTimer.Enabled = true;
+        }
+
+        private void selectSyncAction(string path)
+        {
+            if (remoteFiles.ContainsKey(path)) // se contiene la chiave non è un nuovo file
+            {
+                if (File.Exists(path)) // se esiste nel fs, allora vuol dire che è stato modificato
+                {
+                    //TODO: controllare md5
+                    syncFile(netStream, path, "UPDATE");
+                }
+                else // file eliminato
+                {
+                    syncDeletefile(netStream, path);
+                }
+            }
+            else
+            {
+                syncFile(netStream, path, "CREATE");
+            }
         }
 
         private void handlerChanged(object sender, FileSystemEventArgs e)
@@ -247,6 +271,8 @@ namespace SynchBox_Client
 
                         string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
 
+                        Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder)); // creo le directory
+
                         System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
                     }
                 }
@@ -292,6 +318,8 @@ namespace SynchBox_Client
                     proto_client.GetResponseWrapper(netStream, ref getResponse);
 
                     string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+
+                    Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder)); // creo le directory
 
                     System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
                 }
@@ -435,9 +463,10 @@ namespace SynchBox_Client
 
         private void checkBeginSession(NetworkStream netStream)
         {
-            if (sessionVars.lastSyncId == -1 || sessionVars.lastSyncId == syncIdServer)
+            if (flagSession == false && (sessionVars.lastSyncId == -1 || sessionVars.lastSyncId == syncIdServer))
             {
                 syncSessionId = proto_client.BeginSessionWrapper(netStream);
+                flagSession = true;
             }
         }
         private string computeFileHash(string file)
