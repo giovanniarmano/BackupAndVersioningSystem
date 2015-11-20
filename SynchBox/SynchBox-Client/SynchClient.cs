@@ -124,6 +124,10 @@ namespace SynchBox_Client
 
         private void handlerChanged(object sender, FileSystemEventArgs e)
         {
+            if (e.FullPath.CompareTo(sessionVars.path + "\\conf.ini") == 0)
+            {
+                return;
+            }
             if (!editedFiles.ContainsKey(e.FullPath)){
                 editedFiles.Add(e.FullPath, "CHANGE");
             }
@@ -226,8 +230,6 @@ namespace SynchBox_Client
                             fileToGet.fid = entry.Value.fid;
                             fileToGet.rev = entry.Value.rev;
                             getList.fileList.Add(fileToGet);
-                            //TODO: scaricare un file e scriverlo
-                            //System.IO.File.WriteAllText(f, fileScaricato);
                         }
                     }
 
@@ -237,8 +239,8 @@ namespace SynchBox_Client
                     for (int i = 0; i < getList.n; i++)
                     {
                         proto_client.GetResponseWrapper(netStream, ref getResponse);
-                        
-                        //System.IO.File.WriteAllText(getResponse.fileInfo.fid, getResponse.fileDump);
+
+                        System.IO.File.WriteAllText(getResponse.fileInfo.folder + "\\" + getResponse.fileInfo.filename, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
                     }
                 }
 
@@ -268,8 +270,21 @@ namespace SynchBox_Client
                     System.IO.File.Move(f, newName);
                     syncNewfile(netStream, newName, localHash);
 
-                    //TODO: scaricare un file e scriverlo
-                    //System.IO.File.WriteAllText(f, fileScaricato);
+                    proto_client.GetList getList = new proto_client.GetList();
+                    getList.fileList = new List<proto_client.FileToGet>();
+                    proto_client.FileToGet fileToGet = new proto_client.FileToGet();
+
+                    fileToGet.fid = remoteFiles[f].fid;
+                    fileToGet.rev = remoteFiles[f].rev;
+                    getList.fileList.Add(fileToGet);
+                    getList.n = 1;
+
+                    proto_client.GetListWrapper(netStream, ref getList);
+                    proto_client.GetResponse getResponse = new proto_client.GetResponse();
+
+                    proto_client.GetResponseWrapper(netStream, ref getResponse);
+
+                    System.IO.File.WriteAllText(getResponse.fileInfo.folder + "\\" + getResponse.fileInfo.filename, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
                 }
                 //non fare niente, file ok
             }
