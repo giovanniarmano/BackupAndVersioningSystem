@@ -129,7 +129,7 @@
                                 <ColumnDefinition Width="59*"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBox x:Name="local_path" Height="23" Margin="10,10,8.4,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="E:\backup_monitoring" Grid.ColumnSpan="3"/>
+                            <TextBox x:Name="local_path" Height="23" Margin="10,10,8.4,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="C:\Users\giovanni\Desktop\sync" Grid.ColumnSpan="3"/>
                             <Button Click="Button_click_sfoglia" Content="Sfoglia" HorizontalAlignment="Right" Margin="0,49,9.4,0" Width="75" Height="22" VerticalAlignment="Top" Grid.ColumnSpan="3"/>
                         </Grid>
                     </GroupBox>
