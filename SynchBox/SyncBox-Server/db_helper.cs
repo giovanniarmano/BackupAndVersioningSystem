@@ -363,7 +363,7 @@ namespace SyncBox_Server
 
                         //UPDATE SNAPSHOT
                         mycommand.CommandText = @"UPDATE SNAPSHOT
-                                                SET rev = @rev AND syncid = @synchid
+                                                SET rev = @rev , syncid = @synchid
                                                 WHERE uid = @uid
                                                 AND fid = @fid
                                                 ;";
@@ -529,7 +529,12 @@ namespace SyncBox_Server
                         mycommand.Parameters.AddWithValue("@folder", folder);
                         mycommand.Parameters.AddWithValue("@deleted", true);
                         mycommand.Parameters.AddWithValue("@synchsessionid", currentUser.synchsessionid);
-                        
+
+                        int nUpdated = mycommand.ExecuteNonQuery();
+                        if (nUpdated != 1)
+                            throw new Exception("No Row updated! Rollback");
+
+
                         //UPDATE SNAPSHOT
 
                         mycommand.CommandText = @"SELECT MAX(syncid)
@@ -554,7 +559,7 @@ namespace SyncBox_Server
 
                         //UPDATE SNAPSHOT
                         mycommand.CommandText = @"UPDATE SNAPSHOT
-                                                SET rev = @rev AND syncid = @synchid
+                                                SET rev = @rev , syncid = @synchid
                                                 WHERE uid = @uid
                                                 AND fid = @fid
                                                 ;";
@@ -564,7 +569,7 @@ namespace SyncBox_Server
                         mycommand.Parameters.AddWithValue("@rev", rev);
                         mycommand.Parameters.AddWithValue("@synchid", synchid);
 
-                        int nUpdated = mycommand.ExecuteNonQuery();
+                        nUpdated = mycommand.ExecuteNonQuery();
                         if (nUpdated != 1)
                             throw new Exception("No Row updated! Rollback");
 
