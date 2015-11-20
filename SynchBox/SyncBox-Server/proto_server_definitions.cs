@@ -200,6 +200,21 @@ namespace SyncBox_Server
             [ProtoMember(2)]
             public int rev;
 
+            [ProtoMember(3)]
+            public string filename;
+
+            [ProtoMember(4)]
+            public string folder;
+
+            [ProtoMember(5)]
+            public DateTime timestamp;
+
+            [ProtoMember(6)]
+            public string md5;
+
+            [ProtoMember(7)]
+            public Boolean deleted;
+
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("FileToGet");
@@ -207,6 +222,16 @@ namespace SyncBox_Server
                 str.Append(fid);
                 str.Append("|rev->");
                 str.Append(rev);
+                str.Append("|filename->");
+                str.Append(filename);
+                str.Append("|folder->");
+                str.Append(folder);
+                str.Append("|timestamp->");
+                str.Append(timestamp.ToString());
+                str.Append("|md5->");
+                str.Append(md5);
+                str.Append("|folder->");
+                str.Append(folder);
                 str.Append("|");
                 return str.ToString();
             }

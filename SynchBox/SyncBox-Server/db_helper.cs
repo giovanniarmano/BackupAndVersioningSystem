@@ -605,11 +605,14 @@ namespace SyncBox_Server
                 cnn.Open();
                 using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
                 {
-                    mycommand.CommandText = @"SELECT FILES_DUMP.filedump
-                                            FROM FILES_DUMP
+                    mycommand.CommandText = @"SELECT HISTORY.fid, HISTORY.rev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp ,HISTORY.md5,HISTORY.deleted, FILES_DUMP.filedump
+                                            FROM FILES_DUMP,HISTORY
                                             WHERE FILES_DUMP.uid = @uid
                                             AND FILES_DUMP.fid = @fid
                                             AND FILES_DUMP.rev = @rev
+                                            AND FILES_DUMP.uid = HISTORY.uid
+                                            AND FILES_DUMP.fid = HISTORY.fid
+                                            AND FILES_DUMP.rev = HISTORY.rev
                                             ;";
                     mycommand.Prepare();
                     mycommand.Parameters.AddWithValue("@uid", uid);
@@ -629,14 +632,19 @@ namespace SyncBox_Server
 
                     foreach (DataRow row in dt.Rows)
                     {
-                        //var values = row.ItemArray;
+                        var values = row.ItemArray;
 
                         getResponse = new proto_server.GetResponse()
                         {
                             fileInfo = new proto_server.FileToGet()
                             {
                                 fid = fid,
-                                rev = rev
+                                rev = rev,
+                                filename = values[2].ToString(),
+                                folder = values[3].ToString(),
+                                timestamp = DateTime.Parse(values[4].ToString()),
+                                md5 = values[5].ToString(),
+                                deleted = Boolean.Parse(values[6].ToString())
                             },
                             fileDump = (byte[])row["filedump"]
                         };
