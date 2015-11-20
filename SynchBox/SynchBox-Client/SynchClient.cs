@@ -97,9 +97,9 @@ namespace SynchBox_Client
 
             foreach (KeyValuePair<string, string> entry in editedFiles)
             {
-                if (remoteFiles.ContainsKey(entry.Value)) // se contiene la chiave non è un nuovo file
+                if (remoteFiles.ContainsKey(entry.Key)) // se contiene la chiave non è un nuovo file
                 {
-                    if (File.Exists(entry.Value)) // se esiste nel fs, allora vuol dire che è stato modificato
+                    if (File.Exists(entry.Key)) // se esiste nel fs, allora vuol dire che è stato modificato
                     {
                         //TODO: controllare md5
                         syncFile(netStream, entry.Key, "UPDATE");
