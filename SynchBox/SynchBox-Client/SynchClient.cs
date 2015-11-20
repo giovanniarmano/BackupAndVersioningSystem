@@ -31,6 +31,7 @@ namespace SynchBox_Client
         NetworkStream netStream;
         MainWindow.SessionVars sessionVars;
         int syncIdServer; // TODO: da finire di valorizzare
+        int syncSessionId = -1;
 
         FileSystemWatcher watcher;
         private static System.Timers.Timer aTimer;
@@ -71,16 +72,17 @@ namespace SynchBox_Client
             sessionVars.lastSyncId = syncIdServer;
             populate_dictionary(netStream);
 
-            int syncIdTemporaneo = sessionVars.lastSyncId;
+            int syncSessionIdTemporaneo = syncSessionId;
 
             findDifference(sessionVars.path);
 
-            if (sessionVars.lastSyncId != syncIdTemporaneo) // se ho modificato qualcosa chiudo e aggiorno il lastSyncId
+            if (syncSessionId != syncSessionIdTemporaneo) // se ho modificato qualcosa chiudo e aggiorno il lastSyncId
             {
-                proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
-                syncIdServer = sessionVars.lastSyncId;
-                writeChanges();
+                proto_client.EndSessionWrapper(netStream, syncSessionId);
             }
+            syncIdServer = proto_client.GetSynchIdWrapper(netStream);
+            sessionVars.lastSyncId = syncIdServer;
+            writeChanges();
         }
 
         private void SyncronizeChanges(object sender, ElapsedEventArgs e)
@@ -116,8 +118,11 @@ namespace SynchBox_Client
             editedFiles.Clear();
 
             //potrebbe non essere aperta la sessione
-            proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
-            syncIdServer = sessionVars.lastSyncId;
+            proto_client.EndSessionWrapper(netStream, syncSessionId);
+
+            syncIdServer = proto_client.GetSynchIdWrapper(netStream);
+            sessionVars.lastSyncId = syncIdServer;
+
             writeChanges();
             aTimer.Enabled = true;
         }
@@ -152,7 +157,7 @@ namespace SynchBox_Client
          */
         public int getInitInformation(MainWindow.SessionVars sessionVars)
         {
-            string filePath = ".\\conf.ini";
+            string filePath = "\\conf.ini";
             if (File.Exists(sessionVars.path + filePath))
             {
                 using (StreamReader r = new StreamReader(sessionVars.path + filePath))
@@ -240,7 +245,9 @@ namespace SynchBox_Client
                     {
                         proto_client.GetResponseWrapper(netStream, ref getResponse);
 
-                        System.IO.File.WriteAllText(getResponse.fileInfo.folder + "\\" + getResponse.fileInfo.filename, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                        string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+
+                        System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
                     }
                 }
 
@@ -284,7 +291,9 @@ namespace SynchBox_Client
 
                     proto_client.GetResponseWrapper(netStream, ref getResponse);
 
-                    System.IO.File.WriteAllText(getResponse.fileInfo.folder + "\\" + getResponse.fileInfo.filename, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                    string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+
+                    System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
                 }
                 //non fare niente, file ok
             }
@@ -361,27 +370,33 @@ namespace SynchBox_Client
         {
             int i = 0;
             string json;
+            bool add = false;
 
-            string filePath = ".\\conf.ini";
+            string filePath = "\\conf.ini";
+            string fileName = sessionVars.path + filePath;
             if (File.Exists(sessionVars.path + filePath))
             {
+                List<Item> items;
                 using (StreamReader r = new StreamReader(sessionVars.path + filePath))
                 {
                     json = r.ReadToEnd();
-                    List<Item> items = JsonConvert.DeserializeObject<List<Item>>(json);
-                    for (i = 0; i < items.Count; i++)
+                    items = JsonConvert.DeserializeObject<List<Item>>(json);
+                    for (i = 0; i < items.Count && !add; i++)
                     {
                         if (sessionVars.uid_str.CompareTo(items[i].uid) == 0)
                         {
                             items[i].syncId = sessionVars.lastSyncId.ToString();
-
-                            json = JsonConvert.SerializeObject(items.ToArray());
-                            System.IO.File.WriteAllText(sessionVars.path + filePath, json);
-                            return;
+                            add = true;
                         }
-
+                    }
+                    if(!add){
+                        items[i].syncId = sessionVars.lastSyncId.ToString();
                     }
                 }
+                
+                json = JsonConvert.SerializeObject(items.ToArray());
+                System.IO.File.WriteAllText(sessionVars.path + filePath, json);
+                return;
             }
             else
             {
@@ -422,7 +437,7 @@ namespace SynchBox_Client
         {
             if (sessionVars.lastSyncId == -1 || sessionVars.lastSyncId == syncIdServer)
             {
-                sessionVars.lastSyncId = proto_client.BeginSessionWrapper(netStream);
+                syncSessionId = proto_client.BeginSessionWrapper(netStream);
             }
         }
         private string computeFileHash(string file)
