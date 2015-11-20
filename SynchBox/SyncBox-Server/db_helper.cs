@@ -259,6 +259,105 @@ namespace SyncBox_Server
             return addOk;
         }
 
+        public static proto_server.lock_c Lock(ref proto_server.lock_c lock_c, ref proto_server.login_c currentUser)
+        {
+            proto_server.lock_c lock_response = new proto_server.lock_c();
+            lock_response.succesfull = false;
+
+            SQLiteConnection cnn = new SQLiteConnection(dbConnection);
+            cnn.Open();
+            using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
+            {
+                try
+                {
+                    //BEGIN TRANSACTION
+                    using (var transaction = cnn.BeginTransaction())
+                    {
+                        //GET HISTORY INFORMATION
+                        mycommand.CommandText = @"SELECT USERS.lock
+                                                FROM USERS
+                                                WHERE USERS.uid=@uid 
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        
+                        SQLiteDataReader reader = mycommand.ExecuteReader();
+                        DataTable dt = new DataTable();
+                        dt.Load(reader);
+                        DataRow row = dt.Rows[0];
+
+                        int lock_db = -1;
+
+                        try
+                        {
+                            var values = row.ItemArray;
+                            lock_db = int.Parse(values[0].ToString());
+                        }
+                        catch (Exception e)
+                        {
+                            Logging.WriteToLog("ERROR PARSING!in lock" + e.ToString());
+                            throw;
+                        }                 
+                        
+                        mycommand.CommandText = @"UPDATE USERS
+                                                SET lock = @lock
+                                                WHERE uid = @uid
+                                                ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        
+                        switch (lock_c.lockType)
+                        {
+                            case (byte)proto_server.CmdType.LockAcquire:
+                                if (lock_db == 1)
+                                {
+                                    lock_response.succesfull = false;
+                                }
+                                else
+                                {
+                                    //query acquire lock
+                                    mycommand.Parameters.AddWithValue("@lock", 1);
+                                    lock_response.succesfull = true;
+                                }
+                                break;
+
+                            case (byte)proto_server.CmdType.LockRelease:
+                                if (lock_db == 0)
+                                {
+                                    lock_response.succesfull = false;
+                                }
+                                else
+                                {
+                                    //release lock query
+                                    mycommand.Parameters.AddWithValue("@lock", 0);
+                                    lock_response.succesfull = true;
+                                }
+                                break;
+                        }
+
+                        if (lock_response.succesfull == true)
+                        {
+                            int nUpdated = mycommand.ExecuteNonQuery();
+                            if (nUpdated != 1)
+                            {
+                                transaction.Rollback();
+                                lock_response.succesfull = false;
+                            }
+                        }
+                        //END TRANSACTION
+                        transaction.Commit();
+
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logging.WriteToLog(e.ToString());
+                }
+                return lock_response;
+            }
+        }
+        
+
 
         //UPDATE
 

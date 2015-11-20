@@ -36,6 +36,7 @@ namespace SynchBox_Client
                 Directory.CreateDirectory(basepath + temp_rand);
                 Directory.CreateDirectory(basepath + temp_rand_restore);
 
+                Logging.WriteToLog("AcquireLock:"+ LockAcquireWrapper(netStream).ToString());
                 //folder /temp/RAND/
                 int session = BeginSessionWrapper(netStream);
                 //Begin Session
@@ -83,6 +84,11 @@ namespace SynchBox_Client
 
                 //end session
                 EndSessionWrapper(netStream, session);
+                Logging.WriteToLog("Lock:" + LockReleaseWrapper(netStream).ToString());
+
+
+                Logging.WriteToLog("AcquireLock:" + LockAcquireWrapper(netStream).ToString());
+                Logging.WriteToLog("AcquireLock:" + LockAcquireWrapper(netStream).ToString());
 
                 session = BeginSessionWrapper(netStream);
                 //begin session
@@ -132,6 +138,8 @@ namespace SynchBox_Client
                 }
 
                 EndSessionWrapper(netStream, session);
+                Logging.WriteToLog("ReleaseLock:" + LockReleaseWrapper(netStream).ToString());
+                Logging.WriteToLog("ReleaseLock:" + LockReleaseWrapper(netStream).ToString());
 
                 //end session
 

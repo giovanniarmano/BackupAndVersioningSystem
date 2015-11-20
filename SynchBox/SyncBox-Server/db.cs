@@ -89,7 +89,7 @@ namespace SyncBox_Server
                             CREATE TABLE HISTORY (uid INTEGER NOT NULL, fid INTEGER NOT NULL, rev INTEGER NOT NULL, filename TEXT, folder TEXT, timestamp DATETIME, md5 TEXT, deleted BOOLEAN, synchsessionid INTEGER, PRIMARY KEY (uid, fid, rev));
 
                             -- Table: USERS
-                            CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL);
+                            CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL, [lock] INTEGER  NOT NULL);
 
                             -- Table: FILES_DUMP
                             CREATE TABLE [FILES_DUMP] (

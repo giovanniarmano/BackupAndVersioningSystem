@@ -216,6 +216,8 @@ namespace SynchBox_Client
             return;
         }
 
+
+
         /// <summary>
         /// DA CHIAMARE N Volte solo dopo GetListWrapper. La GetResponse deve essere passata per riferimento dal chiamante(anche vuota)
         /// </summary>
@@ -226,6 +228,44 @@ namespace SynchBox_Client
             getResponse = Serializer.DeserializeWithLengthPrefix<GetResponse>(netStream, PrefixStyle.Base128);
             return;
         }
-        
+
+        public static bool LockAcquireWrapper(NetworkStream netStream)
+        {
+            messagetype_c mt = new messagetype_c();
+            mt.msgtype = (Byte)CmdType.Lock;
+
+            Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+            mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+            if (mt.accepted == false) throw new Exception("Message type not accepted");
+
+            lock_c lock_c = new lock_c();
+            lock_c.lockType = (byte)CmdType.LockAcquire;
+
+            Serializer.SerializeWithLengthPrefix<lock_c>(netStream, lock_c, PrefixStyle.Base128);
+            lock_c lock_response = Serializer.DeserializeWithLengthPrefix<lock_c>(netStream, PrefixStyle.Base128);
+
+            return lock_response.succesfull;
+        }
+
+        public static bool LockReleaseWrapper(NetworkStream netStream)
+        {
+            messagetype_c mt = new messagetype_c();
+            mt.msgtype = (Byte)CmdType.Lock;
+
+            Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+            mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+            if (mt.accepted == false) throw new Exception("Message type not accepted");
+
+            lock_c lock_c = new lock_c();
+            lock_c.lockType = (byte)CmdType.LockRelease;
+
+            Serializer.SerializeWithLengthPrefix<lock_c>(netStream, lock_c, PrefixStyle.Base128);
+            lock_c lock_response = Serializer.DeserializeWithLengthPrefix<lock_c>(netStream, PrefixStyle.Base128);
+
+            return lock_response.succesfull;
+        }
+
     }
 }

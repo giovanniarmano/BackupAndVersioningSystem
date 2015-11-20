@@ -11,8 +11,28 @@ namespace SynchBox_Client
         ///////////STRUCT DEFINITIONS /////////////////
 
         //TODO Synch with client!!
-        enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add, BeginSession, EndSession, GetSynchId };
+        public enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add, BeginSession, EndSession, GetSynchId, Lock, LockAcquire, LockRelease };
 
+        [ProtoContract]
+        public class lock_c
+        {
+            [ProtoMember(1)]
+            public byte lockType; //LockAcquire or Release
+
+
+            [ProtoMember(2)]
+            public bool succesfull;
+
+            public string ToString()
+            {
+                StringBuilder str = new StringBuilder("lock_c");
+                str.Append("|lockType->");
+                str.Append(lockType);
+                str.Append("|");
+                return str.ToString();
+            }
+
+        }
 
         [ProtoContract]
         public class messagetype_c
@@ -478,5 +498,6 @@ namespace SynchBox_Client
 
         /////////////////--END--///////////////////////
         ///////////STRUCT DEFINITIONS /////////////////
+
     }
 }

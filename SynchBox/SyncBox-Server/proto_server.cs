@@ -131,6 +131,13 @@ namespace SyncBox_Server
                         manage_GetSynchId(netStream, ref currentUser);
                         break;
 
+                    case (byte)CmdType.Lock:
+                        Logging.WriteToLog("manage Lock CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_Lock(netStream, ref currentUser);
+                        break;
+
                         default:
                         Logging.WriteToLog("manage DEFAULT CASE ... (panic!!!)");
                         break;
@@ -141,6 +148,13 @@ namespace SyncBox_Server
                 Logging.WriteToLog(ex.ToString());
             }
             }
+        }
+
+        private static void manage_Lock(NetworkStream netStream, ref login_c currentUser)
+        {
+            lock_c lock_c = Serializer.DeserializeWithLengthPrefix<lock_c>(netStream, PrefixStyle.Base128);
+            lock_c lock_c_response = db.Lock(ref lock_c, ref currentUser);
+            Serializer.SerializeWithLengthPrefix<lock_c>(netStream, lock_c_response, PrefixStyle.Base128);
         }
 
         private static void manage_GetSynchId(NetworkStream netStream, ref login_c currentUser)
@@ -388,7 +402,7 @@ namespace SyncBox_Server
             if (dt.Rows.Count == 0)
             {
                 string md5pwd = CalculateMD5Hash(login_r.password);
-                string sqlupdate = "insert into USERS (user,md5) values ('" + login_r.username + "','" + md5pwd + "');";
+                string sqlupdate = "insert into USERS (user,md5,lock) values ('" + login_r.username + "','" + md5pwd + "','0');";
 
                 int row_updated = db.ExecuteNonQuery(sqlupdate);
 
