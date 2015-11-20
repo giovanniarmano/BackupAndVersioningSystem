@@ -85,11 +85,11 @@ namespace SynchBox_Client
 
         private void SyncronizeChanges(object sender, ElapsedEventArgs e)
         {
-            aTimer.Enabled = false;
+            
             if(editedFiles.Count == 0){
-                aTimer.Enabled = true;
                 return;
             }
+            aTimer.Enabled = false;
 
             clientServerAlignment();
 
@@ -99,6 +99,7 @@ namespace SynchBox_Client
                 {
                     if (File.Exists(entry.Value)) // se esiste nel fs, allora vuol dire che è stato modificato
                     {
+                        //TODO: controllare md5
                         syncFile(netStream, entry.Key, "UPDATE");
                     }
                     else // file eliminato
@@ -114,6 +115,7 @@ namespace SynchBox_Client
 
             editedFiles.Clear();
 
+            //potrebbe non essere aperta la sessione
             proto_client.EndSessionWrapper(netStream, sessionVars.lastSyncId);
             syncIdServer = sessionVars.lastSyncId;
             writeChanges();
@@ -175,10 +177,10 @@ namespace SynchBox_Client
 
             proto_client.ListResponse remoteFileList;
 
-            //remoteFileList = proto_client.ListRequestLastWrapper(netStream);
+            remoteFileList = proto_client.ListRequestLastWrapper(netStream);
             //Potrebbe bastare una listRequestLast??
 
-            remoteFileList = proto_client.ListRequestAllWrapper(netStream);
+            //remoteFileList = proto_client.ListRequestAllWrapper(netStream);
             if (remoteFileList.fileList != null) { 
                 foreach (proto_client.FileListItem fileInfo in remoteFileList.fileList)
                 {
@@ -220,10 +222,10 @@ namespace SynchBox_Client
                     {
                         if(entry.Value.deleted==false && !File.Exists(entry.Key)){
                             proto_client.FileToGet fileToGet = new proto_client.FileToGet();
-                                getList.n++;
-                                fileToGet.fid = entry.Value.fid;
-                                fileToGet.rev = entry.Value.rev;
-                                getList.fileList.Add(fileToGet);
+                            getList.n++;
+                            fileToGet.fid = entry.Value.fid;
+                            fileToGet.rev = entry.Value.rev;
+                            getList.fileList.Add(fileToGet);
                             //TODO: scaricare un file e scriverlo
                             //System.IO.File.WriteAllText(f, fileScaricato);
                         }
