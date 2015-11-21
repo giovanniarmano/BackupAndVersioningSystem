@@ -837,9 +837,11 @@ namespace SyncBox_Server
                 cnn.Open();
                 using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
                 {
-                    mycommand.CommandText = @"SELECT HISTORY.fid, HISTORY.rev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp ,HISTORY.md5,HISTORY.deleted
-                                            FROM HISTORY
-                                            WHERE HISTORY.uid = @uid                                            ;";
+                    mycommand.CommandText = @"SELECT H1.fid, H1.rev, H1.filename, H1.folder, datetime(H1.timestamp, 'localtime') as timestamp ,H1.md5, H1.deleted
+                                            FROM HISTORY H1
+                                            WHERE H1.uid = @uid
+                                            ORDER BY H1.folder
+                                            ;";
                     mycommand.Prepare();
                     mycommand.Parameters.AddWithValue("@uid", uid);
 

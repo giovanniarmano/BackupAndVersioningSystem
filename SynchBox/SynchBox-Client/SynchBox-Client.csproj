@@ -76,6 +76,7 @@
     <Compile Include="proto_client_wrapper.cs" />
     <Compile Include="SynchClient.cs" />
     <Compile Include="SyncSocketClient.cs" />
+    <Compile Include="versioning.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

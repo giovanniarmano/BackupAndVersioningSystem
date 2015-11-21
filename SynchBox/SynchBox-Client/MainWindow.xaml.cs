@@ -17,6 +17,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Windows.Forms;
 using System.IO;
+using System.Text.RegularExpressions;
 //using System.Windows;
 
 namespace SynchBox_Client
@@ -385,10 +386,10 @@ namespace SynchBox_Client
                 return;
             }
 
-            initializeSyncParam(); // forse inutile
+            initializeSyncParam();
             synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
 
-            //ShowFileSystem(treeView_1, path);
+            //ShowRemoteFileSystem(sessionVars.socketClient.getStream());
             
         }
 
@@ -406,47 +407,10 @@ namespace SynchBox_Client
 
 
 
-        //Ingresso in sincronizzazione
-        
-        private void startSyncButton() {
-              
-            //Controllare la validità dei campi (folder inserita)
-            //Eventualmente prima, al login di un nuovo user, mi salvo la cartella precedente!
-            //Ovvero: se primo login, controllo la cartella. Se secondo login carico da un file config la cartella e il massimo che concedo all'utente è un MOVE della cartella!
-
-            //chiamo la classe Synch_Client in maniera asincrona, la sgancio e solo il cancellation token si occuperà eventuamente di fermare la sincronizzazione
-            //nel dettaglio passo sessionParam
-
-
-            
-        }
-
-
         private void button_Click_2(object sender, RoutedEventArgs e)
         {
             //Test List protobuf
             proto_client.do_test(sessionVars.socketClient.getStream(), 5, sessionVars.cts.Token);
-                        
-
-        }
-
-        private TreeViewItem CreateDirectoryNode(DirectoryInfo di)
-        {
-            var directoryNode = new TreeViewItem() { Header = di.Name, Tag = di.FullName };
-            directoryNode.MouseLeftButtonUp += directoryTreeItem_Selected;
-
-            foreach (var directory in di.GetDirectories())
-            {
-                directoryNode.Items.Add(CreateDirectoryNode(directory));
-                
-            }
-            /* // mostrare anche i file
-            foreach (var file in di.GetFiles())
-            {
-                directoryNode.Items.Add(file.Name);
-            }*/
-
-            return directoryNode;
         }
 
         private TreeViewItem CreateFileNode(DirectoryInfo di)
@@ -463,6 +427,65 @@ namespace SynchBox_Client
             return fileNode;
         }
 
+        private void ShowRemoteFileSystem(NetworkStream networkStream)
+        {
+            treeView_1.Items.Clear();
+
+            proto_client.ListResponse remoteFileList;
+            remoteFileList = proto_client.ListRequestLastWrapper(networkStream);
+
+            List<proto_client.FileListItem> SortedList = remoteFileList.fileList.OrderBy(o => o.folder).ToList(); //controllare che non si possa fare nella query lato server
+            Lookup<string, proto_client.FileListItem> lookup = (Lookup<string, proto_client.FileListItem>)SortedList.ToLookup(p => p.folder, p => p);
+
+            var keys = lookup.Select(g => g.Key).ToList();
+
+            
+            List<string[]> listTmp = new List<string[]>();
+            List<string> listString = new List<string>();
+
+            for (int i = 0; i < keys.Count; i++)
+            {
+                string cartella = keys[i];
+                string[] source = cartella.Split(new Char[] { '\\' });
+                listString = source.ToList();
+                listString.Add(cartella);
+                listTmp.Add(listString.ToArray());
+            }
+            Lookup<int, string[]> directoryDept = (Lookup<int, string[]>)listTmp.ToLookup(p => p.Length-3 , p => p);
+
+            treeView_1.Items.Add(CreateDirectoryNode(directoryDept, 0));
+
+        }
+
+        private object CreateDirectoryNode(Lookup<int, string[]> directoryDept, int p)
+        {
+            var directoryNode = new TreeViewItem();
+            foreach (var directory in directoryDept[p])
+            {
+                directoryNode = new TreeViewItem() { Header = directory[p], Tag = directory[directory.Length-1]};
+                directoryNode.MouseLeftButtonUp += directoryTreeItem_Selected;
+                foreach (var subdirectory in directory)
+                {
+                    directoryNode.Items.Add(CreateDirectoryNode(directoryDept, p + 1));
+                }
+            }
+
+            return directoryNode;
+        }
+
+        private TreeViewItem CreateDirectoryNode(DirectoryInfo di)
+        {
+            var directoryNode = new TreeViewItem() { Header = di.Name, Tag = di.FullName };
+            directoryNode.MouseLeftButtonUp += directoryTreeItem_Selected;
+
+            foreach (var directory in di.GetDirectories())
+            {
+                directoryNode.Items.Add(CreateDirectoryNode(directory));
+
+            }
+
+            return directoryNode;
+        }
 
         private void ShowFileSystem(System.Windows.Controls.TreeView treeView, string path)
         {
@@ -472,9 +495,9 @@ namespace SynchBox_Client
             treeView.Items.Add(CreateDirectoryNode(rootDirectoryInfo));
         }
 
-        //ERRORE: viene riciamata a cascata e sovrascrive sempre con quelle della cartella root
         private void directoryTreeItem_Selected(object sender, RoutedEventArgs e)
         {
+            e.Handled = true;
             TreeViewItem item = sender as TreeViewItem;
             string path = item.Tag.ToString();
             var rootDirectoryInfo = new DirectoryInfo(path);
@@ -487,13 +510,26 @@ namespace SynchBox_Client
                 fileNode.MouseLeftButtonUp += treeItem_Selected;
                 treeView_2.Items.Add(fileNode);
             }
-
         }
 
         //generare il terzo blocco con tutte le revisione di quel file
         private void treeItem_Selected(object sender, MouseButtonEventArgs e)
         {
-            //throw new NotImplementedException();
+            e.Handled = true;
+            TreeViewItem item = sender as TreeViewItem;
+            string path = item.Tag.ToString();
+            var fileInfo = new FileInfo(path);
+
+            treeView_3.Items.Clear();
+
+            /*
+
+            foreach (var file in rootDirectoryInfo.GetFiles())
+            {
+                var fileNode = new TreeViewItem() { Header = file.Name };
+                fileNode.MouseLeftButtonUp += treeItem_Selected;
+                treeView_3.Items.Add(fileNode);
+            }*/
         }
 
     }

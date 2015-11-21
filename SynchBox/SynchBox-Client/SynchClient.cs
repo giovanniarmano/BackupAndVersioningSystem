@@ -30,7 +30,7 @@ namespace SynchBox_Client
 
         NetworkStream netStream;
         MainWindow.SessionVars sessionVars;
-        int syncIdServer; // TODO: da finire di valorizzare
+        int syncIdServer;
         int syncSessionId = -1;
         bool flagSession = false;
 
@@ -46,7 +46,11 @@ namespace SynchBox_Client
                 syncIdServer = proto_client.GetSynchIdWrapper(netStream);
                 if (sessionVars.lastSyncId == -1  || sessionVars.lastSyncId < syncIdServer)
                 {
-                    clientServerAlignment();
+                    if (proto_client.LockAcquireWrapper(netStream))
+                    {
+                        clientServerAlignment();
+                        proto_client.LockReleaseWrapper(netStream);
+                    }
                 }
 
                 watch(); // inizio il monitoraggio delle cartelle
@@ -95,18 +99,19 @@ namespace SynchBox_Client
             }
             aTimer.Enabled = false;
 
+            
+            if (!proto_client.LockAcquireWrapper(netStream))
+            {
+                return;
+            }
+
             clientServerAlignment();
 
             foreach (KeyValuePair<string, string> entry in editedFiles)
             {
                 if(Directory.Exists(entry.Key)){
-                    foreach (string d in Directory.GetDirectories(entry.Key))
-                    {
-                        foreach (string f in Directory.GetFiles(d))
-                        {
-                            selectSyncAction(f);
-                        }
-                    }
+                    selectActionFolder(entry.Key);
+
                     foreach (string f in Directory.GetFiles(entry.Key))
                     {
                         selectSyncAction(f);
@@ -126,9 +131,22 @@ namespace SynchBox_Client
 
             syncIdServer = proto_client.GetSynchIdWrapper(netStream);
             sessionVars.lastSyncId = syncIdServer;
-
             writeChanges();
+            
+            proto_client.LockReleaseWrapper(netStream);
             aTimer.Enabled = true;
+        }
+
+        private void selectActionFolder(string p)
+        {
+            foreach (string d in Directory.GetDirectories(p))
+            {
+                foreach (string f in Directory.GetFiles(d))
+                {
+                    selectSyncAction(f);
+                }
+                selectActionFolder(d);
+            }
         }
 
         private void selectSyncAction(string path)
@@ -446,11 +464,12 @@ namespace SynchBox_Client
         {
             watcher = new FileSystemWatcher();
             watcher.Path = sessionVars.path;
-            watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+            watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.Attributes;
             watcher.Filter = "*.*";
             watcher.Changed += new FileSystemEventHandler(handlerChanged);
             watcher.Created += new FileSystemEventHandler(handlerChanged);
             watcher.Deleted += new FileSystemEventHandler(handlerChanged);
+            watcher.Renamed += new RenamedEventHandler(handlerChanged);
             watcher.EnableRaisingEvents = true;
 
             aTimer = new System.Timers.Timer(5000); //5 secs interval
