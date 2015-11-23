@@ -78,54 +78,79 @@ namespace SyncBox_Server
 
             string sql = @"
                             --
-                            -- File generated with SQLiteStudio v3.0.6 on lun ott 12 20:45:25 2015
+                            -- File generated with SQLiteStudio v3.0.6 on lun nov 23 17:17:25 2015
                             --
                             -- Text encoding used: windows-1252
                             --
                             PRAGMA foreign_keys = off;
                             BEGIN TRANSACTION;
 
-                            -- Table: HISTORY
-                            CREATE TABLE HISTORY (uid INTEGER NOT NULL, fid INTEGER NOT NULL, rev INTEGER NOT NULL, filename TEXT, folder TEXT, timestamp DATETIME, md5 TEXT, deleted BOOLEAN, synchsessionid INTEGER, PRIMARY KEY (uid, fid, rev));
-
-                            -- Table: USERS
-                            CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL, [lock] INTEGER  NOT NULL);
-
-                            -- Table: FILES_DUMP
-                            CREATE TABLE [FILES_DUMP] (
-
-                                                        [uid] INTEGER  NOT NULL,
-
-                                                        [fid] INTEGER  NOT NULL,
-
-                                                        [rev] INTEGER  NOT NULL,
-
-                                                        [filedump] BLOB  NULL,
-
-                                                        PRIMARY KEY ([uid],[fid],[rev])
-
-                                                        );
-
                             -- Table: SNAPSHOT
                             CREATE TABLE [SNAPSHOT] (
 
-                                                        [uid] INTEGER  NOT NULL,
 
-                                                        [fid] INTEGER  NOT NULL,
 
-                                                        [rev] INTEGER  NULL,
+                                                                                    [uid] INTEGER  NOT NULL,
 
-                                                        [syncid] INTEGER  NULL,
 
-                                                        PRIMARY KEY ([uid],[fid])
 
-                                                        );
+                                                                                    [fid] INTEGER  NOT NULL,
+
+
+
+                                                                                    [rev] INTEGER  NULL,
+
+
+
+                                                                                    [syncid] INTEGER  NULL,
+
+
+
+                                                                                    PRIMARY KEY ([uid],[fid])
+
+
+
+                                                                                    );
+
+                            -- Table: HISTORY
+                            CREATE TABLE HISTORY (uid INTEGER NOT NULL, fid INTEGER NOT NULL, rev INTEGER NOT NULL, filename TEXT, folder TEXT, timestamp DATETIME, md5 TEXT, deleted BOOLEAN, synchsessionid INTEGER, dir BOOLEAN, folder_id TEXT, PRIMARY KEY (uid, fid, rev));
 
                             -- Table: SYNCH_SESSION
                             CREATE TABLE SYNCH_SESSION (uid INTEGER NOT NULL, synchsessionid INTEGER NOT NULL, timestamp DATETIME, n_added INTEGER, n_updated INTEGER, n_deleted INTEGER, PRIMARY KEY (uid, synchsessionid));
 
+                            -- Table: FILES_DUMP
+                            CREATE TABLE [FILES_DUMP] (
+
+
+
+                                                                                    [uid] INTEGER  NOT NULL,
+
+
+
+                                                                                    [fid] INTEGER  NOT NULL,
+
+
+
+                                                                                    [rev] INTEGER  NOT NULL,
+
+
+
+                                                                                    [filedump] BLOB  NULL,
+
+
+
+                                                                                    PRIMARY KEY ([uid],[fid],[rev])
+
+
+
+                                                                                    );
+
+                            -- Table: USERS
+                            CREATE TABLE [USERS] ( [uid] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT, [user] TEXT  UNIQUE NOT NULL, [md5] TEXT  NOT NULL, [lock] INTEGER  NOT NULL);
+
                             COMMIT TRANSACTION;
                             PRAGMA foreign_keys = on;
+
 
 
                         ";

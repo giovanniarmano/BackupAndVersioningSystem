@@ -53,6 +53,37 @@ namespace SynchBox_Client
                 AddOk addOk;
                 string folder = temp_rand;
 
+                //create add struct & populate
+                Add add_ = new Add();
+
+                add_.filename ="temp\\";
+                add_.folder = "\\";
+                add_.dir = true;
+
+                addOk = AddWrapper(netStream, ref add_);
+                Logging.WriteToLog(addOk.ToString());
+                
+                //create add struct & populate
+                add_ = new Add();
+
+                add_.filename = rand + "\\";
+                add_.folder = "\\temp\\";
+                add_.dir = true;
+
+                addOk = AddWrapper(netStream, ref add_);
+                Logging.WriteToLog(addOk.ToString());
+                //create add struct & populate
+               
+                add_.filename = rand +  "_restore\\";
+                add_.folder = "\\temp\\";
+                add_.dir = true;
+
+                addOk = AddWrapper(netStream, ref add_);
+                Logging.WriteToLog(addOk.ToString());
+
+
+
+
                 FileListItem[] fileItemList = new FileListItem[16];
                 for (i = 0; i < 16; i++)
                     fileItemList[i] = new FileListItem();
@@ -72,7 +103,7 @@ namespace SynchBox_Client
                     Add add = new Add();
 
                     add.filename = filename;
-                    add.folder = folder;
+                    add.folder = "\\temp" + folder;
                     add.fileDump = File.ReadAllBytes(bff);
 
                     addOk = AddWrapper(netStream, ref add);

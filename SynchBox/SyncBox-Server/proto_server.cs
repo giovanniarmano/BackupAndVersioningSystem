@@ -430,6 +430,12 @@ namespace SyncBox_Server
 
             Logging.WriteToLog("sent - " + login_r.ToString());
 
+            if (currentUser.is_logged == true)
+            {   
+                //initialize db
+                db.RegisterUser(ref currentUser);
+            }
+
         }
 
 
@@ -456,6 +462,8 @@ namespace SyncBox_Server
 
         public static string CalculateMD5Hash(byte[] byteArray)
         {
+            if (byteArray == null)
+                return null;
             // step 1, calculate MD5 hash from input
             MD5 md5 = System.Security.Cryptography.MD5.Create();
             //byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);

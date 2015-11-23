@@ -79,16 +79,18 @@ namespace SyncBox_Server
         }
 
         //TODO Add verifica se il file era presente come cancellato e a questo punto può aggiungerlo!!!
+        //ADD
         public static proto_server.AddOk Add(ref proto_server.Add add, ref proto_server.login_c currentUser)
         {
             //add.filename;add.folder;add.fileDump; uid;
             proto_server.AddOk addOk = new proto_server.AddOk();
 
+             
             //calcolo md5 & campi timestamp
             string md5 = proto_server.CalculateMD5Hash(add.fileDump);
-           // string timestamp = DateTime.Now.ToString();
-           // DateTime dateTime = DateTime.Parse(timestamp);
-
+            // string timestamp = DateTime.Now.ToString();
+            // DateTime dateTime = DateTime.Parse(timestamp);
+            
 
             SQLiteConnection cnn = new SQLiteConnection(dbConnection);
             cnn.Open();
@@ -98,7 +100,7 @@ namespace SyncBox_Server
                 {
                     //BEGIN TRANSACTION
                     using (var transaction = cnn.BeginTransaction())
-                    {
+                    {                        
                         //controllo se filename folder not present
                         //se si lancio eccezione!
                         mycommand.CommandText = @"SELECT COUNT(*)
@@ -106,21 +108,23 @@ namespace SyncBox_Server
                                             WHERE HISTORY.uid = @uid
                                             AND HISTORY.filename = @filename
                                             AND HISTORY.folder = @folder
+                                            AND HISTORY.dir = @dir
                                             ; ";
                         mycommand.Prepare();
                         mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         mycommand.Parameters.AddWithValue("@filename", add.filename);
                         mycommand.Parameters.AddWithValue("@folder", add.folder);
+                        mycommand.Parameters.AddWithValue("@dir", add.dir);
                         object value = mycommand.ExecuteScalar();
 
                         //TODO IMPROVEEEE
                         if (value == null)
                         {
-                            throw new Exception("Querydb: count(*) if filename is present in the folder for uid. RETURN NULL. PANIC");
+                            throw new Exception("Querydb: count(*) if filename/folder is present in the folder for uid. RETURN NULL. PANIC");
                         }
                         if (value.ToString().CompareTo("0") != 0)
                         {
-                            throw new Exception("file already present in db." + add.ToString());
+                            throw new Exception("file/folder already present in db." + add.ToString());
                         }
 
                         //seleziono  max syncid tra uid
@@ -173,24 +177,80 @@ namespace SyncBox_Server
                         //fid
                         int fid = maxfid + 1;
 
+                        int folderid = -1;
+                        
+                            //trovo il folder id 
+                            //seleziono  max fid tra uid
+                            mycommand.CommandText = @"SELECT fid
+                                                        FROM HISTORY
+                                                        WHERE (folder || filename) = @concatfolder
+                                                        AND dir = @dir
+                                                        AND uid = @uid
+                                                        ; ";
+                            mycommand.Prepare();
+                            mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                            mycommand.Parameters.AddWithValue("@concatfolder", add.folder);
+                            mycommand.Parameters.AddWithValue("@dir", true);
+                            value = mycommand.ExecuteScalar();
+
+                            folderid = -2;
+
+                            try
+                            {
+                                folderid = int.Parse(value.ToString());
+                            }
+                            catch (Exception e)
+                            {
+                                folderid = 0;
+                            }
+                            
+                        
 
 
                         //inserisco in HISTORY SNAPSJOT  e FILE_DUMP
                         //Add vuol dire che non ho da fare update ma solo insert
                         //HISTORY INSERT
-                        mycommand.CommandText = @"INSERT INTO HISTORY(uid,fid,rev,filename,folder,timestamp,md5,deleted,synchsessionid)
-                                            VALUES (@uid,@fid,@rev,@filename,@folder,DATETIME('NOW'),@md5,@deleted,@synchsessionid)
+                        mycommand.CommandText = @"INSERT INTO HISTORY(uid,fid,rev,filename,folder,timestamp,md5,deleted,synchsessionid,dir,folder_id)
+                                            VALUES (@uid,@fid,@rev,@filename,@folder,DATETIME('NOW'),@md5,@deleted,@synchsessionid,@dir,@folder_id)
                                                 ; ";
                         mycommand.Prepare();
                         mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
                         mycommand.Parameters.AddWithValue("@fid", fid);
                         mycommand.Parameters.AddWithValue("@rev", 1);
-                        mycommand.Parameters.AddWithValue("@filename", add.filename);
+                        
                         mycommand.Parameters.AddWithValue("@folder", add.folder);
                         //mycommand.Parameters.AddWithValue("@timestamp", timestamp);
-                        mycommand.Parameters.AddWithValue("@md5", md5);
+                        
                         mycommand.Parameters.AddWithValue("@deleted", false);
                         mycommand.Parameters.AddWithValue("@synchsessionid", currentUser.synchsessionid);
+                        mycommand.Parameters.AddWithValue("@dir", add.dir);
+                        mycommand.Parameters.AddWithValue("@folder_id", folderid);
+
+                        switch (add.dir)
+                        {
+                            case true:
+                                //ADD DIRECTORY
+                                mycommand.Parameters.AddWithValue("@md5", null);
+                                //TOCHECK
+                                if (!add.filename[add.filename.Length-1].Equals('\\') ){
+                                    add.filename += '\\';
+                                }
+                                mycommand.Parameters.AddWithValue("@filename", add.filename);
+                                break;
+
+                            case false:
+                                //ADD FILE
+
+                                //DEVO FARE ALTRA QUERY PER capire a che folder faccio riferimento
+                                //lookup di add.folder in concat folder+filename and dir = true in HISTORY
+
+
+
+                                mycommand.Parameters.AddWithValue("@filename", add.filename);
+                                mycommand.Parameters.AddWithValue("@md5", md5);
+                               
+                                break;
+                        }
 
                         //DEBUG HERE!!!
                         int nUpdated = mycommand.ExecuteNonQuery();
@@ -226,24 +286,24 @@ namespace SyncBox_Server
                         if (nUpdated != 1)
                             throw new Exception("No Row updated! Rollback");
                         
+                        if (!add.dir) { 
+                            //FILEDUMP INSERT
+                            mycommand.CommandText = @"INSERT INTO FILES_DUMP(uid,fid,rev,filedump)
+                                                VALUES (@uid,@fid,@rev,@filedump)
+                                                ;";
+                            mycommand.Prepare();
+                            mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                            mycommand.Parameters.AddWithValue("@fid", fid);
+                            mycommand.Parameters.AddWithValue("@rev", 1);
+                            mycommand.Parameters.AddWithValue("@filedump", add.fileDump);
 
-                        //FILEDUMP INSERT
-                        mycommand.CommandText = @"INSERT INTO FILES_DUMP(uid,fid,rev,filedump)
-                                            VALUES (@uid,@fid,@rev,@filedump)
-                                            ;";
-                        mycommand.Prepare();
-                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
-                        mycommand.Parameters.AddWithValue("@fid", fid);
-                        mycommand.Parameters.AddWithValue("@rev", 1);
-                        mycommand.Parameters.AddWithValue("@filedump", add.fileDump);
+                            nUpdated = mycommand.ExecuteNonQuery();
+                            if (nUpdated != 1)
+                                throw new Exception("No Row updated! Rollback");
 
-                        nUpdated = mycommand.ExecuteNonQuery();
-                        if (nUpdated != 1)
-                            throw new Exception("No Row updated! Rollback");
-
-                        addOk.fid = fid;
-                        addOk.rev = 1;
-
+                            addOk.fid = fid;
+                            addOk.rev = 1;
+                        }
                         //END TRANSACTION
                         transaction.Commit();
                     }
@@ -385,7 +445,7 @@ namespace SyncBox_Server
                     using (var transaction = cnn.BeginTransaction())
                     {
                         //GET HISTORY INFORMATION
-                        mycommand.CommandText = @"SELECT HISTORY.fid,MAX( HISTORY.rev) AS maxrev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp
+                        mycommand.CommandText = @"SELECT HISTORY.fid,MAX( HISTORY.rev) AS maxrev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp, dir , folder_id
                                                 FROM HISTORY
                                                 WHERE HISTORY.fid=@fid 
                                                 AND HISTORY.uid=@uid 
@@ -402,7 +462,8 @@ namespace SyncBox_Server
                         DataRow row = dt.Rows[0];
 
                         int maxrev; string filename; string folder; DateTime timestamp;
-
+                        bool dir;
+                        int folder_id;
                         try
                         {
                             var values = row.ItemArray;
@@ -411,6 +472,8 @@ namespace SyncBox_Server
                             filename = values[2].ToString();
                             folder = values[3].ToString();
                             timestamp = DateTime.Parse(values[4].ToString());
+                            dir = bool.Parse(values[5].ToString());
+                            folder_id = int.Parse(values[6].ToString());
                         }
                         catch (Exception e)
                         {
@@ -421,8 +484,8 @@ namespace SyncBox_Server
 
                         //INSERT IN HISTORY
 
-                        mycommand.CommandText = @"INSERT INTO HISTORY(uid, fid, rev, filename, folder, timestamp, md5 ,deleted, synchsessionid)
-                                                VALUES(@uid, @fid, @rev, @filename, @folder ,DATETIME('NOW'),@md5,@deleted,@synchsessionid)
+                        mycommand.CommandText = @"INSERT INTO HISTORY(uid, fid, rev, filename, folder, timestamp, md5 ,deleted, synchsessionid,dir,folder_id)
+                                                VALUES(@uid, @fid, @rev, @filename, @folder ,DATETIME('NOW'),@md5,@deleted,@synchsessionid,@dir,@folder_id)
                                                 ; ";
                         mycommand.Prepare();
                         mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
@@ -433,6 +496,8 @@ namespace SyncBox_Server
                         mycommand.Parameters.AddWithValue("@md5", md5);
                         mycommand.Parameters.AddWithValue("@deleted", false);
                         mycommand.Parameters.AddWithValue("@synchsessionid", currentUser.synchsessionid);
+                        mycommand.Parameters.AddWithValue("@dir", dir);
+                        mycommand.Parameters.AddWithValue("@folder_id", folder_id);
 
                         int nUpdated = mycommand.ExecuteNonQuery();
                         if (nUpdated != 1)
@@ -581,7 +646,7 @@ namespace SyncBox_Server
                     using (var transaction = cnn.BeginTransaction())
                     {
                         //GET HISTORY INFORMATION
-                        mycommand.CommandText = @"SELECT HISTORY.fid,MAX( HISTORY.rev) AS maxrev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp
+                        mycommand.CommandText = @"SELECT HISTORY.fid,MAX( HISTORY.rev) AS maxrev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp, dir, folder_id
                                                 FROM HISTORY
                                                 WHERE HISTORY.fid=@fid 
                                                 AND HISTORY.uid=@uid 
@@ -598,6 +663,8 @@ namespace SyncBox_Server
                         DataRow row = dt.Rows[0];
 
                         int maxrev; string filename; string folder; DateTime timestamp;
+                        bool dir;
+                        int folder_id;
 
                         try
                         {
@@ -607,6 +674,8 @@ namespace SyncBox_Server
                             filename = values[2].ToString();
                             folder = values[3].ToString();
                             timestamp = DateTime.Parse(values[4].ToString());
+                            dir = bool.Parse(values[5].ToString());
+                            folder_id = int.Parse(values[6].ToString());
                         }
                         catch (Exception e)
                         {
@@ -617,8 +686,8 @@ namespace SyncBox_Server
 
                         //INSERT IN HISTORY
 
-                        mycommand.CommandText = @"INSERT INTO HISTORY(uid, fid, rev, filename, folder, timestamp, deleted, synchsessionid)
-                                                VALUES(@uid, @fid, @rev, @filename, @folder ,DATETIME('NOW'),@deleted,@synchsessionid)
+                        mycommand.CommandText = @"INSERT INTO HISTORY(uid, fid, rev, filename, folder, timestamp, deleted, synchsessionid,dir,folder_id)
+                                                VALUES(@uid, @fid, @rev, @filename, @folder ,DATETIME('NOW'),@deleted,@synchsessionid,@dir,@folder_id)
                                                 ; ";
                         mycommand.Prepare();
                         mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
@@ -628,6 +697,8 @@ namespace SyncBox_Server
                         mycommand.Parameters.AddWithValue("@folder", folder);
                         mycommand.Parameters.AddWithValue("@deleted", true);
                         mycommand.Parameters.AddWithValue("@synchsessionid", currentUser.synchsessionid);
+                        mycommand.Parameters.AddWithValue("@dir", dir);
+                        mycommand.Parameters.AddWithValue("@folder_id", folder_id);
 
                         int nUpdated = mycommand.ExecuteNonQuery();
                         if (nUpdated != 1)
@@ -714,14 +785,14 @@ namespace SyncBox_Server
                 cnn.Open();
                 using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
                 {
-                    mycommand.CommandText = @"SELECT HISTORY.fid, HISTORY.rev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp ,HISTORY.md5,HISTORY.deleted, FILES_DUMP.filedump
-                                            FROM FILES_DUMP,HISTORY
-                                            WHERE FILES_DUMP.uid = @uid
-                                            AND FILES_DUMP.fid = @fid
-                                            AND FILES_DUMP.rev = @rev
-                                            AND FILES_DUMP.uid = HISTORY.uid
-                                            AND FILES_DUMP.fid = HISTORY.fid
-                                            AND FILES_DUMP.rev = HISTORY.rev
+
+                    proto_server.GetResponse getResponse;// = new proto_server.GetResponse();
+                    //check if folder
+                    mycommand.CommandText = @"SELECT HISTORY.fid, HISTORY.rev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp ,HISTORY.deleted, dir, folder_id
+                                            FROM HISTORY
+                                            WHERE HISTORY.fid = @fid
+                                            AND HISTORY.rev = @rev
+                                            AND HISTORY.uid = @uid
                                             ;";
                     mycommand.Prepare();
                     mycommand.Parameters.AddWithValue("@uid", uid);
@@ -735,9 +806,59 @@ namespace SyncBox_Server
                     cnn.Close();
 
                     if (dt.Rows.Count != 1)
+                        throw new Exception("Get file/folder not existing. row count-> " + dt.Rows.Count);
+
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        var values = row.ItemArray;
+
+                        getResponse = new proto_server.GetResponse()
+                        {
+                            fileInfo = new proto_server.FileToGet()
+                            {
+                                fid = fid,
+                                rev = rev,
+                                filename = values[2].ToString(),
+                                folder = values[3].ToString(),
+                                timestamp = DateTime.Parse(values[4].ToString()),
+
+                                deleted = Boolean.Parse(values[5].ToString()),
+                                dir = bool.Parse(values[6].ToString()),
+                                folder_id = int.Parse(values[7].ToString())
+                            },
+
+                        };
+                        //IS A DIR
+                        if (getResponse.fileInfo.dir)
+                            return getResponse;
+                    }
+
+                    //IS A FILE
+           
+                 mycommand.CommandText = @"SELECT HISTORY.fid, HISTORY.rev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp ,HISTORY.md5,HISTORY.deleted, FILES_DUMP.filedump, dir, folder_id
+                                            FROM FILES_DUMP,HISTORY
+                                            WHERE FILES_DUMP.uid = @uid
+                                            AND FILES_DUMP.fid = @fid
+                                            AND FILES_DUMP.rev = @rev
+                                            AND FILES_DUMP.uid = HISTORY.uid
+                                            AND FILES_DUMP.fid = HISTORY.fid
+                                            AND FILES_DUMP.rev = HISTORY.rev
+                                            ;";
+                    mycommand.Prepare();
+                    mycommand.Parameters.AddWithValue("@uid", uid);
+                    mycommand.Parameters.AddWithValue("@fid", fid);
+                    mycommand.Parameters.AddWithValue("@rev", rev);
+
+                    reader = mycommand.ExecuteReader();
+                    dt = new DataTable();
+                    dt.Load(reader);
+                    reader.Close();
+                    cnn.Close();
+
+                    if (dt.Rows.Count != 1)
                         throw new Exception("I expected 1 file in FILES_DUMP -> obtain " + dt.Rows.Count);
 
-                    proto_server.GetResponse getResponse;// = new proto_server.GetResponse();
+                    
 
                     foreach (DataRow row in dt.Rows)
                     {
@@ -753,7 +874,9 @@ namespace SyncBox_Server
                                 folder = values[3].ToString(),
                                 timestamp = DateTime.Parse(values[4].ToString()),
                                 md5 = values[5].ToString(),
-                                deleted = Boolean.Parse(values[6].ToString())
+                                deleted = Boolean.Parse(values[6].ToString()),
+                                dir = bool.Parse(values[8].ToString()),
+                                folder_id = int.Parse(values[9].ToString())
                             },
                             fileDump = (byte[])row["filedump"]
                         };
@@ -767,7 +890,12 @@ namespace SyncBox_Server
             catch (Exception e)
             {
                 Logging.WriteToLog(e.ToString());
-                throw;
+                proto_server.GetResponse getResponse = new proto_server.GetResponse();
+                getResponse.fileInfo.fid = 0;
+                getResponse.fileInfo.rev = 0;
+
+                return getResponse;
+                //throw;
                 //return null;
             }
         }
@@ -780,7 +908,7 @@ namespace SyncBox_Server
                 cnn.Open();
                 using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
                 {
-                    mycommand.CommandText = @"SELECT HISTORY.fid, HISTORY.rev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp ,HISTORY.md5,HISTORY.deleted
+                    mycommand.CommandText = @"SELECT HISTORY.fid, HISTORY.rev,HISTORY.filename, HISTORY.folder, datetime(HISTORY.timestamp, 'localtime') as timestamp ,HISTORY.md5,HISTORY.deleted,dir,folder_id
                                             FROM HISTORY, SNAPSHOT
                                             WHERE HISTORY.fid=SNAPSHOT.fid and HISTORY.uid=SNAPSHOT.uid and HISTORY.rev=SNAPSHOT.rev
                                             AND HISTORY.uid = @uid                                            ;";
@@ -808,7 +936,9 @@ namespace SyncBox_Server
                                 folder = values[3].ToString(),
                                 timestamp = DateTime.Parse(values[4].ToString()),
                                 md5 = values[5].ToString(),
-                                deleted = Boolean.Parse(values[6].ToString())
+                                deleted = Boolean.Parse(values[6].ToString()),
+                                dir = bool.Parse(values[7].ToString()),
+                                folder_id = int.Parse(values[8].ToString())
                             };
                             listResponse.fileList.Add(fileListItem);
                         }
@@ -837,7 +967,7 @@ namespace SyncBox_Server
                 cnn.Open();
                 using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
                 {
-                    mycommand.CommandText = @"SELECT H1.fid, H1.rev, H1.filename, H1.folder, datetime(H1.timestamp, 'localtime') as timestamp ,H1.md5, H1.deleted
+                    mycommand.CommandText = @"SELECT H1.fid, H1.rev, H1.filename, H1.folder, datetime(H1.timestamp, 'localtime') as timestamp ,H1.md5, H1.deleted, H1.dir, H1.folder_id
                                             FROM HISTORY H1
                                             WHERE H1.uid = @uid
                                             ORDER BY H1.folder
@@ -867,7 +997,9 @@ namespace SyncBox_Server
                                 folder = values[3].ToString(),
                                 timestamp = DateTime.Parse(values[4].ToString()),
                                 md5 = values[5].ToString(),
-                                deleted = Boolean.Parse(values[6].ToString())
+                                deleted = Boolean.Parse(values[6].ToString()),
+                                dir = bool.Parse(values[7].ToString()),
+                                folder_id = int.Parse(values[8].ToString())
                             };
                             listResponse.fileList.Add(fileListItem);
                         }
@@ -887,6 +1019,84 @@ namespace SyncBox_Server
             return null;
         }
         //method ended
+
+
+
+        public static void RegisterUser( ref proto_server.login_c currentUser)
+        {
+
+            
+
+            SQLiteConnection cnn = new SQLiteConnection(dbConnection);
+            cnn.Open();
+            using (SQLiteCommand mycommand = new SQLiteCommand(cnn))
+            {
+                try
+                {
+                    //BEGIN TRANSACTION
+                    using (var transaction = cnn.BeginTransaction())
+                    {
+            
+                       
+
+                        
+                        //inserisco in HISTORY SNAPSJOT  e FILE_DUMP
+                        //Add vuol dire che non ho da fare update ma solo insert
+                        //HISTORY INSERT
+                        mycommand.CommandText = @"INSERT INTO HISTORY(uid,fid,rev,filename,folder,timestamp,md5,deleted,synchsessionid,dir,folder_id)
+                                            VALUES (@uid,@fid,@rev,@filename,@folder,DATETIME('NOW'),@md5,@deleted,@synchsessionid,@dir,@folder_id)
+                                                ; ";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@fid", 1);
+                        mycommand.Parameters.AddWithValue("@rev", 1);
+
+                        mycommand.Parameters.AddWithValue("@folder", "\\");
+                        //mycommand.Parameters.AddWithValue("@timestamp", timestamp);
+
+                        mycommand.Parameters.AddWithValue("@deleted", false);
+                        mycommand.Parameters.AddWithValue("@synchsessionid", 0);
+                        mycommand.Parameters.AddWithValue("@dir", true);
+
+
+                        mycommand.Parameters.AddWithValue("@filename", "");
+                        mycommand.Parameters.AddWithValue("@md5", null);
+                        mycommand.Parameters.AddWithValue("@folder_id", 1);
+                        
+                        //DEBUG HERE!!!
+                        int nUpdated = mycommand.ExecuteNonQuery();
+                        if (nUpdated != 1)
+                            throw new Exception("No Row updated! Rollback");
+
+                        //SNAPSHOT INSERT
+                        //HISTORY INSERT
+                        mycommand.CommandText = @"INSERT INTO SNAPSHOT(uid,fid,rev,syncid)
+                                            VALUES (@uid,@fid,@rev,@syncid)
+                                            ;";
+                        mycommand.Prepare();
+                        mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                        mycommand.Parameters.AddWithValue("@fid", 1);
+                        mycommand.Parameters.AddWithValue("@rev", 1);
+                        mycommand.Parameters.AddWithValue("@syncid", 1);
+
+                        nUpdated = mycommand.ExecuteNonQuery();
+                        if (nUpdated != 1)
+                            throw new Exception("No Row updated! Rollback");
+                        
+                        //END TRANSACTION
+                        transaction.Commit();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logging.WriteToLog(e.ToString());
+                    return ;
+                }
+                //manage try catch transaction commit
+            }
+            return ;
+        }
+
 
 
     }

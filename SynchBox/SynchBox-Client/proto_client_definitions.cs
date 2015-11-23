@@ -152,6 +152,14 @@ namespace SynchBox_Client
             [ProtoMember(7)]
             public Boolean deleted;
 
+            //is a dir?
+            [ProtoMember(8)]
+            public Boolean dir;
+
+            //pointer to fid of father folder.
+            [ProtoMember(9)]
+            public int folder_id;
+
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("FileListItem");
@@ -169,6 +177,10 @@ namespace SynchBox_Client
                 str.Append(md5);
                 str.Append("|folder->");
                 str.Append(folder);
+                str.Append("|dir(is a ?)->");
+                str.Append(dir.ToString());
+                str.Append("|folder_id->");
+                str.Append(folder_id);
                 str.Append("|");
                 return str.ToString();
             }
@@ -233,6 +245,14 @@ namespace SynchBox_Client
             [ProtoMember(7)]
             public Boolean deleted;
 
+            //is a dir?
+            [ProtoMember(8)]
+            public Boolean dir;
+
+            //pointer to fid of father folder.
+            [ProtoMember(9)]
+            public int folder_id;
+
             public string ToString()
             {
                 StringBuilder str = new StringBuilder("FileToGet");
@@ -250,6 +270,10 @@ namespace SynchBox_Client
                 str.Append(md5);
                 str.Append("|folder->");
                 str.Append(folder);
+                str.Append("|dir(is a ?)->");
+                str.Append(dir.ToString());
+                str.Append("|folder_id->");
+                str.Append(folder_id);
                 str.Append("|");
                 return str.ToString();
             }
@@ -452,6 +476,9 @@ namespace SynchBox_Client
             public string folder;
 
             [ProtoMember(3)]
+            public bool dir = false;
+
+            [ProtoMember(4)]
             public byte[] fileDump;
 
             public string ToString()
@@ -461,6 +488,8 @@ namespace SynchBox_Client
                 str.Append(filename);
                 str.Append("|folder");
                 str.Append(folder);
+                str.Append("|dir(is a dir?)");
+                str.Append(dir.ToString());
                 str.Append("|filedump->XXX");
                 //str.Append(syncid);
                 str.Append("|");

@@ -75,7 +75,7 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<BeginSession>(netStream, beginSession, PrefixStyle.Base128);
             beginSession = Serializer.DeserializeWithLengthPrefix<BeginSession>(netStream, PrefixStyle.Base128);
 
-            if (beginSession.sessionid < 0) throw new Exception("Error in starting new synch session. Returned sessionid <0");
+            if (beginSession.sessionid < 0) Logging.WriteToLog("Error in starting new synch session. Returned sessionid <0");
 
             return beginSession.sessionid;
         }
@@ -104,7 +104,7 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<EndSession>(netStream, endSession, PrefixStyle.Base128);
             endSession = Serializer.DeserializeWithLengthPrefix<EndSession>(netStream, PrefixStyle.Base128);
 
-            if (endSession.succesful == false) throw new Exception("Error in ENDING synch session. Returned succesful = false");
+            if (endSession.succesful == false) Logging.WriteToLog("Error in ENDING synch session. Returned succesful = false");
 
             return;// endSession.sessionid;
         }
@@ -129,7 +129,8 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<Add>(netStream, add, PrefixStyle.Base128);
             AddOk addOk = Serializer.DeserializeWithLengthPrefix<AddOk>(netStream, PrefixStyle.Base128);
 
-            if ((addOk.fid < 0)||(addOk.rev <0)) throw new Exception("Error in ADDING. fid < 0 !! rev < 0");
+            if ((addOk.fid < 0)||(addOk.rev <0))// throw new Exception("Error in ADDING. fid < 0 !! rev < 0");
+             Logging.WriteToLog("Error in ADDING. fid < 0 !! rev < 0");
 
             return addOk;
         }
@@ -147,7 +148,8 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<Update>(netStream, update, PrefixStyle.Base128);
             UpdateOk updateOk = Serializer.DeserializeWithLengthPrefix<UpdateOk>(netStream, PrefixStyle.Base128);
 
-            if ((updateOk.fid < 0) || (updateOk.rev < 0)) throw new Exception("Error in UPDATING. fid < 0 !! rev < 0");
+            if ((updateOk.fid < 0) || (updateOk.rev < 0))
+                Logging.WriteToLog("Error in UPDATING. fid < 0 !! rev < 0");
 
             return updateOk;
         }
@@ -165,7 +167,7 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<Delete>(netStream, delete, PrefixStyle.Base128);
             DeleteOk deleteOk = Serializer.DeserializeWithLengthPrefix<DeleteOk>(netStream, PrefixStyle.Base128);
 
-            if ((deleteOk.fid < 0)) throw new Exception("Error in DELETING. fid < 0 ");
+            if ((deleteOk.fid < 0)) Logging.WriteToLog("Error in DELETING. fid < 0 ");
 
             return deleteOk;
         }
@@ -188,7 +190,8 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<GetSynchid>(netStream, getSynchId, PrefixStyle.Base128);
             getSynchId = Serializer.DeserializeWithLengthPrefix<GetSynchid>(netStream, PrefixStyle.Base128);
 
-            if ((getSynchId.synchid < -1)) throw new Exception("Error in GetSynchId. symnchid < -1 ");
+            if ((getSynchId.synchid < -1))
+                Logging.WriteToLog("Error in GetSynchId. symnchid < -1 ");
 
             return getSynchId.synchid;
         }
