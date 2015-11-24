@@ -27,6 +27,7 @@ namespace SynchBox_Client
 
         public Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
         public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
+        public Dictionary<string, string> editedDirectory = new Dictionary<string, string>();
 
         NetworkStream netStream;
         MainWindow.SessionVars sessionVars;
@@ -93,12 +94,12 @@ namespace SynchBox_Client
 
         private void SyncronizeChanges(object sender, ElapsedEventArgs e)
         {
+            aTimer.Enabled = false;
             
-            if(editedFiles.Count == 0){
+            if(editedFiles.Count == 0 && editedDirectory.Count == 0){
+                aTimer.Enabled = true;
                 return;
             }
-            aTimer.Enabled = false;
-
             
             if (!proto_client.LockAcquireWrapper(netStream))
             {
@@ -107,23 +108,33 @@ namespace SynchBox_Client
 
             clientServerAlignment();
 
-            foreach (KeyValuePair<string, string> entry in editedFiles)
+            if (editedDirectory.Count > 0)
             {
-                if(Directory.Exists(entry.Key)){
-                    selectActionFolder(entry.Key);
-
-                    foreach (string f in Directory.GetFiles(entry.Key))
+                foreach (KeyValuePair<string, string> entry in editedDirectory)
+                {
+                    if (Directory.Exists(entry.Key))
                     {
-                        selectSyncAction(f);
+                        selectSyncAction(entry.Key);
+                        /*
+                        selectActionFolder(entry.Key);
+                        
+                        foreach (string f in Directory.GetFiles(entry.Key))
+                        {
+                            selectSyncAction(f);
+                        }*/
                     }
                 }
-                else
+                editedDirectory.Clear();
+            }
+
+            if(editedFiles.Count > 0){
+                foreach (KeyValuePair<string, string> entry in editedFiles)
                 {
                     selectSyncAction(entry.Key);
                 }
+                editedFiles.Clear();
             }
-
-            editedFiles.Clear();
+            
 
             //potrebbe non essere aperta la sessione
             proto_client.EndSessionWrapper(netStream, syncSessionId);
@@ -137,15 +148,22 @@ namespace SynchBox_Client
             aTimer.Enabled = true;
         }
 
+        private void sincronizeDirectory()
+        {
+            throw new NotImplementedException();
+        }
+
         private void selectActionFolder(string p)
         {
+            selectSyncAction(p);
+
             foreach (string d in Directory.GetDirectories(p))
             {
+                selectActionFolder(d);
                 foreach (string f in Directory.GetFiles(d))
                 {
                     selectSyncAction(f);
                 }
-                selectActionFolder(d);
             }
         }
 
@@ -156,16 +174,27 @@ namespace SynchBox_Client
                 if (File.Exists(path)) // se esiste nel fs, allora vuol dire che è stato modificato
                 {
                     //TODO: controllare md5
-                    syncFile(netStream, path, "UPDATE");
+                    syncFile(path, "UPDATE");
+                }
+                else if (Directory.Exists(path))
+                {
+                    //Non fare niente, non devo aggiornare le cartelle, nel caso cambino nome, me la gestisco con il rinomina
                 }
                 else // file eliminato
                 {
-                    syncDeletefile(netStream, path);
+                    syncDeletefile(path);
                 }
             }
             else
             {
-                syncFile(netStream, path, "CREATE");
+                if (File.Exists(path))
+                {
+                    syncFile(path, "CREATE");
+                }
+                else if (Directory.Exists(path))
+                {
+                    syncNewFolder(path);
+                }
             }
         }
 
@@ -175,21 +204,38 @@ namespace SynchBox_Client
             {
                 return;
             }
-            if (!editedFiles.ContainsKey(e.FullPath)){
-                editedFiles.Add(e.FullPath, "CHANGE");
+            if (File.Exists(e.FullPath))
+            {
+                if (!editedFiles.ContainsKey(e.FullPath))
+                {
+                    editedFiles.Add(e.FullPath, "CHANGE");
+                }
             }
+            else if (Directory.Exists(e.FullPath))
+            {
+                if (!editedDirectory.ContainsKey(e.FullPath))
+                {
+                    editedDirectory.Add(e.FullPath, "CHANGE");
+                }
+            }
+            
         }
 
-        private void syncFile(NetworkStream netStream, string path, string action)
+        private void handlerRename(object sender, RenamedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void syncFile(string path, string action)
         {
             string hash = computeFileHash(path);
             if (action.CompareTo("UPDATE")==0)
             {
-                syncUpdatefile(netStream, path, hash);
+                syncUpdatefile(path, hash);
             }
             else if (action.CompareTo("CREATE")==0)
             {
-                syncNewfile(netStream, path, hash);
+                syncNewfile(path, hash);
             }
         }
 
@@ -288,10 +334,16 @@ namespace SynchBox_Client
                         proto_client.GetResponseWrapper(netStream, ref getResponse);
 
                         string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-
-                        Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder)); // creo le directory
-
-                        System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                        
+                        if (getResponse.fileInfo.dir)
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(fileName));
+                        }
+                        else
+                        {
+                            Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                            System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                        }
                     }
                 }
 
@@ -307,7 +359,7 @@ namespace SynchBox_Client
             string localHash = computeFileHash(f);
             if (!remoteFiles.ContainsKey(f))
             {
-                syncNewfile(netStream, f, localHash); //nuovo file da aggiungere
+                syncNewfile(f, localHash); //nuovo file da aggiungere
             }
             else
             {
@@ -319,7 +371,7 @@ namespace SynchBox_Client
                 {
                     string newName = MakeUnique(f);
                     System.IO.File.Move(f, newName);
-                    syncNewfile(netStream, newName, localHash);
+                    syncNewfile(newName, localHash);
 
                     proto_client.GetList getList = new proto_client.GetList();
                     getList.fileList = new List<proto_client.FileToGet>();
@@ -360,7 +412,7 @@ namespace SynchBox_Client
             }
         }
 
-        private void syncDeletefile(NetworkStream netStream, string path)
+        private void syncDeletefile(string path)
         {
             checkBeginSession(netStream);
 
@@ -373,7 +425,7 @@ namespace SynchBox_Client
             remoteFiles.Remove(path);
         }
 
-        private void syncUpdatefile(NetworkStream netStream, string path, string hash)
+        private void syncUpdatefile(string path, string hash)
         {
             checkBeginSession(netStream);
 
@@ -387,7 +439,7 @@ namespace SynchBox_Client
             remoteFiles[path].md5 = hash;
         }
 
-        private void syncNewfile(NetworkStream netStream, string path, string hash)
+        private void syncNewfile(string path, string hash)
         {
             checkBeginSession(netStream);
 
@@ -408,6 +460,34 @@ namespace SynchBox_Client
             fileInfo.folder = Path.GetDirectoryName(path).Replace(sessionVars.path, "") + "\\";
             fileInfo.md5 = hash;
             fileInfo.deleted = false;
+
+            remoteFiles.Add(path, fileInfo);
+        }
+
+
+        //ancora da ricontrollare
+        private void syncNewFolder(string path)
+        {
+            checkBeginSession(netStream);
+
+            proto_client.Add add = new proto_client.Add();
+            proto_client.AddOk addOk = new proto_client.AddOk();
+            proto_client.FileListItem fileInfo = new proto_client.FileListItem();
+
+
+            add.filename = Path.GetFileName(path);
+            add.folder = Path.GetDirectoryName(path).Replace(sessionVars.path, "") + "\\";
+            add.dir = true;
+
+            addOk = proto_client.AddWrapper(netStream, ref add);
+
+            fileInfo.fid = addOk.fid;
+            fileInfo.rev = addOk.rev;
+            fileInfo.filename = Path.GetFileName(path);
+            fileInfo.folder = Path.GetDirectoryName(path).Replace(sessionVars.path, "") + "\\";
+            fileInfo.deleted = false;
+            fileInfo.md5 = null;
+            fileInfo.dir = true;
 
             remoteFiles.Add(path, fileInfo);
         }
@@ -463,13 +543,14 @@ namespace SynchBox_Client
         private void watch()
         {
             watcher = new FileSystemWatcher();
+            watcher.IncludeSubdirectories = true;
             watcher.Path = sessionVars.path;
             watcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.Attributes;
             watcher.Filter = "*.*";
             watcher.Changed += new FileSystemEventHandler(handlerChanged);
             watcher.Created += new FileSystemEventHandler(handlerChanged);
             watcher.Deleted += new FileSystemEventHandler(handlerChanged);
-            watcher.Renamed += new RenamedEventHandler(handlerChanged);
+            watcher.Renamed += new RenamedEventHandler(handlerRename);
             watcher.EnableRaisingEvents = true;
 
             aTimer = new System.Timers.Timer(5000); //5 secs interval
