@@ -802,8 +802,8 @@ namespace SyncBox_Server
                     SQLiteDataReader reader = mycommand.ExecuteReader();
                     DataTable dt = new DataTable();
                     dt.Load(reader);
-                    reader.Close();
-                    cnn.Close();
+                    //reader.Close();
+                    //cnn.Close();
 
                     if (dt.Rows.Count != 1)
                         throw new Exception("Get file/folder not existing. row count-> " + dt.Rows.Count);
@@ -891,6 +891,9 @@ namespace SyncBox_Server
             {
                 Logging.WriteToLog(e.ToString());
                 proto_server.GetResponse getResponse = new proto_server.GetResponse();
+
+                proto_server.FileToGet ftg = new proto_server.FileToGet();
+                getResponse.fileInfo = ftg;
                 getResponse.fileInfo.fid = 0;
                 getResponse.fileInfo.rev = 0;
 
