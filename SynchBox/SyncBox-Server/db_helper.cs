@@ -124,7 +124,44 @@ namespace SyncBox_Server
                         }
                         if (value.ToString().CompareTo("0") != 0)
                         {
-                            throw new Exception("file/folder already present in db." + add.ToString());
+                            Logging.WriteToLog("file/folder already present in db." + add.ToString());
+                            //fai query e ritorna fir, rev
+                            mycommand.CommandText = @"SELECT fid,rev
+                                            FROM HISTORY
+                                            WHERE HISTORY.uid = @uid
+                                            AND HISTORY.filename = @filename
+                                            AND HISTORY.folder = @folder
+                                            AND HISTORY.dir = @dir
+                                            ; ";
+                            mycommand.Prepare();
+                            mycommand.Parameters.AddWithValue("@uid", currentUser.uid);
+                            mycommand.Parameters.AddWithValue("@filename", add.filename);
+                            mycommand.Parameters.AddWithValue("@folder", add.folder);
+                            mycommand.Parameters.AddWithValue("@dir", add.dir);
+
+                            SQLiteDataReader reader = mycommand.ExecuteReader();
+                            DataTable dt = new DataTable();
+                            dt.Load(reader);
+
+                            DataRow row = dt.Rows[0];
+                            int fileid, rev;
+
+                            try
+                            {
+                                var values = row.ItemArray;
+
+                                fileid = int.Parse(values[0].ToString());
+                                rev = int.Parse(values[1].ToString());
+                            }
+                            catch (Exception e)
+                            {
+                                Logging.WriteToLog("ERROR PARSING!in Add already present file/folder method" + e.ToString());
+                                throw;
+                            }
+                            addOk.fid = fileid;
+                            addOk.rev = rev;
+                            return addOk;
+
                         }
 
                         //seleziono  max syncid tra uid
@@ -300,10 +337,10 @@ namespace SyncBox_Server
                             nUpdated = mycommand.ExecuteNonQuery();
                             if (nUpdated != 1)
                                 throw new Exception("No Row updated! Rollback");
-
-                            addOk.fid = fid;
-                            addOk.rev = 1;
+                            
                         }
+                        addOk.fid = fid;
+                        addOk.rev = 1;
                         //END TRANSACTION
                         transaction.Commit();
                     }
