@@ -28,6 +28,7 @@ namespace SynchBox_Client
         public Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
         public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
         public Dictionary<string, string> editedDirectory = new Dictionary<string, string>();
+        public Dictionary<string, string> deletedFiles = new Dictionary<string, string>();
 
         NetworkStream netStream;
         MainWindow.SessionVars sessionVars;
@@ -58,6 +59,7 @@ namespace SynchBox_Client
                 
             }catch (Exception e)
             {
+                proto_client.LockReleaseWrapper(netStream);
                 Logging.WriteToLog(e.ToString());
             }
         }
@@ -70,13 +72,16 @@ namespace SynchBox_Client
                 syncIdServer = 1;
                 return;
             }
+            if (remoteFiles.Count == 0)
+            {
+                populate_dictionary(netStream);
+            }
             if (sessionVars.lastSyncId == syncIdServer) //se sono già allineato non faccio niente
             {
                 return;
             }
 
             sessionVars.lastSyncId = syncIdServer;
-            populate_dictionary(netStream);
 
             int syncSessionIdTemporaneo = syncSessionId;
 
@@ -95,8 +100,9 @@ namespace SynchBox_Client
         private void SyncronizeChanges(object sender, ElapsedEventArgs e)
         {
             aTimer.Enabled = false;
-            
-            if(editedFiles.Count == 0 && editedDirectory.Count == 0){
+
+            if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0)
+            {
                 aTimer.Enabled = true;
                 return;
             }
@@ -105,47 +111,57 @@ namespace SynchBox_Client
             {
                 return;
             }
-
-            clientServerAlignment();
-
-            if (editedDirectory.Count > 0)
+            try
             {
-                foreach (KeyValuePair<string, string> entry in editedDirectory)
+                clientServerAlignment();
+
+                if (editedDirectory.Count > 0)
                 {
-                    if (Directory.Exists(entry.Key))
+                    foreach (KeyValuePair<string, string> entry in editedDirectory)
                     {
                         selectSyncAction(entry.Key);
-                        /*
-                        selectActionFolder(entry.Key);
-                        
-                        foreach (string f in Directory.GetFiles(entry.Key))
-                        {
-                            selectSyncAction(f);
-                        }*/
+                        //editedDirectory.Remove(entry.Key);  // sarebbe meglio così in questo modo impedisco problemi si sync con l'handle degli eventi, ma scassa per la modifica del dizionario
                     }
+                    editedDirectory.Clear();
                 }
-                editedDirectory.Clear();
-            }
 
-            if(editedFiles.Count > 0){
-                foreach (KeyValuePair<string, string> entry in editedFiles)
+                if (editedFiles.Count > 0)
                 {
-                    selectSyncAction(entry.Key);
+                    foreach (KeyValuePair<string, string> entry in editedFiles)
+                    {
+                        selectSyncAction(entry.Key);
+                        //editedFiles.Remove(entry.Key);
+                    }
+                    editedFiles.Clear();
                 }
-                editedFiles.Clear();
+
+                if (deletedFiles.Count > 0)
+                {
+                    foreach (KeyValuePair<string, string> entry in deletedFiles)
+                    {
+                        syncDeletefile(entry.Key);
+                    }
+                    deletedFiles.Clear();
+                }
+
+
+                //potrebbe non essere aperta la sessione
+                proto_client.EndSessionWrapper(netStream, syncSessionId);
+                flagSession = false;
+
+                syncIdServer = proto_client.GetSynchIdWrapper(netStream);
+                sessionVars.lastSyncId = syncIdServer;
+                writeChanges();
+
+                proto_client.LockReleaseWrapper(netStream);
+                aTimer.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                proto_client.LockReleaseWrapper(netStream);
+                Logging.WriteToLog(ex.ToString());
             }
             
-
-            //potrebbe non essere aperta la sessione
-            proto_client.EndSessionWrapper(netStream, syncSessionId);
-            flagSession = false;
-
-            syncIdServer = proto_client.GetSynchIdWrapper(netStream);
-            sessionVars.lastSyncId = syncIdServer;
-            writeChanges();
-            
-            proto_client.LockReleaseWrapper(netStream);
-            aTimer.Enabled = true;
         }
 
         private void sincronizeDirectory()
@@ -191,9 +207,16 @@ namespace SynchBox_Client
                 {
                     syncFile(path, "CREATE");
                 }
-                else if (Directory.Exists(path))
+                else if (!remoteFiles.ContainsKey(path+"\\"))
                 {
-                    syncNewFolder(path);
+                    if (Directory.Exists(path))
+                    {
+                        syncNewFolder(path);
+                    }
+                    else
+                    {
+                        syncDeletefile(path);
+                    }
                 }
             }
         }
@@ -204,18 +227,37 @@ namespace SynchBox_Client
             {
                 return;
             }
-            if (File.Exists(e.FullPath))
+
+            if (e.ChangeType.Equals(WatcherChangeTypes.Deleted))
             {
-                if (!editedFiles.ContainsKey(e.FullPath))
+                if (editedDirectory.ContainsKey(e.FullPath))
                 {
-                    editedFiles.Add(e.FullPath, "CHANGE");
+                    editedDirectory.Remove(e.FullPath);
+                }
+                if (!deletedFiles.ContainsKey(e.FullPath))
+                {
+                    deletedFiles.Add(e.FullPath, "CHANGE");
                 }
             }
-            else if (Directory.Exists(e.FullPath))
+            else
             {
-                if (!editedDirectory.ContainsKey(e.FullPath))
+                if (deletedFiles.ContainsKey(e.FullPath))
                 {
-                    editedDirectory.Add(e.FullPath, "CHANGE");
+                    deletedFiles.Remove(e.FullPath);
+                }
+                if (Directory.Exists(e.FullPath))
+                {
+                    if (!editedDirectory.ContainsKey(e.FullPath))
+                    {
+                        editedDirectory.Add(e.FullPath, "CHANGE");
+                    }
+                }
+                else if (File.Exists(e.FullPath))
+                {
+                    if (!editedFiles.ContainsKey(e.FullPath))
+                    {
+                        editedFiles.Add(e.FullPath, "CHANGE");
+                    }
                 }
             }
             
@@ -281,7 +323,15 @@ namespace SynchBox_Client
             if (remoteFileList.fileList != null) { 
                 foreach (proto_client.FileListItem fileInfo in remoteFileList.fileList)
                 {
-                    remoteFiles.Add(sessionVars.path + fileInfo.folder + fileInfo.filename, fileInfo);
+                    if (!remoteFiles.ContainsKey(sessionVars.path + fileInfo.folder + fileInfo.filename))
+                    {
+                        remoteFiles.Add(sessionVars.path + fileInfo.folder + fileInfo.filename, fileInfo);
+                    }
+                    else
+                    {
+                        //TODO: panico
+                    }
+                    
                 }
             }
 
@@ -350,6 +400,7 @@ namespace SynchBox_Client
             }
             catch (System.Exception excpt)
             {
+                proto_client.LockReleaseWrapper(netStream); //TODO: controllare che si possa fare sempre
                 Console.WriteLine(excpt.Message);
             }
         }
@@ -419,7 +470,15 @@ namespace SynchBox_Client
             proto_client.Delete delete = new proto_client.Delete();
             proto_client.DeleteOk deleteOk = new proto_client.DeleteOk();
 
-            delete.fid = remoteFiles[path].fid;
+            if (remoteFiles.ContainsKey(path))
+            {
+                delete.fid = remoteFiles[path].fid;
+            }
+            else if (remoteFiles.ContainsKey(path+"\\"))
+            {
+                delete.fid = remoteFiles[path + "\\"].fid;
+            }
+            
             deleteOk = proto_client.DeleteWrapper(netStream, ref delete);
 
             remoteFiles.Remove(path);
