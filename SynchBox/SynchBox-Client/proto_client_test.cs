@@ -71,6 +71,7 @@ namespace SynchBox_Client
                 add_.dir = true;
 
                 addOk = AddWrapper(netStream, ref add_);
+                int fid_folder_todelete = addOk.fid;
                 Logging.WriteToLog(addOk.ToString());
                 //create add struct & populate
                
@@ -175,6 +176,24 @@ namespace SynchBox_Client
                 DeleteOk dok = DeleteWrapper(netStream, ref d);
                 Logging.WriteToLog("Try delete empty folder _restore-> "+ dok.ToString());
 
+
+                //try to delete un file che non esiste
+                d = new Delete();
+                d.fid = 111111;
+                dok = DeleteWrapper(netStream, ref d);
+                Logging.WriteToLog("Try delete fid 111111 usually NOT EXISTS-> " + dok.ToString());
+
+                //try to get un file che non esiste
+
+
+                Logging.WriteToLog("DELETING FOLDER /temp/XXXX .... in future recursively");
+                d = new Delete();
+                d.fid = fid_folder_todelete;
+                dok = new DeleteOk();
+                dok = DeleteWrapper(netStream, ref d);
+                Logging.WriteToLog(d.ToString() + dok.ToString());
+
+
                 EndSessionWrapper(netStream, session);
                 Logging.WriteToLog("ReleaseLock:" + LockReleaseWrapper(netStream).ToString());
                 Logging.WriteToLog("ReleaseLock:" + LockReleaseWrapper(netStream).ToString());
@@ -216,6 +235,32 @@ namespace SynchBox_Client
 
                     File.WriteAllBytes(bff, getResponse.fileDump);
                 }
+
+                
+
+
+
+                Logging.WriteToLog("try to get 1 file and 1 folder not existing");
+                //try to get 1 file and 1 folder not existing
+                getList.n = 2;
+                getList.fileList = new List<FileToGet>();
+                FileToGet fileToGet_ = new FileToGet();
+                fileToGet_.fid = 11111;
+                fileToGet_.rev = 11111;
+                getList.fileList.Add(fileToGet_);
+
+                fileToGet_ = new FileToGet();
+                fileToGet_.fid = 21111;
+                fileToGet_.rev = 21111;
+                fileToGet_.dir = true;
+                getList.fileList.Add(fileToGet_);
+
+                GetListWrapper(netStream, ref getList);
+                GetResponseWrapper(netStream, ref getResponse);
+                Logging.WriteToLog(getResponse.ToString());
+                GetResponseWrapper(netStream, ref getResponse);
+                Logging.WriteToLog(getResponse.ToString());
+
 
             }
             catch (Exception e)
