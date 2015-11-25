@@ -69,6 +69,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="List.cs" />
     <Compile Include="Logging.cs" />
     <Compile Include="proto_client.cs" />
     <Compile Include="proto_client_definitions.cs" />

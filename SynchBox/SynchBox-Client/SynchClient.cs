@@ -29,6 +29,7 @@ namespace SynchBox_Client
         public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
         public Dictionary<string, string> editedDirectory = new Dictionary<string, string>();
         public Dictionary<string, string> deletedFiles = new Dictionary<string, string>();
+        private Dictionary<string, string> tmpFiles = new Dictionary<string, string>();
 
         NetworkStream netStream;
         MainWindow.SessionVars sessionVars;
@@ -38,6 +39,8 @@ namespace SynchBox_Client
 
         FileSystemWatcher watcher;
         private static System.Timers.Timer aTimer;
+
+        private Mutex SyncMutex = new Mutex();
 
         public async Task StartSyncAsync(NetworkStream netStream, MainWindow.SessionVars sessionVars)
         {   
@@ -93,20 +96,22 @@ namespace SynchBox_Client
 
         private void SyncronizeChanges(object sender, ElapsedEventArgs e)
         {
-            aTimer.Enabled = false;
-
-            if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0)
-            {
-                aTimer.Enabled = true;
-                return;
-            }
-            
-            if (!proto_client.LockAcquireWrapper(netStream))
-            {
-                return;
-            }
             try
             {
+                aTimer.Enabled = false;
+                SyncMutex.WaitOne();
+
+                if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0)
+                {
+                    aTimer.Enabled = true;
+                    return;
+                }
+            
+                if (!proto_client.LockAcquireWrapper(netStream))
+                {
+                    return;
+                }
+            
                 clientServerAlignment();
 
                 if (editedDirectory.Count > 0)
@@ -121,12 +126,12 @@ namespace SynchBox_Client
 
                 if (editedFiles.Count > 0)
                 {
+                    tmpFiles = editedFiles.ToDictionary(entry => entry.Key, entry => entry.Value);
                     foreach (KeyValuePair<string, string> entry in editedFiles)
                     {
                         selectSyncAction(entry.Key);
-                        //editedFiles.Remove(entry.Key);
                     }
-                    editedFiles.Clear();
+                    clearEditedFile();
                 }
 
                 if (deletedFiles.Count > 0)
@@ -155,7 +160,23 @@ namespace SynchBox_Client
                 proto_client.LockReleaseWrapper(netStream);
                 Logging.WriteToLog(ex.ToString());
             }
+            finally
+            {
+                SyncMutex.ReleaseMutex();
+            }
             
+        }
+
+        private void clearEditedFile()
+        {
+            foreach (KeyValuePair<string, string> entry in tmpFiles)
+            {
+                if (entry.Value == null)
+                {
+                    editedFiles.Remove(entry.Key);
+                }
+            }
+            tmpFiles.Clear();
         }
 
         private void selectActionFolder(string p)
@@ -174,81 +195,119 @@ namespace SynchBox_Client
 
         private void selectSyncAction(string path)
         {
-            if (remoteFiles.ContainsKey(path)) // se contiene la chiave non è un nuovo file
+            bool edited = true;
+            try
             {
-                if (File.Exists(path)) // se esiste nel fs, allora vuol dire che è stato modificato
+                if (remoteFiles.ContainsKey(path)) // se contiene la chiave non è un nuovo file
                 {
-                    //TODO: controllare md5
-                    syncFile(path, "UPDATE");
-                }
-                else if (Directory.Exists(path))
-                {
-                    //Non fare niente, non devo aggiornare le cartelle, nel caso cambino nome, me la gestisco con il rinomina
-                }
-                else // file eliminato
-                {
-                    syncDeletefile(path);
-                }
-            }
-            else
-            {
-                if (File.Exists(path))
-                {
-                    syncFile(path, "CREATE");
-                }
-                else if (!remoteFiles.ContainsKey(path+"\\"))
-                {
-                    if (Directory.Exists(path))
+                    if (File.Exists(path)) // se esiste nel fs, allora vuol dire che è stato modificato
                     {
-                        syncNewFolder(path);
+                        syncFile(path, "UPDATE");
                     }
-                    else
+                    else if (Directory.Exists(path))
+                    {
+                        //Non fare niente, non devo aggiornare le cartelle, nel caso cambino nome, me la gestisco con il rinomina
+                    }
+                    else // file eliminato
                     {
                         syncDeletefile(path);
                     }
                 }
+                else
+                {
+                    if (File.Exists(path))
+                    {
+                        syncFile(path, "CREATE");
+                    }
+                    else if (!remoteFiles.ContainsKey(path + "\\"))
+                    {
+                        if (Directory.Exists(path))
+                        {
+                            syncNewFolder(path);
+                        }
+                        else
+                        {
+                            syncDeletefile(path); //TODO: è giusta questa linea????
+                        }
+                    }
+                }
             }
+            catch (System.IO.IOException syncEx)
+            {
+                edited = false;
+            }
+            catch (Exception syncEx)
+            {
+                Console.WriteLine(syncEx.Message);
+            }
+            finally
+            {
+                if (tmpFiles.ContainsKey(path) && edited)
+                {
+                    tmpFiles[path] = null;
+                }
+                else if (tmpFiles.ContainsKey(path + "\\")) //TODO: da controllare se ci passa -------> non ci passa mai
+                {
+                    System.Windows.Forms.MessageBox.Show("Non dovrei passare da qui, c'è qualcosa da sistemare");
+                    tmpFiles[path + "\\"] = null;
+                }
+            }
+            
         }
 
         private void handlerChanged(object sender, FileSystemEventArgs e)
         {
-            if (e.FullPath.CompareTo(sessionVars.path + "\\conf.ini") == 0)
+            if (e.FullPath.CompareTo(sessionVars.path + "\\conf.ini") == 0 || Path.GetFileName(e.FullPath)[0] == '~')
             {
                 return;
             }
+            try
+            {
+                SyncMutex.WaitOne();
+                
+                if (e.ChangeType.Equals(WatcherChangeTypes.Deleted))
+                {
+                    if (editedDirectory.ContainsKey(e.FullPath))
+                    {
+                        editedDirectory.Remove(e.FullPath);
+                    }
+                    if (!deletedFiles.ContainsKey(e.FullPath))
+                    {
+                        deletedFiles.Add(e.FullPath, "CHANGE");
+                    }
+                }
+                else
+                {
+                    if (deletedFiles.ContainsKey(e.FullPath))
+                    {
+                        deletedFiles.Remove(e.FullPath);
+                    }
+                    if (Directory.Exists(e.FullPath))
+                    {
+                        if (!editedDirectory.ContainsKey(e.FullPath))
+                        {
+                            editedDirectory.Add(e.FullPath, "CHANGE");
+                        }
+                    }
+                    else if (File.Exists(e.FullPath))
+                    {
+                        if (!editedFiles.ContainsKey(e.FullPath))
+                        {
+                            editedFiles.Add(e.FullPath, "CHANGE");
+                        }
+                    }
+                }
+            }
+            catch (Exception exe)
+            {
+                Console.WriteLine(exe.Message);
+            }
+            finally
+            {
+                SyncMutex.ReleaseMutex();
+            }
 
-            if (e.ChangeType.Equals(WatcherChangeTypes.Deleted))
-            {
-                if (editedDirectory.ContainsKey(e.FullPath))
-                {
-                    editedDirectory.Remove(e.FullPath);
-                }
-                if (!deletedFiles.ContainsKey(e.FullPath))
-                {
-                    deletedFiles.Add(e.FullPath, "CHANGE");
-                }
-            }
-            else
-            {
-                if (deletedFiles.ContainsKey(e.FullPath))
-                {
-                    deletedFiles.Remove(e.FullPath);
-                }
-                if (Directory.Exists(e.FullPath))
-                {
-                    if (!editedDirectory.ContainsKey(e.FullPath))
-                    {
-                        editedDirectory.Add(e.FullPath, "CHANGE");
-                    }
-                }
-                else if (File.Exists(e.FullPath))
-                {
-                    if (!editedFiles.ContainsKey(e.FullPath))
-                    {
-                        editedFiles.Add(e.FullPath, "CHANGE");
-                    }
-                }
-            }
+            
             
         }
 
@@ -260,7 +319,7 @@ namespace SynchBox_Client
         private void syncFile(string path, string action)
         {
             string hash = CalculateMD5Hash(File.ReadAllBytes(path));
-            if (action.CompareTo("UPDATE")==0)
+            if (action.CompareTo("UPDATE") == 0 && hash.CompareTo(remoteFiles[path].md5) != 0)
             {
                 syncUpdatefile(path, hash);
             }
@@ -396,8 +455,19 @@ namespace SynchBox_Client
 
         private void chooseAction(string f)
         {
-            string localHash = CalculateMD5Hash(File.ReadAllBytes(f));
-            //string localHash = computeFileHash(f);
+            string localHash;
+            try
+            {
+                localHash = CalculateMD5Hash(File.ReadAllBytes(f));
+            }
+            catch (System.IO.IOException ioEx)
+            {
+                if (!editedFiles.ContainsKey(f))
+                {
+                    editedFiles.Add(f, "CHANGE");
+                }
+                return;
+            }
             if (!remoteFiles.ContainsKey(f))
             {
                 syncNewfile(f, localHash); //nuovo file da aggiungere
@@ -431,8 +501,14 @@ namespace SynchBox_Client
                     string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
 
                     Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder)); // creo le directory
-
-                    System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                    try
+                    {
+                        System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                    }
+                    catch (Exception wEcx)
+                    {
+                        Console.WriteLine(wEcx.Message);
+                    }
                 }
                 //non fare niente, file ok
             }
