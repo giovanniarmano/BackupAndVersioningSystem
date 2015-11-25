@@ -79,6 +79,7 @@ namespace SynchBox_Client
                 add_.dir = true;
 
                 addOk = AddWrapper(netStream, ref add_);
+                int fileid_restore_to_delete_after = addOk.fid;
                 Logging.WriteToLog(addOk.ToString());
 
 
@@ -167,6 +168,12 @@ namespace SynchBox_Client
                     fileItemList[i].fid = -1;
                     Logging.WriteToLog(deleteOk.ToString());
                 }
+
+                //try to delete empty folder 
+                Delete d = new Delete();
+                d.fid = fileid_restore_to_delete_after;
+                DeleteOk dok = DeleteWrapper(netStream, ref d);
+                Logging.WriteToLog("Try delete empty folder _restore-> "+ dok.ToString());
 
                 EndSessionWrapper(netStream, session);
                 Logging.WriteToLog("ReleaseLock:" + LockReleaseWrapper(netStream).ToString());
