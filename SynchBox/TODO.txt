@@ -13,3 +13,8 @@ Ai 30 secondi vado a lokkare e ad analizzare questa lista.
 
 --POSSIBILI PROBLEMI
 se faccio una get di un file cancellato che succede? (nei file dump non ci sono entry per i file cancellati)
+
+
+
+--Sistemare rename
+--Lock sui dizionari dei file

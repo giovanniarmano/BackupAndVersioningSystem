@@ -46,13 +46,10 @@ namespace SynchBox_Client
                 this.netStream = netStream;
 
                 syncIdServer = proto_client.GetSynchIdWrapper(netStream);
-                if (sessionVars.lastSyncId == -1  || sessionVars.lastSyncId < syncIdServer)
+                if (proto_client.LockAcquireWrapper(netStream))
                 {
-                    if (proto_client.LockAcquireWrapper(netStream))
-                    {
-                        clientServerAlignment();
-                        proto_client.LockReleaseWrapper(netStream);
-                    }
+                    clientServerAlignment();
+                    proto_client.LockReleaseWrapper(netStream);
                 }
 
                 watch(); // inizio il monitoraggio delle cartelle
@@ -72,14 +69,11 @@ namespace SynchBox_Client
                 syncIdServer = 1;
                 return;
             }
-            if (remoteFiles.Count == 0)
-            {
-                populate_dictionary(netStream);
-            }
-            if (sessionVars.lastSyncId == syncIdServer) //se sono già allineato non faccio niente
+            if (remoteFiles.Count != 0 && sessionVars.lastSyncId == syncIdServer)
             {
                 return;
             }
+            populate_dictionary(netStream);
 
             sessionVars.lastSyncId = syncIdServer;
 
@@ -162,11 +156,6 @@ namespace SynchBox_Client
                 Logging.WriteToLog(ex.ToString());
             }
             
-        }
-
-        private void sincronizeDirectory()
-        {
-            throw new NotImplementedException();
         }
 
         private void selectActionFolder(string p)
@@ -265,12 +254,12 @@ namespace SynchBox_Client
 
         private void handlerRename(object sender, RenamedEventArgs e)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
         }
 
         private void syncFile(string path, string action)
         {
-            string hash = computeFileHash(path);
+            string hash = CalculateMD5Hash(File.ReadAllBytes(path));
             if (action.CompareTo("UPDATE")==0)
             {
                 syncUpdatefile(path, hash);
@@ -376,7 +365,7 @@ namespace SynchBox_Client
                         }
                     }
 
-                    proto_client.GetListWrapper(netStream, ref getList);
+                    proto_client.GetListWrapper(netStream, ref getList); // TODO: problema sulla sincronizzazione delle cartelle (le chiede anche se ci sono per via dello slash
                     proto_client.GetResponse getResponse = new proto_client.GetResponse();
 
                     for (int i = 0; i < getList.n; i++)
@@ -407,7 +396,8 @@ namespace SynchBox_Client
 
         private void chooseAction(string f)
         {
-            string localHash = computeFileHash(f);
+            string localHash = CalculateMD5Hash(File.ReadAllBytes(f));
+            //string localHash = computeFileHash(f);
             if (!remoteFiles.ContainsKey(f))
             {
                 syncNewfile(f, localHash); //nuovo file da aggiungere
@@ -628,16 +618,8 @@ namespace SynchBox_Client
                 flagSession = true;
             }
         }
-        private string computeFileHash(string file)
-        {
-            var md5 = MD5.Create();
-            var stream = File.OpenRead(file);
-            string hash = System.Convert.ToBase64String(md5.ComputeHash(stream));
-            stream.Close();
-            return hash;
-        }
 
-        //funzione usata sul server.. controllare che torni lo stesso output
+
         public static string CalculateMD5Hash(byte[] byteArray)
         {
             MD5 md5 = System.Security.Cryptography.MD5.Create();
