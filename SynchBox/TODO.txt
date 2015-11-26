@@ -7,3 +7,16 @@
 --Sistemare rename
 --Lock sui dizionari dei file
 --lock sul file per il trasferimento, evitare la modifica quando si sta leggendo
+
+
+--se ho la stessa verione del server, quando sincronizzo e non ho un file DEVO CANCELLARLO, NON SCARICARLO
+
+
+POSSIBILE MERDACCIA
+
+--se ho un file cancellato nei file remoti, comunque la chiave è presente nel mio dizionare --> tutte le volte devo controllare che non si eliminato??
+
+
+FIXATO
+
+--syncNewFolder --> aggiungere lo \ alla cartella

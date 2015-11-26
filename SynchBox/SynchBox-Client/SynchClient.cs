@@ -53,6 +53,8 @@ namespace SynchBox_Client
                 {
                     clientServerAlignment();
                     proto_client.LockReleaseWrapper(netStream);
+
+                    Logging.WriteToLog("Sinc completo, inizio monitoraggio cartelle");
                 }
 
                 watch(); // inizio il monitoraggio delle cartelle
@@ -138,7 +140,23 @@ namespace SynchBox_Client
                 {
                     foreach (KeyValuePair<string, string> entry in deletedFiles)
                     {
-                        syncDeletefile(entry.Key);
+                        if (remoteFiles.ContainsKey(entry.Key) && remoteFiles[entry.Key].dir)
+                        {
+                            //syncDeleteFolder(entry.Key);
+                            syncDeletefile(entry.Key);
+                            deleteOldFiles();
+                        }
+                        else if (remoteFiles.ContainsKey(entry.Key + "\\") && remoteFiles[entry.Key + "\\"].dir) // TODO: non dovrebbe passarci mai!
+                        {
+                            //syncDeleteFolder(entry.Key + "\\");
+                            syncDeletefile(entry.Key + "\\");
+                            deleteOldFiles();
+                        }
+                        else
+                        {
+                            syncDeletefile(entry.Key);
+                        }
+                        
                     }
                     deletedFiles.Clear();
                 }
@@ -223,10 +241,11 @@ namespace SynchBox_Client
                     {
                         if (Directory.Exists(path))
                         {
-                            syncNewFolder(path);
+                            syncNewFolder(path); /// problem!
                         }
                         else
                         {
+                            System.Windows.Forms.MessageBox.Show("Non so se dovrei eliminarlo.. sul server non c'è");
                             syncDeletefile(path); //TODO: è giusta questa linea????
                         }
                     }
@@ -306,9 +325,6 @@ namespace SynchBox_Client
             {
                 SyncMutex.ReleaseMutex();
             }
-
-            
-            
         }
 
         private void handlerRename(object sender, RenamedEventArgs e)
@@ -377,7 +393,9 @@ namespace SynchBox_Client
                     }
                     else
                     {
-                        //TODO: panico
+                        System.Windows.Forms.MessageBox.Show("Sul server ci sono due entry con lo stesso path.. non è consistente!!");
+                        //essendo che le cartelle hanno lo \ alla fine e che i file non posso chiamarmi uguali nella stessa dir
+                        // il fatto che passi di qui è un bel casino
                     }
                     
                 }
@@ -409,39 +427,13 @@ namespace SynchBox_Client
                         chooseAction(f);
                     }
 
-                    proto_client.GetList getList = new proto_client.GetList();
-                    getList.fileList = new List<proto_client.FileToGet>();
-                    getList.n = 0;
-
-                    foreach (KeyValuePair<string, proto_client.FileListItem> entry in remoteFiles)
+                    if (syncSessionId > sessionVars.lastSyncId) // se sono indietro scarico i file che mi mancano
                     {
-                        if(entry.Value.deleted==false && !File.Exists(entry.Key)){
-                            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
-                            getList.n++;
-                            fileToGet.fid = entry.Value.fid;
-                            fileToGet.rev = entry.Value.rev;
-                            getList.fileList.Add(fileToGet);
-                        }
+                        downloadNewFiles();
                     }
-
-                    proto_client.GetListWrapper(netStream, ref getList); // TODO: problema sulla sincronizzazione delle cartelle (le chiede anche se ci sono per via dello slash
-                    proto_client.GetResponse getResponse = new proto_client.GetResponse();
-
-                    for (int i = 0; i < getList.n; i++)
+                    else // altrimenti elimino i file di troppo dal server
                     {
-                        proto_client.GetResponseWrapper(netStream, ref getResponse);
-
-                        string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-                        
-                        if (getResponse.fileInfo.dir)
-                        {
-                            Directory.CreateDirectory(Path.GetDirectoryName(fileName));
-                        }
-                        else
-                        {
-                            Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
-                            System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
-                        }
+                        deleteOldFiles();
                     }
                 }
 
@@ -450,6 +442,58 @@ namespace SynchBox_Client
             {
                 proto_client.LockReleaseWrapper(netStream); //TODO: controllare che si possa fare sempre
                 Console.WriteLine(excpt.Message);
+            }
+        }
+
+        private void deleteOldFiles()
+        {
+            Dictionary<string, proto_client.FileListItem> tmpDict = new Dictionary<string, proto_client.FileListItem>();
+            tmpDict = remoteFiles.ToDictionary(entry => entry.Key, entry => entry.Value);
+            foreach (KeyValuePair<string, proto_client.FileListItem> entry in tmpDict)
+            {
+                if (entry.Value.deleted == false && ((!File.Exists(entry.Key) && !entry.Value.dir) || (!Directory.Exists(entry.Key) && entry.Value.dir)))
+                {
+                    syncDeletefile(entry.Key);
+                }
+            }
+        }
+
+        private void downloadNewFiles()
+        {
+            proto_client.GetList getList = new proto_client.GetList();
+            getList.fileList = new List<proto_client.FileToGet>();
+            getList.n = 0;
+
+            foreach (KeyValuePair<string, proto_client.FileListItem> entry in remoteFiles)
+            {
+                if (entry.Value.deleted == false && ((!File.Exists(entry.Key) && !entry.Value.dir) || (!Directory.Exists(entry.Key) && entry.Value.dir)))
+                {
+                    proto_client.FileToGet fileToGet = new proto_client.FileToGet();
+                    getList.n++;
+                    fileToGet.fid = entry.Value.fid;
+                    fileToGet.rev = entry.Value.rev;
+                    getList.fileList.Add(fileToGet);
+                }
+            }
+
+            proto_client.GetListWrapper(netStream, ref getList); // TODO: problema sulla sincronizzazione delle cartelle (le chiede anche se ci sono per via dello slash --> risolto (?)
+            proto_client.GetResponse getResponse = new proto_client.GetResponse();
+
+            for (int i = 0; i < getList.n; i++)
+            {
+                proto_client.GetResponseWrapper(netStream, ref getResponse);
+
+                string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+
+                if (getResponse.fileInfo.dir)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(fileName));
+                }
+                else
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                    System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                }
             }
         }
 
@@ -547,7 +591,45 @@ namespace SynchBox_Client
             
             deleteOk = proto_client.DeleteWrapper(netStream, ref delete);
 
-            remoteFiles.Remove(path);
+            //remoteFiles.Remove(path); //TODO :: quale delle due??
+            
+            if (remoteFiles.ContainsKey(path))
+            {
+                remoteFiles[path].deleted = true;
+                remoteFiles[path].rev = remoteFiles[path].rev+1;
+            }
+            else if (remoteFiles.ContainsKey(path + "\\"))
+            {
+                remoteFiles[path + "\\"].deleted = true;
+                remoteFiles[path].rev = remoteFiles[path].rev + 1;
+            }
+        }
+
+        private void syncDeleteFolder(string path)
+        {
+            checkBeginSession(netStream);
+
+            proto_client.Delete delete = new proto_client.Delete();
+            proto_client.DeleteOk deleteOk = new proto_client.DeleteOk();
+
+            if (remoteFiles.ContainsKey(path))
+            {
+                delete.fid = remoteFiles[path].fid;
+            }
+            else if (remoteFiles.ContainsKey(path+"\\"))
+            {
+                delete.fid = remoteFiles[path + "\\"].fid;
+            }
+
+            deleteOk = proto_client.DeleteFolderWrapper(netStream, ref delete);
+
+            //remoteFiles.Remove(path);
+
+            if (remoteFiles.ContainsKey(path))
+            {
+                remoteFiles[path].deleted = true;
+                remoteFiles[path].rev = remoteFiles[path].rev + 1;
+            }
         }
 
         private void syncUpdatefile(string path, string hash)
@@ -562,6 +644,7 @@ namespace SynchBox_Client
             UpdateOk = proto_client.UpdateWrapper(netStream, ref Update);
 
             remoteFiles[path].md5 = hash;
+            remoteFiles[path].rev = remoteFiles[path].rev + 1;
         }
 
         private void syncNewfile(string path, string hash)
@@ -608,13 +691,13 @@ namespace SynchBox_Client
 
             fileInfo.fid = addOk.fid;
             fileInfo.rev = addOk.rev;
-            fileInfo.filename = Path.GetFileName(path);
+            fileInfo.filename = Path.GetFileName(path) + "\\";
             fileInfo.folder = Path.GetDirectoryName(path).Replace(sessionVars.path, "") + "\\";
             fileInfo.deleted = false;
             fileInfo.md5 = null;
             fileInfo.dir = true;
 
-            remoteFiles.Add(path, fileInfo);
+            remoteFiles.Add(path + "\\", fileInfo);
         }
 
         private void writeChanges()
@@ -684,7 +767,6 @@ namespace SynchBox_Client
             aTimer.Elapsed += new ElapsedEventHandler(SyncronizeChanges);
             GC.KeepAlive(aTimer);
         }
-
 
         private void checkBeginSession(NetworkStream netStream)
         {

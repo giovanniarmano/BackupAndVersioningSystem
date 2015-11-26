@@ -13,7 +13,7 @@ namespace SyncBox_Server
         ///////////STRUCT DEFINITIONS /////////////////
 
         //TODO Synch with client!!
-        public enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, Add, BeginSession, EndSession , GetSynchId, Lock , LockAcquire, LockRelease};
+        public enum CmdType : byte { Login, Register, Logout, Test, ListRequest, GetList, Update, Delete, DeleteFolder, Add, BeginSession, EndSession , GetSynchId, Lock , LockAcquire, LockRelease};
 
         [ProtoContract]
         public class lock_c

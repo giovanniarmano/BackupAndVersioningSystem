@@ -102,6 +102,13 @@ namespace SyncBox_Server
                         Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
                         manage_Delete(netStream, ref currentUser);
                         break;
+                        
+                    case (byte)CmdType.DeleteFolder:
+                        Logging.WriteToLog("manage Delete CASE ...");
+                        msgtype_r.accepted = true;
+                        Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
+                        manage_DeleteFolder(netStream, ref currentUser);
+                        break;
 
                     case (byte)CmdType.Add:
                         Logging.WriteToLog("manage Add CASE ...");
@@ -199,6 +206,13 @@ namespace SyncBox_Server
             Delete delete = Serializer.DeserializeWithLengthPrefix<Delete>(netStream, PrefixStyle.Base128);
             if (currentUser.synchsessionid == -1) throw new Exception("Delete out of SynchSession");
             DeleteOk deleteOk = db.Delete(ref delete, ref currentUser);
+            Serializer.SerializeWithLengthPrefix<DeleteOk>(netStream, deleteOk, PrefixStyle.Base128);
+        }
+        private static void manage_DeleteFolder(NetworkStream netStream, ref login_c currentUser)
+        {
+            Delete delete = Serializer.DeserializeWithLengthPrefix<Delete>(netStream, PrefixStyle.Base128);
+            if (currentUser.synchsessionid == -1) throw new Exception("Delete out of SynchSession");
+            DeleteOk deleteOk = db.DeleteFolder(ref delete, ref currentUser);
             Serializer.SerializeWithLengthPrefix<DeleteOk>(netStream, deleteOk, PrefixStyle.Base128);
         }
 

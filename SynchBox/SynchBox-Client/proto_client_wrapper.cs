@@ -172,6 +172,24 @@ namespace SynchBox_Client
             return deleteOk;
         }
 
+        public static DeleteOk DeleteFolderWrapper(NetworkStream netStream, ref Delete delete)
+        {
+            messagetype_c mt = new messagetype_c();
+            mt.msgtype = (Byte)CmdType.DeleteFolder;
+
+            Serializer.SerializeWithLengthPrefix<messagetype_c>(netStream, mt, PrefixStyle.Base128);
+            mt = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
+
+            if (mt.accepted == false) throw new Exception("Message type not accepted");
+
+            Serializer.SerializeWithLengthPrefix<Delete>(netStream, delete, PrefixStyle.Base128);
+            DeleteOk deleteOk = Serializer.DeserializeWithLengthPrefix<DeleteOk>(netStream, PrefixStyle.Base128);
+
+            if ((deleteOk.fid < 0)) Logging.WriteToLog("Error in DELETING FOLDER. fid < 0 ");
+
+            return deleteOk;
+        }
+
 
         public static int GetSynchIdWrapper(NetworkStream netStream)
         {
