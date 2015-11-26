@@ -639,7 +639,8 @@ namespace SynchBox_Client
             if (remoteFiles.ContainsKey(path))
             {
                 remoteFiles[path].deleted = true;
-                remoteFiles[path].rev = remoteFiles[path].rev+1;
+                remoteFiles[path].rev = remoteFiles[path].rev + 1;
+                remoteFiles[path].md5 = null;
             }
             else if (remoteFiles.ContainsKey(path + "\\"))
             {
@@ -686,7 +687,7 @@ namespace SynchBox_Client
 
             UpdateOk = proto_client.UpdateWrapper(netStream, ref Update);
 
-            if (remoteFiles[path].md5.CompareTo("") == 0)
+            if (remoteFiles[path].md5 == null)
             {
                 remoteFiles[path].md5 = hash;
                 remoteFiles[path].deleted = false;
