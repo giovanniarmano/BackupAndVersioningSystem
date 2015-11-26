@@ -678,7 +678,12 @@ namespace SynchBox_Client
 
             UpdateOk = proto_client.UpdateWrapper(netStream, ref Update);
 
-            remoteFiles[path].md5 = hash;
+            if (remoteFiles[path].md5.CompareTo("") == 0)
+            {
+                remoteFiles[path].md5 = hash;
+                remoteFiles[path].deleted = false;
+            }
+            
             remoteFiles[path].rev = remoteFiles[path].rev + 1;
         }
 
