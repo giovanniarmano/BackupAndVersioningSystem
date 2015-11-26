@@ -103,7 +103,9 @@ namespace SynchBox_Client
                 aTimer.Enabled = false;
                 SyncMutex.WaitOne();
 
-                if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0)
+                syncIdServer = proto_client.GetSynchIdWrapper(netStream);
+
+                if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0 && sessionVars.lastSyncId == syncIdServer)
                 {
                     aTimer.Enabled = true;
                     return;
@@ -113,7 +115,7 @@ namespace SynchBox_Client
                 {
                     return;
                 }
-            
+
                 clientServerAlignment();
 
                 if (editedDirectory.Count > 0)
