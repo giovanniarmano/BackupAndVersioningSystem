@@ -365,7 +365,7 @@ namespace SynchBox_Client
         private void syncFile(string path, string action)
         {
             string hash = CalculateMD5Hash(File.ReadAllBytes(path));
-            if (action.CompareTo("UPDATE") == 0 && hash.CompareTo(remoteFiles[path].md5) != 0)
+            if (action.CompareTo("UPDATE") == 0 && (hash.CompareTo(remoteFiles[path].md5) != 0 || remoteFiles[path].deleted))
             {
                 syncUpdatefile(path, hash);
             }
