@@ -152,7 +152,7 @@ namespace SynchBox_Client
                             syncDeletefile(entry.Key + "\\");
                             deleteOldFiles();
                         }
-                        else
+                        else if (remoteFiles.ContainsKey(entry.Key))
                         {
                             syncDeletefile(entry.Key);
                         }
@@ -245,8 +245,9 @@ namespace SynchBox_Client
                         }
                         else
                         {
-                            System.Windows.Forms.MessageBox.Show("Non so se dovrei eliminarlo.. sul server non c'è");
-                            syncDeletefile(path); //TODO: è giusta questa linea????
+                            tmpFiles[path] = null;
+                            //System.Windows.Forms.MessageBox.Show("Non so se dovrei eliminarlo.. sul server non c'è");
+                            //syncDeletefile(path); //TODO: è giusta questa linea????
                         }
                     }
                 }
@@ -329,7 +330,36 @@ namespace SynchBox_Client
 
         private void handlerRename(object sender, RenamedEventArgs e)
         {
-            //throw new NotImplementedException();
+            try
+            {
+                SyncMutex.WaitOne();
+                deletedFiles.Add(e.OldFullPath, "CHANGE");
+
+                if (Directory.Exists(e.FullPath))
+                {
+                    editedDirectory.Add(e.FullPath, "CHANGE");
+                    if (editedFiles.ContainsKey(e.OldFullPath + "\\"))
+                    {
+                        editedFiles.Remove(e.OldFullPath + "\\");
+                    }
+                }
+                else if (File.Exists(e.FullPath))
+                {
+                    editedFiles.Add(e.FullPath, "CHANGE");
+                    if (editedFiles.ContainsKey(e.OldFullPath))
+                    {
+                        editedFiles.Remove(e.OldFullPath);
+                    }
+                }
+            }
+            catch (Exception exe)
+            {
+                Console.WriteLine(exe.Message);
+            }
+            finally
+            {
+                SyncMutex.ReleaseMutex();
+            }
         }
 
         private void syncFile(string path, string action)
@@ -427,7 +457,7 @@ namespace SynchBox_Client
                         chooseAction(f);
                     }
 
-                    if (syncSessionId > sessionVars.lastSyncId) // se sono indietro scarico i file che mi mancano
+                    if (syncIdServer > syncSessionId) // se sono indietro scarico i file che mi mancano
                     {
                         downloadNewFiles();
                     }
@@ -474,6 +504,11 @@ namespace SynchBox_Client
                     fileToGet.rev = entry.Value.rev;
                     getList.fileList.Add(fileToGet);
                 }
+            }
+
+            if (getList.n == 0)
+            {
+                return;
             }
 
             proto_client.GetListWrapper(netStream, ref getList); // TODO: problema sulla sincronizzazione delle cartelle (le chiede anche se ci sono per via dello slash --> risolto (?)
