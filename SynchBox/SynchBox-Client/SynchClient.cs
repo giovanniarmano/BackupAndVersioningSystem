@@ -156,6 +156,10 @@ namespace SynchBox_Client
                         {
                             syncDeletefile(entry.Key);
                         }
+                        else if (remoteFiles.ContainsKey(entry.Key) && remoteFiles[entry.Key].deleted)
+                        {
+                            //selectSyncAction(entry.Key);
+                        }
                         
                     }
                     deletedFiles.Clear();
@@ -249,6 +253,10 @@ namespace SynchBox_Client
                             //System.Windows.Forms.MessageBox.Show("Non so se dovrei eliminarlo.. sul server non c'è");
                             //syncDeletefile(path); //TODO: è giusta questa linea????
                         }
+                    }
+                    else if (remoteFiles.ContainsKey(path + "\\") && remoteFiles[path + "\\"].deleted && remoteFiles[path + "\\"].dir)
+                    {
+                        syncUpdateFolder(path);
                     }
                 }
             }
@@ -683,8 +691,22 @@ namespace SynchBox_Client
                 remoteFiles[path].md5 = hash;
                 remoteFiles[path].deleted = false;
             }
-            
+
             remoteFiles[path].rev = remoteFiles[path].rev + 1;
+        }
+
+        private void syncUpdateFolder(string path)
+        {
+            checkBeginSession(netStream);
+
+            proto_client.Update Update = new proto_client.Update();
+            proto_client.UpdateOk UpdateOk = new proto_client.UpdateOk();
+            Update.fid = remoteFiles[path + "\\"].fid;
+
+            UpdateOk = proto_client.UpdateWrapper(netStream, ref Update);
+
+            remoteFiles[path + "\\"].deleted = false;
+            remoteFiles[path + "\\"].rev = remoteFiles[path + "\\"].rev + 1;
         }
 
         private void syncNewfile(string path, string hash)
