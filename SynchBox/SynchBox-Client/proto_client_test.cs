@@ -236,10 +236,6 @@ namespace SynchBox_Client
                     File.WriteAllBytes(bff, getResponse.fileDump);
                 }
 
-                
-
-
-
                 Logging.WriteToLog("try to get 1 file and 1 folder not existing");
                 //try to get 1 file and 1 folder not existing
                 getList.n = 2;
@@ -260,6 +256,17 @@ namespace SynchBox_Client
                 Logging.WriteToLog(getResponse.ToString());
                 GetResponseWrapper(netStream, ref getResponse);
                 Logging.WriteToLog(getResponse.ToString());
+
+                
+                //potrebbe schiantare
+                proto_client.GetList getList_ = new proto_client.GetList();
+                getList_.fileList = new List<proto_client.FileToGet>();
+                getList_.n = 0;
+
+                
+                proto_client.GetListWrapper(netStream, ref getList_); // TODO: problema sulla sincronizzazione delle cartelle (le chiede anche se ci sono per via dello slash --> risolto (?)
+                proto_client.GetResponse getResponse_ = new proto_client.GetResponse();
+                
 
 
             }

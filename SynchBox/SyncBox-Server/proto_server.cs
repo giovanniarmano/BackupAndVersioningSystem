@@ -228,8 +228,11 @@ namespace SyncBox_Server
         private static void manage_GetList(NetworkStream netStream, ref login_c currentUser)
         {
             GetList getList = Serializer.DeserializeWithLengthPrefix<GetList>(netStream, PrefixStyle.Base128);
+            if (getList.fileList == null)
+                return;
             Logging.WriteToLog("GET LIST request ...\n"+getList.ToString());
             int i = 0;
+            
             for (i = 0; i < getList.fileList.Count; i++)
             {
                 GetResponse getResponse = db.GetResponse(getList.fileList[i].fid, getList.fileList[i].rev,currentUser.uid);
