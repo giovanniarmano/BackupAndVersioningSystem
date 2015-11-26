@@ -140,19 +140,19 @@ namespace SynchBox_Client
                 {
                     foreach (KeyValuePair<string, string> entry in deletedFiles)
                     {
-                        if (remoteFiles.ContainsKey(entry.Key) && remoteFiles[entry.Key].dir)
+                        if (remoteFiles.ContainsKey(entry.Key) && remoteFiles[entry.Key].dir && !remoteFiles[entry.Key].deleted)// TODO: non dovrebbe passarci mai!
                         {
                             //syncDeleteFolder(entry.Key);
                             syncDeletefile(entry.Key);
                             deleteOldFiles();
                         }
-                        else if (remoteFiles.ContainsKey(entry.Key + "\\") && remoteFiles[entry.Key + "\\"].dir) // TODO: non dovrebbe passarci mai!
+                        else if (remoteFiles.ContainsKey(entry.Key + "\\") && remoteFiles[entry.Key + "\\"].dir && !remoteFiles[entry.Key + "\\"].deleted) 
                         {
                             //syncDeleteFolder(entry.Key + "\\");
                             syncDeletefile(entry.Key + "\\");
                             deleteOldFiles();
                         }
-                        else if (remoteFiles.ContainsKey(entry.Key))
+                        else if (remoteFiles.ContainsKey(entry.Key) && !remoteFiles[entry.Key].deleted)
                         {
                             syncDeletefile(entry.Key);
                         }
