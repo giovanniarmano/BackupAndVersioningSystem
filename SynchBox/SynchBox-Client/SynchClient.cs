@@ -422,6 +422,7 @@ namespace SynchBox_Client
 
             remoteFileList = proto_client.ListRequestLastWrapper(netStream);
             //Potrebbe bastare una listRequestLast??
+            remoteFiles.Clear();
 
             //remoteFileList = proto_client.ListRequestAllWrapper(netStream);
             if (remoteFileList.fileList != null) { 
@@ -449,11 +450,15 @@ namespace SynchBox_Client
             {
                 foreach (string d in Directory.GetDirectories(path))
                 {
-                    foreach (string f in Directory.GetFiles(d))
+                    chooseActionFolder(d);
+                    if (Directory.Exists(d))
                     {
-                        chooseAction(f);
+                        foreach (string f in Directory.GetFiles(d))
+                        {
+                            chooseAction(f);
+                        }
+                        findDifference(d);
                     }
-                    findDifference(d);
                 }
 
                 if (sessionVars.path.CompareTo(path) == 0)
@@ -483,6 +488,40 @@ namespace SynchBox_Client
                 proto_client.LockReleaseWrapper(netStream); //TODO: controllare che si possa fare sempre
                 Console.WriteLine(excpt.Message);
             }
+        }
+
+        private void chooseActionFolder(string f)  // da fare prima dei file nella cartella
+        {
+            if (!remoteFiles.ContainsKey(f+"\\"))
+            {
+                syncNewFolder(f);
+            }
+            else
+            {
+                if (remoteFiles[f + "\\"].deleted == true)
+                {
+                    DeleteDirectory(f);
+                }
+            }
+        }
+
+        public static void DeleteDirectory(string target_dir)
+        {
+            string[] files = Directory.GetFiles(target_dir);
+            string[] dirs = Directory.GetDirectories(target_dir);
+
+            foreach (string file in files)
+            {
+                File.SetAttributes(file, FileAttributes.Normal);
+                File.Delete(file);
+            }
+
+            foreach (string dir in dirs)
+            {
+                DeleteDirectory(dir);
+            }
+
+            Directory.Delete(target_dir, false);
         }
 
         private void deleteOldFiles()
@@ -565,7 +604,14 @@ namespace SynchBox_Client
             {
                 if (remoteFiles[f].deleted == true)
                 {
-                    File.Delete(f); //elimino il file locale
+                    if (remoteFiles[f].dir)
+                    {
+                        Directory.Delete(f);
+                    }
+                    else
+                    {
+                        File.Delete(f); //elimino il file locale
+                    }
                 }
                 else if (localHash.CompareTo(remoteFiles[f].md5) != 0)
                 {
