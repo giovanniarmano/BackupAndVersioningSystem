@@ -11,6 +11,7 @@
 
 --se ho la stessa verione del server, quando sincronizzo e non ho un file DEVO CANCELLARLO, NON SCARICARLO
 
+--utilizzare penultima revisione come indice per file in conflitto
 
 POSSIBILE MERDACCIA
 
@@ -20,3 +21,4 @@ POSSIBILE MERDACCIA
 FIXATO
 
 --syncNewFolder --> aggiungere lo \ alla cartella
+

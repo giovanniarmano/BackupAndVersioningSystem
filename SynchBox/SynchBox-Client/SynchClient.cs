@@ -28,6 +28,7 @@ namespace SynchBox_Client
         public Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
         public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
         public Dictionary<string, string> editedDirectory = new Dictionary<string, string>();
+        public Dictionary<string, string> renamedDirectory = new Dictionary<string, string>();
         public Dictionary<string, string> deletedFiles = new Dictionary<string, string>();
         private Dictionary<string, string> tmpFiles = new Dictionary<string, string>();
 
@@ -105,13 +106,14 @@ namespace SynchBox_Client
 
                 syncIdServer = proto_client.GetSynchIdWrapper(netStream);
 
-                if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0 && sessionVars.lastSyncId == syncIdServer)
+                if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0 && renamedDirectory.Count == 0
+                        && sessionVars.lastSyncId == syncIdServer)
                 {
                     aTimer.Enabled = true;
                     return;
                 }
             
-                if (!proto_client.LockAcquireWrapper(netStream))
+                if (!proto_client.LockAcquireWrapper(netStream)) //TODO pernsare se fare merge di questa if con quella sopra
                 {
                     return;
                 }
@@ -137,6 +139,15 @@ namespace SynchBox_Client
                         selectSyncAction(entry.Key);
                     }
                     clearEditedFile();
+                }
+
+                if (renamedDirectory.Count > 0)
+                {
+                    foreach (KeyValuePair<string, string> entry in renamedDirectory)
+                    {
+                        findRenamedDifference(entry.Key);
+                    }
+                    renamedDirectory.Clear();
                 }
 
                 if (deletedFiles.Count > 0)
@@ -348,6 +359,7 @@ namespace SynchBox_Client
 
                 if (Directory.Exists(e.FullPath))
                 {
+                    renamedDirectory.Add(e.FullPath, "CHANGE");
                     editedDirectory.Add(e.FullPath, "CHANGE");
                     if (editedDirectory.ContainsKey(e.OldFullPath + "\\"))
                     {
@@ -497,6 +509,26 @@ namespace SynchBox_Client
             }
         }
 
+        private void findRenamedDifference(string path)
+        {
+            foreach (string d in Directory.GetDirectories(path))
+            {
+                chooseActionFolder(d);
+                if (Directory.Exists(d))
+                {
+                    foreach (string f in Directory.GetFiles(d))
+                    {
+                        chooseAction(f);
+                    }
+                    findDifference(d);
+                }
+            }
+            foreach (string f in Directory.GetFiles(path))
+            {
+                chooseAction(f);
+            }
+        }
+
         private void chooseActionFolder(string f)  // da fare prima dei file nella cartella
         {
             if (!remoteFiles.ContainsKey(f+"\\"))
@@ -622,37 +654,57 @@ namespace SynchBox_Client
                 }
                 else if (localHash.CompareTo(remoteFiles[f].md5) != 0)
                 {
-                    /*
-                    string newName = MakeUnique(f);
-                    System.IO.File.Move(f, newName);
-                    syncNewfile(newName, localHash);*/
 
                     proto_client.GetList getList = new proto_client.GetList();
                     getList.fileList = new List<proto_client.FileToGet>();
                     proto_client.FileToGet fileToGet = new proto_client.FileToGet();
-
-                    fileToGet.fid = remoteFiles[f].fid;
-                    fileToGet.rev = remoteFiles[f].rev;
-                    getList.fileList.Add(fileToGet);
-                    getList.n = 1;
-
-                    proto_client.GetListWrapper(netStream, ref getList);
                     proto_client.GetResponse getResponse = new proto_client.GetResponse();
 
-                    proto_client.GetResponseWrapper(netStream, ref getResponse);
-
-                    string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-
-                    //Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder)); // creo le directory
-                    File.Delete(f);
-                    try
+                    if (remoteFiles[f].rev > 1)
                     {
-                        System.IO.File.WriteAllBytes(f, getResponse.fileDump);
+
+                        fileToGet.fid = remoteFiles[f].fid;
+                        fileToGet.rev = remoteFiles[f].rev - 1;
+                        getList.fileList.Add(fileToGet);
+                        getList.n = 1;
+
+                        proto_client.GetListWrapper(netStream, ref getList);
+
+                        proto_client.GetResponseWrapper(netStream, ref getResponse);
+
+
+                        if(getResponse.fileInfo.md5.CompareTo(localHash) != 0){
+                            string newName = MakeUnique(f);
+                            System.IO.File.Move(f, newName);
+                            syncNewfile(newName, localHash);
+                        }
+                        else
+                        {
+                            File.Delete(f);
+                        }
+                        getList.fileList.Clear();
+
+                        fileToGet.fid = remoteFiles[f].fid;
+                        fileToGet.rev = remoteFiles[f].rev;
+                        getList.fileList.Add(fileToGet);
+                        getList.n = 1;
+
+                        proto_client.GetListWrapper(netStream, ref getList);
+
+                        proto_client.GetResponseWrapper(netStream, ref getResponse);
+
+                        string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+                            
+                        try
+                        {
+                            System.IO.File.WriteAllBytes(f, getResponse.fileDump);
+                        }
+                        catch (Exception wEcx)
+                        {
+                            Console.WriteLine(wEcx.Message);
+                        }
                     }
-                    catch (Exception wEcx)
-                    {
-                        Console.WriteLine(wEcx.Message);
-                    }
+
                 }
                 //non fare niente, file ok
             }
@@ -735,7 +787,7 @@ namespace SynchBox_Client
 
         private void syncUpdatefile(string path, string hash)
         {
-            checkBeginSession(netStream);
+          checkBeginSession(netStream);
 
             proto_client.Update Update = new proto_client.Update();
             proto_client.UpdateOk UpdateOk = new proto_client.UpdateOk();
