@@ -349,9 +349,9 @@ namespace SynchBox_Client
                 if (Directory.Exists(e.FullPath))
                 {
                     editedDirectory.Add(e.FullPath, "CHANGE");
-                    if (editedFiles.ContainsKey(e.OldFullPath + "\\"))
+                    if (editedDirectory.ContainsKey(e.OldFullPath + "\\"))
                     {
-                        editedFiles.Remove(e.OldFullPath + "\\");
+                        editedDirectory.Remove(e.OldFullPath + "\\");
                     }
                 }
                 else if (File.Exists(e.FullPath))
