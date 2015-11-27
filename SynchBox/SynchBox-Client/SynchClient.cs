@@ -424,6 +424,12 @@ namespace SynchBox_Client
             //Potrebbe bastare una listRequestLast??
             remoteFiles.Clear();
 
+            // -----------DA CONTROLLARE !!!!---------------
+            editedFiles.Clear();
+            editedDirectory.Clear();
+            deletedFiles.Clear();
+            // ----------------------------------------------
+
             //remoteFileList = proto_client.ListRequestAllWrapper(netStream);
             if (remoteFileList.fileList != null) { 
                 foreach (proto_client.FileListItem fileInfo in remoteFileList.fileList)
