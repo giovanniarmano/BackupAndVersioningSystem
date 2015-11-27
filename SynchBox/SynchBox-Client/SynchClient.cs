@@ -118,6 +118,7 @@ namespace SynchBox_Client
 
                 clientServerAlignment();
 
+
                 if (editedDirectory.Count > 0)
                 {
                     foreach (KeyValuePair<string, string> entry in editedDirectory)
@@ -424,11 +425,11 @@ namespace SynchBox_Client
             //Potrebbe bastare una listRequestLast??
             remoteFiles.Clear();
 
-            // -----------DA CONTROLLARE !!!!---------------
-            editedFiles.Clear();
+            // -----------DA CONTROLLARE !!!!--------------- 
+            /*editedFiles.Clear();
             editedDirectory.Clear();
             deletedFiles.Clear();
-            // ----------------------------------------------
+            */ // ----------------------------------------------
 
             //remoteFileList = proto_client.ListRequestAllWrapper(netStream);
             if (remoteFileList.fileList != null) { 
@@ -582,7 +583,7 @@ namespace SynchBox_Client
                 else
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
-                    System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                    System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
                 }
             }
         }
@@ -621,9 +622,10 @@ namespace SynchBox_Client
                 }
                 else if (localHash.CompareTo(remoteFiles[f].md5) != 0)
                 {
+                    /*
                     string newName = MakeUnique(f);
                     System.IO.File.Move(f, newName);
-                    syncNewfile(newName, localHash);
+                    syncNewfile(newName, localHash);*/
 
                     proto_client.GetList getList = new proto_client.GetList();
                     getList.fileList = new List<proto_client.FileToGet>();
@@ -641,10 +643,11 @@ namespace SynchBox_Client
 
                     string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
 
-                    Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder)); // creo le directory
+                    //Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder)); // creo le directory
+                    File.Delete(f);
                     try
                     {
-                        System.IO.File.WriteAllText(fileName, System.Text.Encoding.UTF8.GetString(getResponse.fileDump));
+                        System.IO.File.WriteAllBytes(f, getResponse.fileDump);
                     }
                     catch (Exception wEcx)
                     {
@@ -741,11 +744,9 @@ namespace SynchBox_Client
 
             UpdateOk = proto_client.UpdateWrapper(netStream, ref Update);
 
-            if (remoteFiles[path].md5 == null)
-            {
-                remoteFiles[path].md5 = hash;
-                remoteFiles[path].deleted = false;
-            }
+
+            remoteFiles[path].md5 = hash;
+            remoteFiles[path].deleted = false;
 
             remoteFiles[path].rev = remoteFiles[path].rev + 1;
         }
