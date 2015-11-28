@@ -109,7 +109,6 @@ namespace SynchBox_Client
                 if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0 && renamedDirectory.Count == 0
                         && sessionVars.lastSyncId == syncIdServer)
                 {
-                    aTimer.Enabled = true;
                     return;
                 }
             
@@ -189,7 +188,6 @@ namespace SynchBox_Client
                 writeChanges();
 
                 proto_client.LockReleaseWrapper(netStream);
-                aTimer.Enabled = true;
             }
             catch (Exception ex)
             {
@@ -198,6 +196,8 @@ namespace SynchBox_Client
             }
             finally
             {
+
+                aTimer.Enabled = true;
                 SyncMutex.ReleaseMutex();
             }
             
