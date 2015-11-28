@@ -1,0 +1,22 @@
+#1 Prio High: BUG Il secondo client perde la sincronizzazione (come scritto su whatsapp venerdì sera)
+[27/11/2015, 20:54] +39 334 798 6923: Ho copiato la solita cartella con 4 sottocartelle con una decina di foto l'una.
+correttamente uplodate sul server, e l'altro client le ha viste e sincronizzate.
+creo una cartella con file word nella root nella root. da questo punto A uplodda correttamente ma B ha perso la sincronizzazzione
+[27/11/2015, 20:54] +39 334 798 6923: morale è un problema di B che non si accorge di non essere sincronizzato per qualche motivo
+[27/11/2015, 20:58] +39 334 798 6923: perchè se riavvio client B, quando fa la synch iniziale si allinea correttamente
+
+#2 Prio Low: BUG  2 rename consecutive troppo veloci, il client (pur non crashando) non continua più con nessuna sincronizzazione e lascia il server diasllineato
+
+#3 Prio Low: FEATURE nella sincronizzazione, ad ogni loop aggiungere, 
+if (sessionVars.cancellationtoken.iscancellationrequested == true) ferma la sincronizzazione
+(non l'ho fatto io perchè probabilmente hai dei timer o delle cose da stoppareche conosci meglio tu)
+
+#4 Prio Normal: Scelta progettuale - discutere dell'interfaccia grafica di sincronizzazzione
+
+#5 Prio Normal :Scelta progettuale - discutere interfaccia grafica di restore (eventualmente 2 una filetofile e una per SynchSession con menu a tendina restore complessivo)
+
+#6 Prio High: Scelta progettuale -discutere di come gestire una variabile globale condivisa che mi dica quando fare download GetListAll per la restore
+
+#7 Prio Normal: BUG - Aggiungo una cartella con un centinaio di file ok. aggiungo altra cartella con altro centinaio di file (sempre foto poco pesanti, ma capita anche con altro), e la seconda volta non mi uplodda tutto, ma solo parte e non capisco il perchè. testato duevolte con un solo client attivo.
+
+#8 Prio Low: scelta progettuale - supponiamo file molto molto big, lo dividiamo in chunk nella comunicazione client/server o ce ne fottiamo? (io me ne fotterei)
