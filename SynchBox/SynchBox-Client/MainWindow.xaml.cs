@@ -74,6 +74,7 @@ namespace SynchBox_Client
         public MainWindow()
         {
             InitializeComponent();
+            disable_tabitems();
             sessionVars = new SessionVars();
             Logging.WriteToLog("-----CLIENT STARTED------");
             initializeSessionParam();
@@ -263,7 +264,7 @@ namespace SynchBox_Client
        
 
         private void setNameLogin() {
-            welcome_l.Content = "welcome, " + sessionVars.username + " @ " + sessionVars.ip_str + ":" + sessionVars.port_str;
+            welcome_l.Content = "Welcome, " + sessionVars.username + " @ " + sessionVars.ip_str + ":" + sessionVars.port_int.ToString();
         }
 
         private void unsetNameLogin() {
@@ -306,13 +307,6 @@ namespace SynchBox_Client
             b_register.IsEnabled = false;
         }
 
-        private void end_login_register_ui() {
-            b_login_login.Content = "Login";
-            b_register.Content = "or Register";
-            b_login_login.IsEnabled = true;
-            b_register.IsEnabled = true;
-            
-        }
 
         private void login_ui() {
             setNameLogin();
@@ -326,6 +320,7 @@ namespace SynchBox_Client
             clearTextBox();
             enableTextBox();
             unsetNameLogin();
+            disable_tabitems();
         }
 
         private void clearTextBox() {
@@ -354,6 +349,51 @@ namespace SynchBox_Client
             b_logout_login.Visibility = Visibility.Visible;
         }
 
+
+
+        private void end_login_register_ui()
+        {
+            b_login_login.Content = "Login";
+            b_register.Content = "or Register";
+            b_login_login.IsEnabled = true;
+            b_register.IsEnabled = true;
+
+            
+            enable_tabitems();
+        }
+
+        private void disable_tabitems()
+        {
+            var tab = tabControl.Items[1] as TabItem;
+            //tab.Visibility = Visibility.Hidden;
+            tab.IsEnabled = false;
+         
+            tab = tabControl.Items[2] as TabItem;
+            //tab.Visibility = Visibility.Hidden;
+            tab.IsEnabled = false;
+
+            tab = tabControl.Items[3] as TabItem;
+            //tab.Visibility = Visibility.Hidden;
+            tab.IsEnabled = false;
+        }
+
+        private void enable_tabitems()
+        {
+            var tab = tabControl.Items[1] as TabItem;
+            //tab.Visibility = Visibility.Visible;
+            tab.IsEnabled = true;
+
+            tab = tabControl.Items[2] as TabItem;
+            //tab.Visibility = Visibility.Visible;
+            tab.IsEnabled = true;
+
+            tab = tabControl.Items[3] as TabItem;
+            //tab.Visibility = Visibility.Visible;
+            tab.IsEnabled = true;
+        }
+
+
+
         private void b_logout_login_Click(object sender, RoutedEventArgs e)
         {
             //do logout
@@ -368,6 +408,7 @@ namespace SynchBox_Client
             logout_ui();
         }
 
+        //button begin Syncronization
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             Logging.WriteToLog("Begin syncronization ...");
@@ -376,6 +417,7 @@ namespace SynchBox_Client
                 System.Windows.Forms.MessageBox.Show("Invalid directory");
                 return;
             }
+            start_synch_begin_ui();
             sessionVars.path = local_path.Text;
             Logging.WriteToLog("Loading information ...");
             int result = synchClient.getInitInformation(sessionVars);
@@ -383,15 +425,58 @@ namespace SynchBox_Client
             if (Directory.EnumerateFileSystemEntries(local_path.Text).Any() && result==1)
             {
                 System.Windows.Forms.MessageBox.Show("Impossible to sincronize a not empty directory");
+                start_synch_stopped_ui();
                 return;
             }
 
             initializeSyncParam();
-            synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
-
-            //ShowRemoteFileSystem(sessionVars.socketClient.getStream());
             
+            synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
+            start_synch_end_ui();
+            //ShowRemoteFileSystem(sessionVars.socketClient.getStream());
+
         }
+
+        private void b_stop_sync_Click(object sender, RoutedEventArgs e)
+        {
+            sessionVars.cts.Cancel();
+            start_synch_stopped_ui();
+        }
+
+        private void start_synch_end_ui()
+        {
+            b_start_sync.Visibility = Visibility.Hidden;
+            b_stop_sync.Visibility = Visibility.Visible;
+
+            //b_start_sync.Content = "Stop Syncronization";
+            //b_start_sync.IsEnabled = true;
+            local_path.IsEnabled = false;
+            button_sfoglia.IsEnabled = false;
+        }
+
+        private void start_synch_stopped_ui()
+        {
+            b_start_sync.Visibility = Visibility.Visible;
+            b_stop_sync.Visibility = Visibility.Hidden;
+
+            b_start_sync.Content = "Start Syncronization";
+            b_start_sync.IsEnabled = true;
+
+            local_path.IsEnabled = true;
+            button_sfoglia.IsEnabled = true;
+        }
+        private void start_synch_begin_ui()
+        {
+            b_start_sync.Content = "Starting Syncronization...";
+            b_start_sync.IsEnabled = false;
+            b_start_sync.Visibility = Visibility.Visible;
+            b_stop_sync.Visibility = Visibility.Hidden;
+
+            local_path.IsEnabled = false;
+            button_sfoglia.IsEnabled = false;
+
+        }
+
 
         private void Button_click_sfoglia(object sender, System.EventArgs e)
         {
@@ -532,5 +617,6 @@ namespace SynchBox_Client
             }*/
         }
 
+        
     }
 }

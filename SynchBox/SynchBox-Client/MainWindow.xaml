@@ -60,7 +60,7 @@
         </Grid>
 
 
-        <TabControl Grid.Row="1" Background="{x:Null}" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}" >
+        <TabControl Name="tabControl"  Grid.Row="1" Background="{x:Null}" BorderBrush="{DynamicResource {x:Static SystemColors.ActiveCaptionBrushKey}}" >
 
             <TabItem Margin="-2,-2,-2,0.333" >
                 <!--BorderBrush="{x:Null}" Background="{x:Null}"-->
@@ -130,10 +130,11 @@
                             </Grid.ColumnDefinitions>
 
                             <TextBox x:Name="local_path" Height="23" Margin="10,10,8.4,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="C:\Users\giovanni\Desktop\sync" Grid.ColumnSpan="3"/>
-                            <Button Click="Button_click_sfoglia" Content="Sfoglia" HorizontalAlignment="Right" Margin="0,49,9.4,0" Width="75" Height="22" VerticalAlignment="Top" Grid.ColumnSpan="3"/>
+                            <Button x:Name="button_sfoglia" Click="Button_click_sfoglia" Content="Sfoglia" HorizontalAlignment="Right" Margin="0,49,9.4,0" Width="75" Height="22" VerticalAlignment="Top" Grid.ColumnSpan="3"/>
                         </Grid>
                     </GroupBox>
-                    <Button x:Name="b_start_sync" Content="Start Syncronization" HorizontalAlignment="Left" Margin="434,140,0,0" VerticalAlignment="Top" Width="135" Click="Button_Click_1" Height="36"/>
+                    <Button x:Name="b_start_sync" Content="Start Syncronization" Visibility="Visible" HorizontalAlignment="Left" Margin="434,140,0,0" VerticalAlignment="Top" Width="135" Click="Button_Click_1" Height="36"/>
+                    <Button x:Name="b_stop_sync" Content="Stop Syncronization" Visibility="Hidden" HorizontalAlignment="Left" Margin="434,140,0,0" VerticalAlignment="Top" Width="135"  Height="36" Click="b_stop_sync_Click"/>
 
 
 
