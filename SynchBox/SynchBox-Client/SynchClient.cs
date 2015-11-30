@@ -13,6 +13,7 @@ using System.Threading;
 using System.IO;
 using Newtonsoft.Json;
 using System.Timers;
+using System.Web.Script.Serialization;
 
 namespace SynchBox_Client
 {
@@ -28,6 +29,9 @@ namespace SynchBox_Client
         int intervallo = 10;
 
         public Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
+        public Dictionary<string, proto_client.FileListItem> oldRemoteFiles = new Dictionary<string, proto_client.FileListItem>();
+
+
         public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
         public Dictionary<string, string> editedDirectory = new Dictionary<string, string>();
         public Dictionary<string, string> renamedDirectory = new Dictionary<string, string>();
@@ -98,6 +102,8 @@ namespace SynchBox_Client
             sessionVars.lastSyncId = syncIdServer;
 
             int syncSessionIdTemporaneo = syncSessionId;
+
+            readRemoteFile();
 
             findDifference(sessionVars.path);
 
@@ -515,7 +521,7 @@ namespace SynchBox_Client
                 {
                     foreach (string f in Directory.GetFiles(path))
                     {
-                        if (f.CompareTo(path + "\\conf.ini") == 0)
+                        if (f.CompareTo(path + "\\conf.ini") == 0 || f.CompareTo(path + "\\~remoteFiles") == 0 )
                         {
                             continue;
                         }
@@ -683,7 +689,7 @@ namespace SynchBox_Client
                         File.Delete(f); //elimino il file locale
                     }
                 }
-                else if (localHash.CompareTo(remoteFiles[f].md5) != 0)
+                else if (localHash.CompareTo(remoteFiles[f].md5) != 0 || localHash.CompareTo(oldRemoteFiles[f].md5) != 0)
                 {
 
                     proto_client.GetList getList = new proto_client.GetList();
@@ -691,41 +697,24 @@ namespace SynchBox_Client
                     proto_client.FileToGet fileToGet = new proto_client.FileToGet();
                     proto_client.GetResponse getResponse = new proto_client.GetResponse();
 
-                    if (remoteFiles[f].rev > 1)
+                    fileToGet.fid = remoteFiles[f].fid;
+                    fileToGet.rev = remoteFiles[f].rev;
+                    getList.fileList.Add(fileToGet);
+                    getList.n = 1;
+
+
+                    if (localHash.CompareTo(oldRemoteFiles[f].md5) != 0 && oldRemoteFiles[f].md5.CompareTo(remoteFiles[f].md5) == 0 )
                     {
-
-                        fileToGet.fid = remoteFiles[f].fid;
-                        fileToGet.rev = remoteFiles[f].rev - 1;
-                        getList.fileList.Add(fileToGet);
-                        getList.n = 1;
-
-                        proto_client.GetListWrapper(netStream, ref getList);
-
-                        proto_client.GetResponseWrapper(netStream, ref getResponse);
-
-
-                        if(getResponse.fileInfo.md5.CompareTo(localHash) != 0){
-                            string newName = MakeUnique(f);
-                            System.IO.File.Move(f, newName);
-                            syncNewfile(newName, localHash);
-                        }
-                        else
-                        {
-                            File.Delete(f);
-                        }
-                        getList.fileList.Clear();
-
-                        fileToGet.fid = remoteFiles[f].fid;
-                        fileToGet.rev = remoteFiles[f].rev;
-                        getList.fileList.Add(fileToGet);
-                        getList.n = 1;
+                        syncUpdatefile(f, localHash);
+                    }
+                    else if (localHash.CompareTo(oldRemoteFiles[f].md5) == 0 && oldRemoteFiles[f].md5.CompareTo(remoteFiles[f].md5) != 0)
+                    {
+                        File.Delete(f);
 
                         proto_client.GetListWrapper(netStream, ref getList);
-
                         proto_client.GetResponseWrapper(netStream, ref getResponse);
-
                         string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-                            
+
                         try
                         {
                             System.IO.File.WriteAllBytes(f, getResponse.fileDump);
@@ -735,9 +724,25 @@ namespace SynchBox_Client
                             Console.WriteLine(wEcx.Message);
                         }
                     }
-                    else
+                    else if (localHash.CompareTo(oldRemoteFiles[f].md5) != 0 && oldRemoteFiles[f].md5.CompareTo(remoteFiles[f].md5) != 0)
                     {
-                        syncUpdatefile(f, localHash);
+                        string newName = MakeUnique(f);
+                        System.IO.File.Move(f, newName);
+                        syncNewfile(newName, localHash);
+
+                        proto_client.GetListWrapper(netStream, ref getList);
+                        proto_client.GetResponseWrapper(netStream, ref getResponse);
+
+                        string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+
+                        try
+                        {
+                            System.IO.File.WriteAllBytes(f, getResponse.fileDump);
+                        }
+                        catch (Exception wEcx)
+                        {
+                            Console.WriteLine(wEcx.Message);
+                        }
                     }
 
                 }
@@ -935,7 +940,6 @@ namespace SynchBox_Client
                 
                 json = JsonConvert.SerializeObject(items.ToArray());
                 System.IO.File.WriteAllText(sessionVars.path + filePath, json);
-                return;
             }
             else
             {
@@ -950,8 +954,31 @@ namespace SynchBox_Client
 
                 //write string to file
                 System.IO.File.WriteAllText(sessionVars.path + filePath, json);
-                File.SetAttributes(sessionVars.path + filePath, File.GetAttributes(sessionVars.path + filePath) | FileAttributes.Hidden);
+                //File.SetAttributes(sessionVars.path + filePath, File.GetAttributes(sessionVars.path + filePath) | FileAttributes.Hidden);
             }
+            writeRemoteFile();
+        }
+
+        private void writeRemoteFile()
+        {
+            if(File.Exists(sessionVars.path + "\\~remoteFiles")){
+                File.Delete(sessionVars.path + "\\~remoteFiles");
+            }
+            File.WriteAllText(sessionVars.path + "\\~remoteFiles", new JavaScriptSerializer().Serialize(remoteFiles));
+        }
+
+        private void readRemoteFile()
+        {
+            oldRemoteFiles.Clear();
+            if (File.Exists(sessionVars.path + "\\~remoteFiles"))
+            {
+                oldRemoteFiles = new JavaScriptSerializer().Deserialize<Dictionary<string, proto_client.FileListItem>>(File.ReadAllText(sessionVars.path + "\\~remoteFiles"));
+            }
+            else
+            {
+                oldRemoteFiles = remoteFiles.ToDictionary(entry => entry.Key, entry => entry.Value);
+            }
+
         }
 
         private void watch()
