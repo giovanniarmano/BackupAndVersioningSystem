@@ -25,12 +25,26 @@ namespace SynchBox_Client
             public string syncId;
         }
 
+        int intervallo = 1000;
+
         public Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
         public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
         public Dictionary<string, string> editedDirectory = new Dictionary<string, string>();
         public Dictionary<string, string> renamedDirectory = new Dictionary<string, string>();
         public Dictionary<string, string> deletedFiles = new Dictionary<string, string>();
         private Dictionary<string, string> tmpFiles = new Dictionary<string, string>();
+
+
+        //------------- HANDLER ------------------
+
+
+        public Dictionary<string, string> handlerEditedFiles = new Dictionary<string, string>();
+        public Dictionary<string, string> handlerEditedDirectory = new Dictionary<string, string>();
+        public Dictionary<string, string> handlerRenamedDirectory = new Dictionary<string, string>();
+        public Dictionary<string, string> handlerDeletedFiles = new Dictionary<string, string>();
+
+
+        //------------- END ------------------
 
         NetworkStream netStream;
         MainWindow.SessionVars sessionVars;
@@ -102,11 +116,10 @@ namespace SynchBox_Client
             try
             {
                 aTimer.Enabled = false;
-                SyncMutex.WaitOne();
 
                 syncIdServer = proto_client.GetSynchIdWrapper(netStream);
 
-                if (editedFiles.Count == 0 && editedDirectory.Count == 0 && deletedFiles.Count == 0 && renamedDirectory.Count == 0
+                if (handlerEditedFiles.Count == 0 && handlerEditedDirectory.Count == 0 && handlerRenamedDirectory.Count == 0 && handlerDeletedFiles.Count == 0
                         && sessionVars.lastSyncId == syncIdServer)
                 {
                     return;
@@ -116,6 +129,21 @@ namespace SynchBox_Client
                 {
                     return;
                 }
+
+
+                SyncMutex.WaitOne();
+
+                editedFiles = handlerEditedFiles.ToDictionary(entry => entry.Key, entry => entry.Value);
+                editedDirectory = handlerEditedDirectory.ToDictionary(entry => entry.Key, entry => entry.Value);
+                renamedDirectory = handlerRenamedDirectory.ToDictionary(entry => entry.Key, entry => entry.Value);
+                deletedFiles = handlerDeletedFiles.ToDictionary(entry => entry.Key, entry => entry.Value);
+
+                handlerEditedFiles.Clear();
+                handlerEditedDirectory.Clear();
+                handlerRenamedDirectory.Clear();
+                handlerDeletedFiles.Clear();
+
+                SyncMutex.ReleaseMutex();
 
                 clientServerAlignment();
 
@@ -196,9 +224,7 @@ namespace SynchBox_Client
             }
             finally
             {
-
                 aTimer.Enabled = true;
-                SyncMutex.ReleaseMutex();
             }
             
         }
@@ -288,11 +314,6 @@ namespace SynchBox_Client
                 {
                     tmpFiles[path] = null;
                 }
-                else if (tmpFiles.ContainsKey(path + "\\")) //TODO: da controllare se ci passa -------> non ci passa mai
-                {
-                    System.Windows.Forms.MessageBox.Show("Non dovrei passare da qui, c'è qualcosa da sistemare");
-                    tmpFiles[path + "\\"] = null;
-                }
             }
             
         }
@@ -309,33 +330,33 @@ namespace SynchBox_Client
                 
                 if (e.ChangeType.Equals(WatcherChangeTypes.Deleted))
                 {
-                    if (editedDirectory.ContainsKey(e.FullPath))
+                    if (handlerEditedDirectory.ContainsKey(e.FullPath))
                     {
-                        editedDirectory.Remove(e.FullPath);
+                        handlerEditedDirectory.Remove(e.FullPath);
                     }
-                    if (!deletedFiles.ContainsKey(e.FullPath))
+                    if (!handlerDeletedFiles.ContainsKey(e.FullPath))
                     {
-                        deletedFiles.Add(e.FullPath, "CHANGE");
+                        handlerDeletedFiles.Add(e.FullPath, "CHANGE");
                     }
                 }
                 else
                 {
-                    if (deletedFiles.ContainsKey(e.FullPath))
+                    if (handlerDeletedFiles.ContainsKey(e.FullPath))
                     {
-                        deletedFiles.Remove(e.FullPath);
+                        handlerDeletedFiles.Remove(e.FullPath);
                     }
                     if (Directory.Exists(e.FullPath))
                     {
-                        if (!editedDirectory.ContainsKey(e.FullPath))
+                        if (!handlerEditedDirectory.ContainsKey(e.FullPath))
                         {
-                            editedDirectory.Add(e.FullPath, "CHANGE");
+                            handlerEditedDirectory.Add(e.FullPath, "CHANGE");
                         }
                     }
                     else if (File.Exists(e.FullPath))
                     {
-                        if (!editedFiles.ContainsKey(e.FullPath))
+                        if (!handlerEditedFiles.ContainsKey(e.FullPath))
                         {
-                            editedFiles.Add(e.FullPath, "CHANGE");
+                            handlerEditedFiles.Add(e.FullPath, "CHANGE");
                         }
                     }
                 }
@@ -355,23 +376,23 @@ namespace SynchBox_Client
             try
             {
                 SyncMutex.WaitOne();
-                deletedFiles.Add(e.OldFullPath, "CHANGE");
+                handlerDeletedFiles.Add(e.OldFullPath, "CHANGE");
 
                 if (Directory.Exists(e.FullPath))
                 {
-                    renamedDirectory.Add(e.FullPath, "CHANGE");
-                    editedDirectory.Add(e.FullPath, "CHANGE");
-                    if (editedDirectory.ContainsKey(e.OldFullPath + "\\"))
+                    handlerRenamedDirectory.Add(e.FullPath, "CHANGE");
+                    handlerEditedDirectory.Add(e.FullPath, "CHANGE");
+                    if (handlerEditedDirectory.ContainsKey(e.OldFullPath + "\\"))
                     {
-                        editedDirectory.Remove(e.OldFullPath + "\\");
+                        handlerEditedDirectory.Remove(e.OldFullPath + "\\");
                     }
                 }
                 else if (File.Exists(e.FullPath))
                 {
-                    editedFiles.Add(e.FullPath, "CHANGE");
-                    if (editedFiles.ContainsKey(e.OldFullPath))
+                    handlerEditedFiles.Add(e.FullPath, "CHANGE");
+                    if (handlerEditedFiles.ContainsKey(e.OldFullPath))
                     {
-                        editedFiles.Remove(e.OldFullPath);
+                        handlerEditedFiles.Remove(e.OldFullPath);
                     }
                 }
             }
@@ -614,7 +635,7 @@ namespace SynchBox_Client
                 }
                 else
                 {
-                    Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                    //Directory.CreateDirectory(Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
                     System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
                 }
             }
@@ -931,7 +952,9 @@ namespace SynchBox_Client
             watcher.Renamed += new RenamedEventHandler(handlerRename);
             watcher.EnableRaisingEvents = true;
 
-            aTimer = new System.Timers.Timer(5000); //5 secs interval
+            watcher.InternalBufferSize = 60000;
+
+            aTimer = new System.Timers.Timer(intervallo); //5 secs interval
             aTimer.AutoReset = true;
             aTimer.Enabled = true;
             aTimer.Elapsed += new ElapsedEventHandler(SyncronizeChanges);
@@ -940,7 +963,8 @@ namespace SynchBox_Client
 
         private void checkBeginSession(NetworkStream netStream)
         {
-            if (flagSession == false && (sessionVars.lastSyncId == -1 || sessionVars.lastSyncId == syncIdServer))
+            //if (flagSession == false && (sessionVars.lastSyncId == -1 || sessionVars.lastSyncId == syncIdServer))
+            if (flagSession == false)
             {
                 syncSessionId = proto_client.BeginSessionWrapper(netStream);
                 flagSession = true;
