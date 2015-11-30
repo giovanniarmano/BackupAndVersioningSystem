@@ -25,7 +25,7 @@ namespace SynchBox_Client
             public string syncId;
         }
 
-        int intervallo = 1000;
+        int intervallo = 10;
 
         public Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
         public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
@@ -116,6 +116,11 @@ namespace SynchBox_Client
 
         private void SyncronizeChanges(object sender, ElapsedEventArgs e)
         {
+            if (sessionVars.cts.IsCancellationRequested)
+            {
+                fuggite();
+                return;
+            }
             try
             {
                 aTimer.Enabled = false;
@@ -730,6 +735,10 @@ namespace SynchBox_Client
                             Console.WriteLine(wEcx.Message);
                         }
                     }
+                    else
+                    {
+                        syncUpdatefile(f, localHash);
+                    }
 
                 }
                 //non fare niente, file ok
@@ -941,6 +950,7 @@ namespace SynchBox_Client
 
                 //write string to file
                 System.IO.File.WriteAllText(sessionVars.path + filePath, json);
+                File.SetAttributes(sessionVars.path + filePath, File.GetAttributes(sessionVars.path + filePath) | FileAttributes.Hidden);
             }
         }
 
@@ -987,6 +997,35 @@ namespace SynchBox_Client
                 sb.Append(hash[i].ToString("X2"));
             }
             return sb.ToString();
+        }
+
+        private void fuggite()
+        {
+            Logging.WriteToLog("Syncronization cancellation requested ---> in progress");
+
+            aTimer.Dispose();
+
+            watcher.EnableRaisingEvents = false;
+            watcher.Changed -= new FileSystemEventHandler(handlerChanged);
+            watcher.Created -= new FileSystemEventHandler(handlerChanged);
+            watcher.Deleted -= new FileSystemEventHandler(handlerChanged);
+            watcher.Renamed -= new RenamedEventHandler(handlerRename);
+            watcher.Dispose(); 
+
+            editedFiles.Clear();
+            editedDirectory.Clear();
+            renamedDirectory.Clear();
+            deletedFiles.Clear();
+            tmpFiles.Clear();
+            remoteFiles.Clear();
+
+
+            handlerEditedFiles.Clear();
+            handlerEditedDirectory.Clear();
+            handlerRenamedDirectory.Clear();
+            handlerDeletedFiles.Clear();
+
+            Logging.WriteToLog("Syncronization cancellation requested ---> done");
         }
     }
 }
