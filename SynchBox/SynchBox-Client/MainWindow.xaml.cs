@@ -37,6 +37,7 @@ namespace SynchBox_Client
         {
             public CancellationTokenSource cts;
             public SyncSocketClient socketClient = null;
+            public volatile bool isSynchronizationActive = false;
 
             public string ip_str = "";
             public int port_int = -1;
@@ -411,6 +412,7 @@ namespace SynchBox_Client
         //button begin Syncronization
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
+            sessionVars.isSynchronizationActive = true;
             Logging.WriteToLog("Begin syncronization ...");
             if (!Directory.Exists(local_path.Text))
             {
@@ -439,7 +441,7 @@ namespace SynchBox_Client
 
         private void b_stop_sync_Click(object sender, RoutedEventArgs e)
         {
-            sessionVars.cts.Cancel();
+            sessionVars.isSynchronizationActive = false;
             start_synch_stopped_ui();
         }
 

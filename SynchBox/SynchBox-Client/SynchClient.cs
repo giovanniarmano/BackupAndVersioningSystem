@@ -116,7 +116,7 @@ namespace SynchBox_Client
 
         private void SyncronizeChanges(object sender, ElapsedEventArgs e)
         {
-            if (sessionVars.cts.IsCancellationRequested)
+            if (!sessionVars.isSynchronizationActive)
             {
                 fuggite();
                 return;
