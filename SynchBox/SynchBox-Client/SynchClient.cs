@@ -103,8 +103,11 @@ namespace SynchBox_Client
 
             if (syncSessionId != syncSessionIdTemporaneo) // se ho modificato qualcosa chiudo e aggiorno il lastSyncId
             {
-                proto_client.EndSessionWrapper(netStream, syncSessionId);
-                flagSession = false;
+                if (flagSession)
+                {
+                    proto_client.EndSessionWrapper(netStream, syncSessionId);
+                    flagSession = false;
+                }
             }
             syncIdServer = proto_client.GetSynchIdWrapper(netStream);
             sessionVars.lastSyncId = syncIdServer;
@@ -207,9 +210,11 @@ namespace SynchBox_Client
                 }
 
 
-                //potrebbe non essere aperta la sessione
-                proto_client.EndSessionWrapper(netStream, syncSessionId);
-                flagSession = false;
+                //potrebbe non essere aperta la sessioneif (flagSession)
+                if(flagSession){
+                    proto_client.EndSessionWrapper(netStream, syncSessionId);
+                    flagSession = false;
+                }
 
                 syncIdServer = proto_client.GetSynchIdWrapper(netStream);
                 sessionVars.lastSyncId = syncIdServer;
