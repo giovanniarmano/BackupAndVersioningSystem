@@ -150,10 +150,11 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
-                    <Button x:Name="button" Content="Test List" HorizontalAlignment="Left" Margin="33,10,0,0" VerticalAlignment="Top" Width="75" Click="button_Click_2"/>
+                    <Button x:Name="button" Content="Test List" HorizontalAlignment="Left" Margin="490,9,0,0" VerticalAlignment="Top" Width="75" Click="button_Click_2"/>
                     <TreeView x:Name="treeView_1" HorizontalAlignment="Left" Height="330" Margin="10,34,0,0" VerticalAlignment="Top" Width="162"/>
                     <TreeView x:Name="treeView_3" HorizontalAlignment="Left" Height="330" Margin="418,34,0,0" VerticalAlignment="Top" Width="160"/>
                     <TreeView x:Name="treeView_2" HorizontalAlignment="Left" Height="330" Margin="177,34,0,0" VerticalAlignment="Top" Width="236"/>
+                    <Button x:Name="updateRestoreButton" Content="Update/GetLast" HorizontalAlignment="Left" Margin="10,9,0,0" VerticalAlignment="Top" Width="302" Click="updateRestoreButton_Click"/>
                 </Grid>
             </TabItem>
             <TabItem  >

@@ -435,9 +435,10 @@ namespace SynchBox_Client
 
             initializeSyncParam();
             
-            //synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
+            synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
             start_synch_end_ui();
-            ShowRemoteFileSystem(sessionVars.socketClient.getStream());
+            //sposto sull'evento click updateRestoreButton
+            //ShowRemoteFileSystem(sessionVars.socketClient.getStream());
 
         }
 
@@ -626,6 +627,13 @@ namespace SynchBox_Client
                 {
                     if (file.fid.ToString().CompareTo(fileInfo[0]) == 0 && file.rev.ToString().CompareTo(fileInfo[1]) == 0)
                     {
+
+                        /*
+                        Task t = Task.Factory.StartNew(() =>
+                            proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
+                        );
+                        */
+
                         proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
                         proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
 
@@ -642,7 +650,9 @@ namespace SynchBox_Client
                         }
                         catch (Exception wEcx)
                         {
-                            Console.WriteLine(wEcx.Message);
+                            Logging.WriteToLog(wEcx.Message);
+                            //Console.WriteLine(wEcx.Message);
+                            
                         }
                         return;
                     }
@@ -722,6 +732,11 @@ namespace SynchBox_Client
                     return path;
             }
         }
-        
+
+        private void updateRestoreButton_Click(object sender, RoutedEventArgs e)
+        {
+            //sposto sull'evento click updateRestoreButton
+            ShowRemoteFileSystem(sessionVars.socketClient.getStream());
+        }
     }
 }
