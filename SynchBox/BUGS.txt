@@ -1,15 +1,37 @@
+//---new---
+
+#1 nel restore viene troncata l'ultima lettera dl nome dei file a.jpg viene scritto a.jp
+
+#2 restore di un file in una cartella cancellata, non ha effetto
+
+#file di cui fare il restore-> vuoi fare il restore? se clikko su no, mi dice che ha fatto il restore lo stesso
+
+#impedire il restore della versione deleted di un file. cosa scrivo su disco se il filedump == null ?? 
+non so se sia semplice ma sarebbe bello evitare di visualizzarla la revisione eliminata
+
+#interfaccia di restore- scrivere folder - file - revision
+
+#discutere dell'interfaccia di sych. magari mettere una label:
+Nero: Not Synchronizing
+Blu: Synchronizing ...
+Verde: Synchronized
+
+posso farlo dal thread che fa la synch direttamente! 
+
+
+#fare ulteriore testing se spengo brutalmente il server / cade la connessione il client nn si accorge che è caduta. dovrei inserire una variabile o qualcosa in un try catch che se catturo il tipo di eccezione connessione interrotta fa il logout!!
+
+#in release, togliere il log (in parte o totalmente ??) - anche perchè se non ho c:/backup schianta tutta l'applicazione!
+
+#in release, togliere default path della restore folder!
+
+
+
 //----TO-DISCUSS-----
 
 #getSynchId perenne per client..>server 40 richieste al secondo client->server mi sembrano eccessive
 
 #4 Prio Normal: Scelta progettuale - discutere dell'interfaccia grafica di sincronizzazzione
-
-
-#5 Prio Normal :Scelta progettuale - discutere interfaccia grafica di restore (eventualmente 2 una filetofile e una per SynchSession con menu a tendina restore complessivo)
-
-
-#6 Prio High: Scelta progettuale -discutere di come gestire una variabile globale condivisa che mi dica quando fare download GetListAll per la restore
-!!
 
 #9 togliere i log in release!!!!!
 
