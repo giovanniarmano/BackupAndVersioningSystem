@@ -441,6 +441,9 @@ namespace SynchBox_Client
             //sposto sull'evento click updateRestoreButton
             ShowRemoteFileSystem(sessionVars.socketClient.getStream());
 
+            treeView_2.Items.Clear();
+            treeView_3.Items.Clear();
+
         }
 
         private void b_stop_sync_Click(object sender, RoutedEventArgs e)
@@ -574,6 +577,7 @@ namespace SynchBox_Client
             string folderId = item.Tag.ToString();
 
             treeView_2.Items.Clear();
+            treeView_3.Items.Clear();
 
             foreach (var file in remoteFileListLast)
             {
@@ -703,7 +707,16 @@ namespace SynchBox_Client
         private void updateRestoreButton_Click(object sender, RoutedEventArgs e)
         {
             //sposto sull'evento click updateRestoreButton
-            //ShowRemoteFileSystem(sessionVars.socketClient.getStream());
+            if (sessionVars.path == null)
+            {
+                synchClient.getInitInformation(sessionVars);
+            }
+
+
+            treeView_2.Items.Clear();
+            treeView_3.Items.Clear();
+
+            ShowRemoteFileSystem(sessionVars.socketClient.getStream());
         }
     }
 }

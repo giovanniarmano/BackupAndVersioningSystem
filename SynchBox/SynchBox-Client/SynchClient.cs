@@ -772,7 +772,7 @@ namespace SynchBox_Client
 
             for (int i = 1; ; ++i)
             {
-                path = System.IO.Path.Combine(dir, fileName + " Rev:" + rev + " - " + i + fileExt);
+                path = System.IO.Path.Combine(dir, fileName + " Rev " + rev + " - " + i + fileExt);
 
                 if (!File.Exists(path))
                     return path;
