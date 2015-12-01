@@ -570,6 +570,10 @@ namespace SynchBox_Client
                 {
                     var fileNode = new TreeViewItem() { Header = file.filename, Tag = file.fid };
                     fileNode.MouseLeftButtonUp += treeItem_Selected;
+                    if (file.deleted)
+                    {
+                        fileNode.Foreground = Brushes.Red;
+                    }
                     treeView_2.Items.Add(fileNode);
                 }
                 
