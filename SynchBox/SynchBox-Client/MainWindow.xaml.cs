@@ -695,6 +695,11 @@ namespace SynchBox_Client
             string fileName = System.IO.Path.GetFileNameWithoutExtension(path);
             string fileExt = System.IO.Path.GetExtension(path);
 
+            path = System.IO.Path.Combine(dir, fileName + " Rev:" + rev + fileExt);
+
+            if (!File.Exists(path))
+                return path;
+
             for (int i = 1; ; ++i)
             {
                 path = System.IO.Path.Combine(dir, fileName + " Rev:" + rev + " - " + i + fileExt);
