@@ -660,12 +660,12 @@ namespace SynchBox_Client
                         proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
 
                         string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-                        MakeUnique(fileName, fileInfo[1]);
+                        fileName = MakeUnique(fileName, fileInfo[1]);
 
                         try
                         {
                             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
-                            System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
+                            File.WriteAllBytes(fileName, getResponse.fileDump);
                             synchClient.syncNewfile(fileName, getResponse.fileInfo.md5);
                         }
                         catch (Exception wEcx)
