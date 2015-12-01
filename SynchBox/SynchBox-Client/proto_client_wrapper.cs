@@ -15,6 +15,8 @@ namespace SynchBox_Client
 
         public static ListResponse ListRequestAllWrapper(NetworkStream netStream)
         {
+            Logging.WriteToLog("ListRequest ALL Wrapper .....");
+
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.ListRequest;
@@ -31,12 +33,16 @@ namespace SynchBox_Client
 
             Serializer.SerializeWithLengthPrefix<ListRequest>(netStream, listRequest, PrefixStyle.Base128);
             ListResponse listResponse = Serializer.DeserializeWithLengthPrefix<ListResponse>(netStream, PrefixStyle.Base128);
+            Logging.WriteToLog("ListRequest ALL Wrapper DONE");
+
             wrapMutex.ReleaseMutex();
             return listResponse;
         }
 
         public static ListResponse ListRequestLastWrapper(NetworkStream netStream)
         {
+            Logging.WriteToLog("ListRequest LAST Wrapper .....");
+
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.ListRequest;
@@ -54,6 +60,8 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<ListRequest>(netStream, listRequest, PrefixStyle.Base128);
             ListResponse listResponse = Serializer.DeserializeWithLengthPrefix<ListResponse>(netStream, PrefixStyle.Base128);
 
+            Logging.WriteToLog("ListRequest LAST Wrapper DONE");
+            
             wrapMutex.ReleaseMutex();
             return listResponse;
 
@@ -67,6 +75,8 @@ namespace SynchBox_Client
         /// <returns>synchsessionid per la sessione di sincronizzazione richiesta</returns>
         public static int BeginSessionWrapper(NetworkStream netStream)
         {
+            Logging.WriteToLog("BeginSession Wrapper .....");
+
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.BeginSession;
@@ -86,6 +96,9 @@ namespace SynchBox_Client
 
             if (beginSession.sessionid < 0) Logging.WriteToLog("Error in starting new synch session. Returned sessionid <0");
 
+
+            Logging.WriteToLog("BeginSession Wrapper DONE");
+
             wrapMutex.ReleaseMutex();
             return beginSession.sessionid;
         }
@@ -97,6 +110,8 @@ namespace SynchBox_Client
         /// <param name="synchsessionid">synchsessionid corrente, per verificare di terminare la sessione di synch corretta!</param>
         public static void EndSessionWrapper(NetworkStream netStream,int synchsessionid)
         {
+            Logging.WriteToLog("EndSession Wrapper .....");
+
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.EndSession;
@@ -117,6 +132,8 @@ namespace SynchBox_Client
 
             if (endSession.succesful == false) Logging.WriteToLog("Error in ENDING synch session. Returned succesful = false");
 
+            Logging.WriteToLog("EndSession Wrapper DONE");
+
             wrapMutex.ReleaseMutex();
             return;// endSession.sessionid;
         }
@@ -130,6 +147,8 @@ namespace SynchBox_Client
         /// <returns>Class AddOk con fid, rev del file aggiunto</returns>
         public static AddOk AddWrapper(NetworkStream netStream, ref Add add)
         {
+            Logging.WriteToLog("Add Wrapper .....");
+
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.Add;
@@ -145,12 +164,16 @@ namespace SynchBox_Client
             if ((addOk.fid < 0)||(addOk.rev <0))// throw new Exception("Error in ADDING. fid < 0 !! rev < 0");
              Logging.WriteToLog("Error in ADDING. fid < 0 !! rev < 0");
 
+            Logging.WriteToLog("Add Wrapper DONE");
+
             wrapMutex.ReleaseMutex();
             return addOk;
         }
 
         public static UpdateOk UpdateWrapper(NetworkStream netStream, ref Update update)
         {
+            Logging.WriteToLog("Update Wrapper .....");
+
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.Update;
@@ -166,12 +189,16 @@ namespace SynchBox_Client
             if ((updateOk.fid < 0) || (updateOk.rev < 0))
                 Logging.WriteToLog("Error in UPDATING. fid < 0 !! rev < 0");
 
+            Logging.WriteToLog("Update Wrapper DONE");
+
             wrapMutex.ReleaseMutex();
             return updateOk;
         }
 
         public static DeleteOk DeleteWrapper(NetworkStream netStream, ref Delete delete)
         {
+
+            Logging.WriteToLog("Delete Wrapper .....");
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.Delete;
@@ -186,12 +213,16 @@ namespace SynchBox_Client
 
             if ((deleteOk.fid < 0)) Logging.WriteToLog("Error in DELETING. fid < 0 ");
 
+            Logging.WriteToLog("Delete Wrapper DONE");
+
             wrapMutex.ReleaseMutex();
             return deleteOk;
         }
 
         public static DeleteOk DeleteFolderWrapper(NetworkStream netStream, ref Delete delete)
         {
+
+            Logging.WriteToLog("Delete Folder Wrapper .....");
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.DeleteFolder;
@@ -206,6 +237,8 @@ namespace SynchBox_Client
 
             if ((deleteOk.fid < 0)) Logging.WriteToLog("Error in DELETING FOLDER. fid < 0 ");
 
+
+            Logging.WriteToLog("Delete Folder Wrapper DONE");
             wrapMutex.ReleaseMutex();
             return deleteOk;
         }
@@ -213,6 +246,7 @@ namespace SynchBox_Client
 
         public static int GetSynchIdWrapper(NetworkStream netStream)
         {
+            Logging.WriteToLog("Get Synch Id Wrapper ......");
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.GetSynchId;
@@ -232,6 +266,8 @@ namespace SynchBox_Client
             if ((getSynchId.synchid < -1))
                 Logging.WriteToLog("Error in GetSynchId. symnchid < -1 ");
 
+
+            Logging.WriteToLog("Get Synch Id Wrapper DONE");
             wrapMutex.ReleaseMutex();
             return getSynchId.synchid;
         }
@@ -312,6 +348,8 @@ namespace SynchBox_Client
 
         public static bool LockAcquireWrapper(NetworkStream netStream)
         {
+            Logging.WriteToLog("LockAcquire db Wrapper .....");
+
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.Lock;
@@ -327,12 +365,17 @@ namespace SynchBox_Client
             Serializer.SerializeWithLengthPrefix<lock_c>(netStream, lock_c, PrefixStyle.Base128);
             lock_c lock_response = Serializer.DeserializeWithLengthPrefix<lock_c>(netStream, PrefixStyle.Base128);
 
+            Logging.WriteToLog("LockAcquire db Wrapper DONE");
+
+
             wrapMutex.ReleaseMutex();
             return lock_response.succesfull;
         }
 
         public static bool LockReleaseWrapper(NetworkStream netStream)
         {
+            Logging.WriteToLog("LockRelease db Wrapper .....");
+
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.Lock;
@@ -347,6 +390,8 @@ namespace SynchBox_Client
 
             Serializer.SerializeWithLengthPrefix<lock_c>(netStream, lock_c, PrefixStyle.Base128);
             lock_c lock_response = Serializer.DeserializeWithLengthPrefix<lock_c>(netStream, PrefixStyle.Base128);
+
+            Logging.WriteToLog("LockRelease db Wrapper DONE");
 
             wrapMutex.ReleaseMutex();
             return lock_response.succesfull;
