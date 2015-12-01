@@ -607,7 +607,7 @@ namespace SynchBox_Client
                 if(!file.dir && file.folder_id.ToString().CompareTo(folderId) == 0)
                 {
                     i++;
-                    var fileNode = new TreeViewItem() { Header = file.filename.Substring(0, file.filename.Length - 1), Tag = file.fid };
+                    var fileNode = new TreeViewItem() { Header = file.filename, Tag = file.fid };
                     fileNode.MouseLeftButtonUp += treeItem_Selected;
                     if (file.deleted)
                     {
@@ -635,7 +635,7 @@ namespace SynchBox_Client
 
             foreach (var file in remoteFileListAll)
             {
-                if (file.fid.ToString().CompareTo(fileId) == 0)
+                if (file.fid.ToString().CompareTo(fileId) == 0 && !file.deleted)
                 {
                     var fileNode = new TreeViewItem() { Header = file.timestamp, Tag = file.fid + "_" + file.rev };
                     fileNode.MouseLeftButtonUp += treeItem_Revision;

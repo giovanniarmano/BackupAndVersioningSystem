@@ -1,16 +1,17 @@
 //---new---
 
-#1 nel restore viene troncata l'ultima lettera dl nome dei file a.jpg viene scritto a.jp
+DONE #1 nel restore viene troncata l'ultima lettera dl nome dei file a.jpg viene scritto a.jp
 
-#2 restore di un file in una cartella cancellata, non ha effetto
+DONE #2 restore di un file in una cartella cancellata, non ha effetto
 
-#file di cui fare il restore-> vuoi fare il restore? se clikko su no, mi dice che ha fatto il restore lo stesso
+LASCIATO COM'ERA #file di cui fare il restore-> vuoi fare il restore? se clikko su no, mi dice che ha fatto il restore lo stesso
 
-#impedire il restore della versione deleted di un file. cosa scrivo su disco se il filedump == null ?? 
+DONE (TOLTI I FILE ELIMINATI) #impedire il restore della versione deleted di un file. cosa scrivo su disco se il filedump == null ?? 
 non so se sia semplice ma sarebbe bello evitare di visualizzarla la revisione eliminata
 
 #interfaccia di restore- scrivere folder - file - revision
 
+Nessuna differenza tra nero e blu.. non posso saperlo
 #discutere dell'interfaccia di sych. magari mettere una label:
 Nero: Not Synchronizing
 Blu: Synchronizing ...
@@ -18,12 +19,14 @@ Verde: Synchronized
 
 posso farlo dal thread che fa la synch direttamente! 
 
-
+Tutto tuo
 #fare ulteriore testing se spengo brutalmente il server / cade la connessione il client nn si accorge che è caduta. dovrei inserire una variabile o qualcosa in un try catch che se catturo il tipo di eccezione connessione interrotta fa il logout!!
 
+Puoi controllare se puoi scrivere li il file, altrimenti o lo metti in un altro posto o non lo fai.. vedi tu
+O ancora lo metti dove c'è l'exe del programma
 #in release, togliere il log (in parte o totalmente ??) - anche perchè se non ho c:/backup schianta tutta l'applicazione!
 
-#in release, togliere default path della restore folder!
+SI LASCIA ANCHE.. TANTO CONTROLLO SE LA CARTELLA ESISTE #in release, togliere default path della restore folder!
 
 
 
