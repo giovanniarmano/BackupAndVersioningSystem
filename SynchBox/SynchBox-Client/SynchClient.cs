@@ -19,54 +19,54 @@ namespace SynchBox_Client
 {
     public class SynchClient
     {
-        public class Item
+        private class Item
         {
             public string uid;
             public string path;
             public string syncId;
         }
 
-        int intervallo = 10;
+        private int intervallo = 10;
 
-        public Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
-        public Dictionary<string, proto_client.FileListItem> oldRemoteFiles = new Dictionary<string, proto_client.FileListItem>();
+        private Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
+        private Dictionary<string, proto_client.FileListItem> oldRemoteFiles = new Dictionary<string, proto_client.FileListItem>();
 
 
-        public Dictionary<string, string> editedFiles = new Dictionary<string, string>();
-        public Dictionary<string, string> editedDirectory = new Dictionary<string, string>();
-        public Dictionary<string, string> renamedDirectory = new Dictionary<string, string>();
-        public Dictionary<string, string> deletedFiles = new Dictionary<string, string>();
+        private Dictionary<string, string> editedFiles = new Dictionary<string, string>();
+        private Dictionary<string, string> editedDirectory = new Dictionary<string, string>();
+        private Dictionary<string, string> renamedDirectory = new Dictionary<string, string>();
+        private Dictionary<string, string> deletedFiles = new Dictionary<string, string>();
         private Dictionary<string, string> tmpFiles = new Dictionary<string, string>();
 
 
         //------------- HANDLER ------------------
 
 
-        public Dictionary<string, string> handlerEditedFiles = new Dictionary<string, string>();
-        public Dictionary<string, string> handlerEditedDirectory = new Dictionary<string, string>();
-        public Dictionary<string, string> handlerRenamedDirectory = new Dictionary<string, string>();
-        public Dictionary<string, string> handlerDeletedFiles = new Dictionary<string, string>();
+        private Dictionary<string, string> handlerEditedFiles = new Dictionary<string, string>();
+        private Dictionary<string, string> handlerEditedDirectory = new Dictionary<string, string>();
+        private Dictionary<string, string> handlerRenamedDirectory = new Dictionary<string, string>();
+        private Dictionary<string, string> handlerDeletedFiles = new Dictionary<string, string>();
 
 
         //------------- END ------------------
 
-        NetworkStream netStream;
-        MainWindow.SessionVars sessionVars;
-        int syncIdServer;
-        int syncSessionId = -1;
-        bool flagSession = false;
+        private string[] fileInfoContainer;
 
-        FileSystemWatcher watcher;
+        private NetworkStream netStream;
+        private MainWindow.SessionVars sessionVars;
+        private int syncIdServer;
+        private int syncSessionId = -1;
+        private bool flagSession = false;
+
+        private FileSystemWatcher watcher;
         private static System.Timers.Timer aTimer;
 
         private Mutex SyncMutex = new Mutex();
 
-        public async Task StartSyncAsync(NetworkStream netStream, MainWindow.SessionVars sessionVars)
-        {   
-            try { 
-                this.sessionVars = sessionVars;
-                this.netStream = netStream;
 
+        public void StartSyncAsync()
+        {
+            try { 
                 syncIdServer = proto_client.GetSynchIdWrapper(netStream);
                 if (proto_client.LockAcquireWrapper(netStream))
                 {
@@ -764,6 +764,20 @@ namespace SynchBox_Client
                     return path;
             }
         }
+        private string MakeUnique(string path, string rev)
+        {
+            string dir = System.IO.Path.GetDirectoryName(path);
+            string fileName = System.IO.Path.GetFileNameWithoutExtension(path);
+            string fileExt = System.IO.Path.GetExtension(path);
+
+            for (int i = 1; ; ++i)
+            {
+                path = System.IO.Path.Combine(dir, fileName + " Rev:" + rev + " - " + i + fileExt);
+
+                if (!File.Exists(path))
+                    return path;
+            }
+        }
 
         private void syncDeletefile(string path)
         {
@@ -1053,6 +1067,83 @@ namespace SynchBox_Client
             handlerDeletedFiles.Clear();
 
             Logging.WriteToLog("Syncronization cancellation requested ---> done");
+        }
+
+        public void setEnvironment(NetworkStream networkStream, MainWindow.SessionVars sessionVars)
+        {
+            this.sessionVars = sessionVars;
+            this.netStream = networkStream;
+        }
+
+        public void overrideLocalCopy()
+        {
+
+            proto_client.GetList getList = new proto_client.GetList();
+            getList.fileList = new List<proto_client.FileToGet>();
+            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
+            proto_client.GetResponse getResponse = new proto_client.GetResponse();
+
+            fileToGet.fid = Int32.Parse(fileInfoContainer[0]);
+            fileToGet.rev = Int32.Parse(fileInfoContainer[1]);
+            getList.fileList.Add(fileToGet);
+            getList.n = 1;
+
+            proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
+            proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
+
+            string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+
+            if (File.Exists(fileName))
+            {
+                File.Delete(fileName);
+            }
+            try
+            {
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
+            }
+            catch (Exception wEcx)
+            {
+                Logging.WriteToLog(wEcx.Message);
+
+            }
+            return;
+        }
+        public void saveNewCopy()
+        {
+
+            proto_client.GetList getList = new proto_client.GetList();
+            getList.fileList = new List<proto_client.FileToGet>();
+            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
+            proto_client.GetResponse getResponse = new proto_client.GetResponse();
+
+            fileToGet.fid = Int32.Parse(fileInfoContainer[0]);
+            fileToGet.rev = Int32.Parse(fileInfoContainer[1]);
+            getList.fileList.Add(fileToGet);
+            getList.n = 1;
+
+            proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
+            proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
+
+            string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+            fileName = MakeUnique(fileName, fileInfoContainer[1]);
+
+            try
+            {
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                File.WriteAllBytes(fileName, getResponse.fileDump);
+                syncNewfile(fileName, getResponse.fileInfo.md5);
+            }
+            catch (Exception wEcx)
+            {
+                Console.WriteLine(wEcx.Message);
+            }
+            return;
+        }
+
+        internal void setFileInfoContainer(string[] fileInfo)
+        {
+            fileInfoContainer = fileInfo;
         }
     }
 }

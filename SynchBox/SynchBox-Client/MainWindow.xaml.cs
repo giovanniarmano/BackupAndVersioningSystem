@@ -69,11 +69,6 @@ namespace SynchBox_Client
             sessionVars.lastSyncId = -1;
         }
 
-        private void initializeSyncParam()
-        {
-            synchClient.remoteFiles.Clear();
-        }
-
         public MainWindow()
         {
             InitializeComponent();
@@ -412,7 +407,7 @@ namespace SynchBox_Client
         }
 
         //button begin Syncronization
-        private async void Button_Click_1(object sender, RoutedEventArgs e)
+        private void Button_Click_1(object sender, RoutedEventArgs e)
         {
             sessionVars.isSynchronizationActive = true;
             Logging.WriteToLog("Begin syncronization ...");
@@ -432,12 +427,17 @@ namespace SynchBox_Client
                 start_synch_stopped_ui();
                 return;
             }
+            
+            synchClient.setEnvironment(sessionVars.socketClient.getStream(), sessionVars);
+            ThreadStart MyDelegate = new ThreadStart(synchClient.StartSyncAsync);
+            Thread MyThread = new Thread(MyDelegate);
+            MyThread.Start();
 
-            initializeSyncParam();
-
-            await synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
+            //TODO: aggiungere la terminazione di un thread, al posto del ct!!
 
             start_synch_end_ui();
+
+
             //sposto sull'evento click updateRestoreButton
             ShowRemoteFileSystem(sessionVars.socketClient.getStream());
 
@@ -628,11 +628,11 @@ namespace SynchBox_Client
                 {
                     if (file.fid.ToString().CompareTo(fileInfo[0]) == 0 && file.rev.ToString().CompareTo(fileInfo[1]) == 0)
                     {
-                        Task t = Task.Factory.StartNew(() =>
-                            overrideLocalCopy(sessionVars.socketClient.getStream(), fileInfo)
-                        );
-                        t.Wait();
-
+                        synchClient.setFileInfoContainer(fileInfo);
+                        ThreadStart MyDelegate = new ThreadStart(synchClient.overrideLocalCopy);
+                        Thread MyThread = new Thread(MyDelegate);
+                        MyThread.Start();
+                        return;
                     }
                 } 
             }
@@ -643,10 +643,11 @@ namespace SynchBox_Client
                 {
                     if (file.fid.ToString().CompareTo(fileInfo[0]) == 0 && file.rev.ToString().CompareTo(fileInfo[1]) == 0)
                     {
-                        Task t = Task.Factory.StartNew(() =>
-                            saveNewCopy(sessionVars.socketClient.getStream(), fileInfo)
-                        );
-                        t.Wait();
+                        synchClient.setFileInfoContainer(fileInfo);
+                        ThreadStart MyDelegate = new ThreadStart(synchClient.saveNewCopy);
+                        Thread MyThread = new Thread(MyDelegate);
+                        MyThread.Start();
+                        return;
                     }
                 } 
             }
@@ -656,72 +657,7 @@ namespace SynchBox_Client
             }
         }
 
-        private void saveNewCopy(NetworkStream networkStream, string[] fileInfo)
-        {
-
-            proto_client.GetList getList = new proto_client.GetList();
-            getList.fileList = new List<proto_client.FileToGet>();
-            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
-            proto_client.GetResponse getResponse = new proto_client.GetResponse();
-
-            fileToGet.fid = Int32.Parse(fileInfo[0]);
-            fileToGet.rev = Int32.Parse(fileInfo[1]);
-            getList.fileList.Add(fileToGet);
-            getList.n = 1;
-
-            proto_client.GetListWrapper(networkStream, ref getList);
-            proto_client.GetResponseWrapper(networkStream, ref getResponse);
-
-            string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-            fileName = MakeUnique(fileName, fileInfo[1]);
-
-            try
-            {
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
-                File.WriteAllBytes(fileName, getResponse.fileDump);
-                synchClient.syncNewfile(fileName, getResponse.fileInfo.md5);
-            }
-            catch (Exception wEcx)
-            {
-                Console.WriteLine(wEcx.Message);
-            }
-            return;
-        }
-
-        private void overrideLocalCopy(NetworkStream netstream, string[] fileInfo)
-        {
-
-            proto_client.GetList getList = new proto_client.GetList();
-            getList.fileList = new List<proto_client.FileToGet>();
-            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
-            proto_client.GetResponse getResponse = new proto_client.GetResponse();
-
-            fileToGet.fid = Int32.Parse(fileInfo[0]);
-            fileToGet.rev = Int32.Parse(fileInfo[1]);
-            getList.fileList.Add(fileToGet);
-            getList.n = 1;
-
-            proto_client.GetListWrapper(netstream, ref getList);
-            proto_client.GetResponseWrapper(netstream, ref getResponse);
-
-            string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-
-            if (File.Exists(fileName))
-            {
-                File.Delete(fileName);
-            }
-            try
-            {
-                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
-                System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
-            }
-            catch (Exception wEcx)
-            {
-                Logging.WriteToLog(wEcx.Message);
-
-            }
-            return;
-        }
+        
 
         //------------------------- OLD FUNCTION -------------------------
 
