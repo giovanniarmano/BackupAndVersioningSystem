@@ -427,6 +427,8 @@ namespace SynchBox_Client
                 start_synch_stopped_ui();
                 return;
             }
+
+            //PAGANO CHIAMA FUNZIONE
             
             synchClient.setEnvironment(sessionVars.socketClient.getStream(), sessionVars);
             ThreadStart MyDelegate = new ThreadStart(synchClient.StartSyncAsync);
