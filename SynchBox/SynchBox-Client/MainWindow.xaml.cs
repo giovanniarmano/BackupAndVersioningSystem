@@ -412,7 +412,7 @@ namespace SynchBox_Client
         }
 
         //button begin Syncronization
-        private void Button_Click_1(object sender, RoutedEventArgs e)
+        private async void Button_Click_1(object sender, RoutedEventArgs e)
         {
             sessionVars.isSynchronizationActive = true;
             Logging.WriteToLog("Begin syncronization ...");
@@ -434,8 +434,9 @@ namespace SynchBox_Client
             }
 
             initializeSyncParam();
-            
-            synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
+
+            await synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
+
             start_synch_end_ui();
             //sposto sull'evento click updateRestoreButton
             ShowRemoteFileSystem(sessionVars.socketClient.getStream());
