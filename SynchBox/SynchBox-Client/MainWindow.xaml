@@ -121,7 +121,11 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
-                    <GroupBox Header="Folder Monitoring" HorizontalAlignment="Left" Margin="16,22,0,0" VerticalAlignment="Top" Height="103" Width="562">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="313*"/>
+                        <ColumnDefinition Width="275*"/>
+                    </Grid.ColumnDefinitions>
+                    <GroupBox Header="Folder Monitoring" HorizontalAlignment="Left" Margin="16,22,0,0" VerticalAlignment="Top" Height="103" Width="562" Grid.ColumnSpan="2">
                         <Grid Margin="1,0,-3,-12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="180*"/>
@@ -133,8 +137,8 @@
                             <Button x:Name="button_sfoglia" Click="Button_click_sfoglia" Content="Sfoglia" HorizontalAlignment="Right" Margin="0,49,9.4,0" Width="75" Height="22" VerticalAlignment="Top" Grid.ColumnSpan="3"/>
                         </Grid>
                     </GroupBox>
-                    <Button x:Name="b_start_sync" Content="Start Syncronization" Visibility="Visible" HorizontalAlignment="Left" Margin="434,140,0,0" VerticalAlignment="Top" Width="135" Click="Button_Click_1" Height="36"/>
-                    <Button x:Name="b_stop_sync" Content="Stop Syncronization" Visibility="Hidden" HorizontalAlignment="Left" Margin="434,140,0,0" VerticalAlignment="Top" Width="135"  Height="36" Click="b_stop_sync_Click"/>
+                    <Button x:Name="b_start_sync" Content="Start Syncronization" Visibility="Visible" HorizontalAlignment="Left" Margin="120.6,140,0,0" VerticalAlignment="Top" Width="135" Click="Button_Click_1" Height="36" Grid.Column="1"/>
+                    <Button x:Name="b_stop_sync" Content="Stop Syncronization" Visibility="Hidden" HorizontalAlignment="Left" Margin="120.6,140,0,0" VerticalAlignment="Top" Width="135"  Height="36" Click="b_stop_sync_Click" Grid.Column="1"/>
 
 
 
@@ -150,11 +154,12 @@
                     </StackPanel>
                 </TabItem.Header>
                 <Grid>
-                    <Button x:Name="button" Content="Test List" HorizontalAlignment="Left" Margin="490,9,0,0" VerticalAlignment="Top" Width="75" Click="button_Click_2"/>
-                    <TreeView x:Name="treeView_1" HorizontalAlignment="Left" Height="330" Margin="10,34,0,0" VerticalAlignment="Top" Width="162"/>
-                    <TreeView x:Name="treeView_3" HorizontalAlignment="Left" Height="330" Margin="418,34,0,0" VerticalAlignment="Top" Width="160"/>
-                    <TreeView x:Name="treeView_2" HorizontalAlignment="Left" Height="330" Margin="177,34,0,0" VerticalAlignment="Top" Width="236"/>
-                    <Button x:Name="updateRestoreButton" Content="Update/GetLast" HorizontalAlignment="Left" Margin="10,9,0,0" VerticalAlignment="Top" Width="302" Click="updateRestoreButton_Click"/>
+                    <TreeView x:Name="treeView_1" HorizontalAlignment="Left" Height="312" Margin="10,24,0,0" VerticalAlignment="Top" Width="162"/>
+                    <TreeView x:Name="treeView_3" HorizontalAlignment="Left" Height="312" Margin="418,24,0,0" VerticalAlignment="Top" Width="160"/>
+                    <TreeView x:Name="treeView_2" HorizontalAlignment="Left" Height="312" Margin="177,24,0,0" VerticalAlignment="Top" Width="236"/>
+                    <Button x:Name="updateRestoreButton" Content="Refresh" HorizontalAlignment="Left" Margin="445,341,0,0" VerticalAlignment="Top" Width="111" Click="updateRestoreButton_Click"/>
+                    <Label x:Name="dirLabel" Content="" HorizontalAlignment="Left" Margin="177,-2,0,0" VerticalAlignment="Top"/>
+                    <Label x:Name="fileLabel" Content="" HorizontalAlignment="Left" Margin="418,0,0,0" VerticalAlignment="Top"/>
                 </Grid>
             </TabItem>
             <TabItem  >
@@ -164,8 +169,8 @@
                         <TextBlock Text="Settings" VerticalAlignment="Center"/>
                     </StackPanel>
                 </TabItem.Header>
-                <Grid >
-                    <CheckBox Content="CheckBox" HorizontalAlignment="Left" Margin="483,10,0,0" VerticalAlignment="Top"/>
+                <Grid Margin="0,-2,0,2.4" >
+                    <Button x:Name="button" Content="Test List" HorizontalAlignment="Left" Margin="20,11,0,0" VerticalAlignment="Top" Width="75" Click="button_Click_2"/>
 
                 </Grid>
             </TabItem>

@@ -532,7 +532,7 @@ namespace SynchBox_Client
             t.Wait();
 
             proto_client.FileListItem root = new proto_client.FileListItem();
-            root.filename = "Root";
+            root.filename = "Root\\";
             root.fid = 1;
 
             treeView_1.Items.Add(CreateDirectoryNode(remoteFileListLast, 1, root));
@@ -552,7 +552,7 @@ namespace SynchBox_Client
 
         private object CreateDirectoryNode(List<proto_client.FileListItem> remoteFileList, int p, proto_client.FileListItem parentDirectory)
         {
-            var directoryNode = new TreeViewItem() { Header = parentDirectory.filename, Tag = parentDirectory.fid };
+            var directoryNode = new TreeViewItem() { Header = parentDirectory.filename.Substring(0, parentDirectory.filename.Length-1), Tag = parentDirectory.fid };
             if (parentDirectory.deleted)
             {
                 directoryNode.Foreground = Brushes.Red;
@@ -575,15 +575,19 @@ namespace SynchBox_Client
             e.Handled = true;
             TreeViewItem item = sender as TreeViewItem;
             string folderId = item.Tag.ToString();
+            int i = 0;
 
             treeView_2.Items.Clear();
             treeView_3.Items.Clear();
+            dirLabel.Content = item.Header;
+            fileLabel.Content = "";
 
             foreach (var file in remoteFileListLast)
             {
                 if(!file.dir && file.folder_id.ToString().CompareTo(folderId) == 0)
                 {
-                    var fileNode = new TreeViewItem() { Header = file.filename, Tag = file.fid };
+                    i++;
+                    var fileNode = new TreeViewItem() { Header = file.filename.Substring(0, file.filename.Length - 1), Tag = file.fid };
                     fileNode.MouseLeftButtonUp += treeItem_Selected;
                     if (file.deleted)
                     {
@@ -591,7 +595,11 @@ namespace SynchBox_Client
                     }
                     treeView_2.Items.Add(fileNode);
                 }
-                
+            }
+            if (i == 0)
+            {
+                var fileNode = new TreeViewItem() { Header = "Directory without files" };
+                treeView_2.Items.Add(fileNode);
             }
         }
 
@@ -603,6 +611,7 @@ namespace SynchBox_Client
             string fileId = item.Tag.ToString();
 
             treeView_3.Items.Clear();
+            fileLabel.Content = item.Header;
 
             foreach (var file in remoteFileListAll)
             {
@@ -661,54 +670,6 @@ namespace SynchBox_Client
             }
         }
 
-        
-
-        //------------------------- OLD FUNCTION -------------------------
-
-
-        /*
-        private TreeViewItem CreateDirectoryNode(DirectoryInfo di)
-        {
-            var directoryNode = new TreeViewItem() { Header = di.Name, Tag = di.FullName };
-            directoryNode.MouseLeftButtonUp += directoryTreeItem_Selected;
-
-            foreach (var directory in di.GetDirectories())
-            {
-                directoryNode.Items.Add(CreateDirectoryNode(directory));
-
-            }
-
-            return directoryNode;
-        }
-
-        private void ShowFileSystem(System.Windows.Controls.TreeView treeView, string path)
-        {
-            treeView.Items.Clear();
-            var rootDirectoryInfo = new DirectoryInfo(path);
-
-            treeView.Items.Add(CreateDirectoryNode(rootDirectoryInfo));
-        }
-        */
-        private string MakeUnique(string path, string rev)
-        {
-            string dir = System.IO.Path.GetDirectoryName(path);
-            string fileName = System.IO.Path.GetFileNameWithoutExtension(path);
-            string fileExt = System.IO.Path.GetExtension(path);
-
-            path = System.IO.Path.Combine(dir, fileName + " Rev:" + rev + fileExt);
-
-            if (!File.Exists(path))
-                return path;
-
-            for (int i = 1; ; ++i)
-            {
-                path = System.IO.Path.Combine(dir, fileName + " Rev:" + rev + " - " + i + fileExt);
-
-                if (!File.Exists(path))
-                    return path;
-            }
-        }
-
         private void updateRestoreButton_Click(object sender, RoutedEventArgs e)
         {
             //sposto sull'evento click updateRestoreButton
@@ -717,9 +678,10 @@ namespace SynchBox_Client
                 synchClient.getInitInformation(sessionVars);
             }
 
-
             treeView_2.Items.Clear();
             treeView_3.Items.Clear();
+            dirLabel.Content = "";
+            fileLabel.Content = "";
 
             ShowRemoteFileSystem(sessionVars.socketClient.getStream());
         }
