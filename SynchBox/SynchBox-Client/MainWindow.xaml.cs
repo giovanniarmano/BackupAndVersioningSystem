@@ -527,18 +527,36 @@ namespace SynchBox_Client
         {
             treeView_1.Items.Clear();
 
+            ThreadStart MyDelegate = new ThreadStart(drawRestore);
+            Thread MyThread = new Thread(MyDelegate);
+            MyThread.Start();
 
-            Task t = Task.Factory.StartNew(() =>
-                getRemoteInformation(networkStream)
-            );
-            t.Wait();
+        }
+
+        private void drawRestore()
+        {
+
+            getRemoteInformation(sessionVars.socketClient.getStream());
 
             proto_client.FileListItem root = new proto_client.FileListItem();
             root.filename = "Root\\";
             root.fid = 1;
 
-            treeView_1.Items.Add(CreateDirectoryNode(remoteFileListLast, 1, root));
-
+            if (!treeView_1.Dispatcher.CheckAccess())
+            {
+                treeView_1.Dispatcher.Invoke(
+                    System.Windows.Threading.DispatcherPriority.Background,
+                    new Action(
+                        delegate()
+                        {
+                            treeView_1.Items.Add(CreateDirectoryNode(remoteFileListLast, 1, root));
+                        }
+                        ));
+            }
+            else
+            {
+                treeView_1.Items.Add(new TreeViewItem() { Header = "Loading information" });
+            }
         }
 
         private void getRemoteInformation(NetworkStream networkStream)

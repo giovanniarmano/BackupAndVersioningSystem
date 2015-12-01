@@ -26,7 +26,7 @@ namespace SynchBox_Client
             public string syncId;
         }
 
-        private int intervallo = 10;
+        private int intervallo = 333;
 
         private Dictionary<string, proto_client.FileListItem> remoteFiles = new Dictionary<string, proto_client.FileListItem>();
         private Dictionary<string, proto_client.FileListItem> oldRemoteFiles = new Dictionary<string, proto_client.FileListItem>();
