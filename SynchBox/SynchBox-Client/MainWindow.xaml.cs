@@ -438,7 +438,7 @@ namespace SynchBox_Client
             synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
             start_synch_end_ui();
             //sposto sull'evento click updateRestoreButton
-            //ShowRemoteFileSystem(sessionVars.socketClient.getStream());
+            ShowRemoteFileSystem(sessionVars.socketClient.getStream());
 
         }
 
@@ -521,13 +521,11 @@ namespace SynchBox_Client
         {
             treeView_1.Items.Clear();
 
-            proto_client.ListResponse remoteFileInfo;
 
-            remoteFileInfo = proto_client.ListRequestLastWrapper(networkStream);
-            remoteFileListLast = remoteFileInfo.fileList.ToList();
-
-            remoteFileInfo = proto_client.ListRequestAllWrapper(networkStream);
-            remoteFileListAll = remoteFileInfo.fileList.ToList();
+            Task t = Task.Factory.StartNew(() =>
+                getRemoteInformation(networkStream)
+            );
+            t.Wait();
 
             proto_client.FileListItem root = new proto_client.FileListItem();
             root.filename = "Root";
@@ -535,6 +533,17 @@ namespace SynchBox_Client
 
             treeView_1.Items.Add(CreateDirectoryNode(remoteFileListLast, 1, root));
 
+        }
+
+        private void getRemoteInformation(NetworkStream networkStream)
+        {
+            proto_client.ListResponse remoteFileInfo;
+
+            remoteFileInfo = proto_client.ListRequestLastWrapper(networkStream);
+            remoteFileListLast = remoteFileInfo.fileList.ToList();
+
+            remoteFileInfo = proto_client.ListRequestAllWrapper(networkStream);
+            remoteFileListAll = remoteFileInfo.fileList.ToList();
         }
 
         private object CreateDirectoryNode(List<proto_client.FileListItem> remoteFileList, int p, proto_client.FileListItem parentDirectory)
@@ -609,15 +618,6 @@ namespace SynchBox_Client
             string tag = item.Tag.ToString();
             string[] fileInfo = tag.Split('_');
 
-            proto_client.GetList getList = new proto_client.GetList();
-            getList.fileList = new List<proto_client.FileToGet>();
-            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
-            proto_client.GetResponse getResponse = new proto_client.GetResponse();
-
-            fileToGet.fid = Int32.Parse(fileInfo[0]);
-            fileToGet.rev = Int32.Parse(fileInfo[1]);
-            getList.fileList.Add(fileToGet);
-            getList.n = 1;
 
             System.Windows.Forms.DialogResult dialogResult = System.Windows.Forms.MessageBox.Show("Do you want to restore this file and override the current version?", "Restore dialog", MessageBoxButtons.YesNoCancel);
             if (dialogResult == System.Windows.Forms.DialogResult.Yes)
@@ -627,14 +627,11 @@ namespace SynchBox_Client
                 {
                     if (file.fid.ToString().CompareTo(fileInfo[0]) == 0 && file.rev.ToString().CompareTo(fileInfo[1]) == 0)
                     {
-
-                        /*
                         Task t = Task.Factory.StartNew(() =>
-                            proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
+                            overrideLocalCopy(sessionVars.socketClient.getStream(), fileInfo)
                         );
-                        */
+                        t.Wait();
 
-                       
                     }
                 } 
             }
@@ -645,24 +642,10 @@ namespace SynchBox_Client
                 {
                     if (file.fid.ToString().CompareTo(fileInfo[0]) == 0 && file.rev.ToString().CompareTo(fileInfo[1]) == 0)
                     {
-
-                        proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
-                        proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
-
-                        string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-                        fileName = MakeUnique(fileName, fileInfo[1]);
-
-                        try
-                        {
-                            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
-                            File.WriteAllBytes(fileName, getResponse.fileDump);
-                            synchClient.syncNewfile(fileName, getResponse.fileInfo.md5);
-                        }
-                        catch (Exception wEcx)
-                        {
-                            Console.WriteLine(wEcx.Message);
-                        }
-                        return;
+                        Task t = Task.Factory.StartNew(() =>
+                            saveNewCopy(sessionVars.socketClient.getStream(), fileInfo)
+                        );
+                        t.Wait();
                     }
                 } 
             }
@@ -672,10 +655,53 @@ namespace SynchBox_Client
             }
         }
 
-        private void myfunc1()
+        private void saveNewCopy(NetworkStream networkStream, string[] fileInfo)
         {
-            proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
-            proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
+
+            proto_client.GetList getList = new proto_client.GetList();
+            getList.fileList = new List<proto_client.FileToGet>();
+            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
+            proto_client.GetResponse getResponse = new proto_client.GetResponse();
+
+            fileToGet.fid = Int32.Parse(fileInfo[0]);
+            fileToGet.rev = Int32.Parse(fileInfo[1]);
+            getList.fileList.Add(fileToGet);
+            getList.n = 1;
+
+            proto_client.GetListWrapper(networkStream, ref getList);
+            proto_client.GetResponseWrapper(networkStream, ref getResponse);
+
+            string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+            fileName = MakeUnique(fileName, fileInfo[1]);
+
+            try
+            {
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                File.WriteAllBytes(fileName, getResponse.fileDump);
+                synchClient.syncNewfile(fileName, getResponse.fileInfo.md5);
+            }
+            catch (Exception wEcx)
+            {
+                Console.WriteLine(wEcx.Message);
+            }
+            return;
+        }
+
+        private void overrideLocalCopy(NetworkStream netstream, string[] fileInfo)
+        {
+
+            proto_client.GetList getList = new proto_client.GetList();
+            getList.fileList = new List<proto_client.FileToGet>();
+            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
+            proto_client.GetResponse getResponse = new proto_client.GetResponse();
+
+            fileToGet.fid = Int32.Parse(fileInfo[0]);
+            fileToGet.rev = Int32.Parse(fileInfo[1]);
+            getList.fileList.Add(fileToGet);
+            getList.n = 1;
+
+            proto_client.GetListWrapper(netstream, ref getList);
+            proto_client.GetResponseWrapper(netstream, ref getResponse);
 
             string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
 
@@ -691,7 +717,6 @@ namespace SynchBox_Client
             catch (Exception wEcx)
             {
                 Logging.WriteToLog(wEcx.Message);
-                //Console.WriteLine(wEcx.Message);
 
             }
             return;
@@ -741,7 +766,7 @@ namespace SynchBox_Client
         private void updateRestoreButton_Click(object sender, RoutedEventArgs e)
         {
             //sposto sull'evento click updateRestoreButton
-            ShowRemoteFileSystem(sessionVars.socketClient.getStream());
+            //ShowRemoteFileSystem(sessionVars.socketClient.getStream());
         }
     }
 }
