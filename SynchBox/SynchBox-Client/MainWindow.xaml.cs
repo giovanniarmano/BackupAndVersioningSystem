@@ -634,27 +634,7 @@ namespace SynchBox_Client
                         );
                         */
 
-                        proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
-                        proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
-
-                        string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
-
-                        if (File.Exists(fileName))
-                        {
-                            File.Delete(fileName);
-                        }
-                        try
-                        {
-                            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
-                            System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
-                        }
-                        catch (Exception wEcx)
-                        {
-                            Logging.WriteToLog(wEcx.Message);
-                            //Console.WriteLine(wEcx.Message);
-                            
-                        }
-                        return;
+                       
                     }
                 } 
             }
@@ -690,6 +670,31 @@ namespace SynchBox_Client
             {
                 System.Windows.Forms.MessageBox.Show("Operation aborted");
             }
+        }
+
+        private void myfunc1()
+        {
+            proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
+            proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
+
+            string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+
+            if (File.Exists(fileName))
+            {
+                File.Delete(fileName);
+            }
+            try
+            {
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
+            }
+            catch (Exception wEcx)
+            {
+                Logging.WriteToLog(wEcx.Message);
+                //Console.WriteLine(wEcx.Message);
+
+            }
+            return;
         }
 
         //------------------------- OLD FUNCTION -------------------------
