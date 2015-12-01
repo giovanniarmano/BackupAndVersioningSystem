@@ -54,6 +54,8 @@ namespace SynchBox_Client
 
         public SessionVars sessionVars;
         public SynchClient synchClient = new SynchClient();
+        public List<proto_client.FileListItem> remoteFileListAll;
+        public List<proto_client.FileListItem> remoteFileListLast;
         
         private void initializeSessionParam()
         {
@@ -433,9 +435,9 @@ namespace SynchBox_Client
 
             initializeSyncParam();
             
-            synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
+            //synchClient.StartSyncAsync(sessionVars.socketClient.getStream(), sessionVars);
             start_synch_end_ui();
-            //ShowRemoteFileSystem(sessionVars.socketClient.getStream());
+            ShowRemoteFileSystem(sessionVars.socketClient.getStream());
 
         }
 
@@ -518,48 +520,168 @@ namespace SynchBox_Client
         {
             treeView_1.Items.Clear();
 
-            proto_client.ListResponse remoteFileList;
-            remoteFileList = proto_client.ListRequestLastWrapper(networkStream);
+            proto_client.ListResponse remoteFileInfo;
 
-            List<proto_client.FileListItem> SortedList = remoteFileList.fileList.OrderBy(o => o.folder).ToList(); //controllare che non si possa fare nella query lato server
-            Lookup<string, proto_client.FileListItem> lookup = (Lookup<string, proto_client.FileListItem>)SortedList.ToLookup(p => p.folder, p => p);
+            remoteFileInfo = proto_client.ListRequestLastWrapper(networkStream);
+            remoteFileListLast = remoteFileInfo.fileList.ToList();
 
-            var keys = lookup.Select(g => g.Key).ToList();
+            remoteFileInfo = proto_client.ListRequestAllWrapper(networkStream);
+            remoteFileListAll = remoteFileInfo.fileList.ToList();
 
-            
-            List<string[]> listTmp = new List<string[]>();
-            List<string> listString = new List<string>();
+            proto_client.FileListItem root = new proto_client.FileListItem();
+            root.filename = "Root";
+            root.fid = 1;
 
-            for (int i = 0; i < keys.Count; i++)
-            {
-                string cartella = keys[i];
-                string[] source = cartella.Split(new Char[] { '\\' });
-                listString = source.ToList();
-                listString.Add(cartella);
-                listTmp.Add(listString.ToArray());
-            }
-            Lookup<int, string[]> directoryDept = (Lookup<int, string[]>)listTmp.ToLookup(p => p.Length-3 , p => p);
-
-            treeView_1.Items.Add(CreateDirectoryNode(directoryDept, 0));
+            treeView_1.Items.Add(CreateDirectoryNode(remoteFileListLast, 1, root));
 
         }
 
-        private object CreateDirectoryNode(Lookup<int, string[]> directoryDept, int p)
+        private object CreateDirectoryNode(List<proto_client.FileListItem> remoteFileList, int p, proto_client.FileListItem parentDirectory)
         {
-            var directoryNode = new TreeViewItem();
-            foreach (var directory in directoryDept[p])
+            var directoryNode = new TreeViewItem() { Header = parentDirectory.filename, Tag = parentDirectory.fid };
+            if (parentDirectory.deleted)
             {
-                directoryNode = new TreeViewItem() { Header = directory[p], Tag = directory[directory.Length-1]};
-                directoryNode.MouseLeftButtonUp += directoryTreeItem_Selected;
-                foreach (var subdirectory in directory)
+                directoryNode.Foreground = Brushes.Red;
+            }
+            directoryNode.MouseLeftButtonUp += directoryTreeItem_Selected;
+
+            foreach (var directory in remoteFileList)
+            {
+                if (directory.dir && directory.folder_id == p && directory.folder_id != directory.fid)
                 {
-                    directoryNode.Items.Add(CreateDirectoryNode(directoryDept, p + 1));
+                    directoryNode.Items.Add(CreateDirectoryNode(remoteFileList, directory.fid, directory));
                 }
             }
 
             return directoryNode;
         }
 
+        private void directoryTreeItem_Selected(object sender, RoutedEventArgs e)
+        {
+            e.Handled = true;
+            TreeViewItem item = sender as TreeViewItem;
+            string folderId = item.Tag.ToString();
+
+            treeView_2.Items.Clear();
+
+            foreach (var file in remoteFileListLast)
+            {
+                if(!file.dir && file.folder_id.ToString().CompareTo(folderId) == 0)
+                {
+                    var fileNode = new TreeViewItem() { Header = file.filename, Tag = file.fid };
+                    fileNode.MouseLeftButtonUp += treeItem_Selected;
+                    treeView_2.Items.Add(fileNode);
+                }
+                
+            }
+        }
+
+        //generare il terzo blocco con tutte le revisione di quel file
+        private void treeItem_Selected(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+            TreeViewItem item = sender as TreeViewItem;
+            string fileId = item.Tag.ToString();
+
+            treeView_3.Items.Clear();
+
+            foreach (var file in remoteFileListAll)
+            {
+                if (file.fid.ToString().CompareTo(fileId) == 0)
+                {
+                    var fileNode = new TreeViewItem() { Header = file.timestamp, Tag = file.fid + "_" + file.rev };
+                    fileNode.MouseLeftButtonUp += treeItem_Revision;
+                    treeView_3.Items.Add(fileNode);
+                }
+            } 
+        }
+
+        private void treeItem_Revision(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+
+            TreeViewItem item = sender as TreeViewItem;
+            string tag = item.Tag.ToString();
+            string[] fileInfo = tag.Split('_');
+
+            proto_client.GetList getList = new proto_client.GetList();
+            getList.fileList = new List<proto_client.FileToGet>();
+            proto_client.FileToGet fileToGet = new proto_client.FileToGet();
+            proto_client.GetResponse getResponse = new proto_client.GetResponse();
+
+            fileToGet.fid = Int32.Parse(fileInfo[0]);
+            fileToGet.rev = Int32.Parse(fileInfo[1]);
+            getList.fileList.Add(fileToGet);
+            getList.n = 1;
+
+            System.Windows.Forms.DialogResult dialogResult = System.Windows.Forms.MessageBox.Show("Do you want to restore this file and override the current version?", "Restore dialog", MessageBoxButtons.YesNoCancel);
+            if (dialogResult == System.Windows.Forms.DialogResult.Yes)
+            {
+                System.Windows.Forms.MessageBox.Show("You're going to override file: " + fileInfo[0] + " with is " + fileInfo[1] + " revision" );
+                foreach (var file in remoteFileListAll)
+                {
+                    if (file.fid.ToString().CompareTo(fileInfo[0]) == 0 && file.rev.ToString().CompareTo(fileInfo[1]) == 0)
+                    {
+                        proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
+                        proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
+
+                        string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+
+                        if (File.Exists(fileName))
+                        {
+                            File.Delete(fileName);
+                        }
+                        try
+                        {
+                            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                            System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
+                        }
+                        catch (Exception wEcx)
+                        {
+                            Console.WriteLine(wEcx.Message);
+                        }
+                        return;
+                    }
+                } 
+            }
+            else if (dialogResult == System.Windows.Forms.DialogResult.No)
+            {
+                System.Windows.Forms.MessageBox.Show("You're going to restore file: " + fileInfo[0] + " at revision " + fileInfo[1] + " in a new file");
+                foreach (var file in remoteFileListAll)
+                {
+                    if (file.fid.ToString().CompareTo(fileInfo[0]) == 0 && file.rev.ToString().CompareTo(fileInfo[1]) == 0)
+                    {
+
+                        proto_client.GetListWrapper(sessionVars.socketClient.getStream(), ref getList);
+                        proto_client.GetResponseWrapper(sessionVars.socketClient.getStream(), ref getResponse);
+
+                        string fileName = sessionVars.path + getResponse.fileInfo.folder + getResponse.fileInfo.filename;
+                        MakeUnique(fileName, fileInfo[1]);
+
+                        try
+                        {
+                            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(sessionVars.path + getResponse.fileInfo.folder));
+                            System.IO.File.WriteAllBytes(fileName, getResponse.fileDump);
+                            synchClient.syncNewfile(fileName, getResponse.fileInfo.md5);
+                        }
+                        catch (Exception wEcx)
+                        {
+                            Console.WriteLine(wEcx.Message);
+                        }
+                        return;
+                    }
+                } 
+            }
+            else if (dialogResult == System.Windows.Forms.DialogResult.Cancel)
+            {
+                System.Windows.Forms.MessageBox.Show("Operation aborted");
+            }
+        }
+
+        //------------------------- OLD FUNCTION -------------------------
+
+
+        /*
         private TreeViewItem CreateDirectoryNode(DirectoryInfo di)
         {
             var directoryNode = new TreeViewItem() { Header = di.Name, Tag = di.FullName };
@@ -581,44 +703,21 @@ namespace SynchBox_Client
 
             treeView.Items.Add(CreateDirectoryNode(rootDirectoryInfo));
         }
-
-        private void directoryTreeItem_Selected(object sender, RoutedEventArgs e)
+        */
+        private string MakeUnique(string path, string rev)
         {
-            e.Handled = true;
-            TreeViewItem item = sender as TreeViewItem;
-            string path = item.Tag.ToString();
-            var rootDirectoryInfo = new DirectoryInfo(path);
+            string dir = System.IO.Path.GetDirectoryName(path);
+            string fileName = System.IO.Path.GetFileNameWithoutExtension(path);
+            string fileExt = System.IO.Path.GetExtension(path);
 
-            treeView_2.Items.Clear();
-
-            foreach (var file in rootDirectoryInfo.GetFiles())
+            for (int i = 1; ; ++i)
             {
-                var fileNode = new TreeViewItem() { Header = file.Name};
-                fileNode.MouseLeftButtonUp += treeItem_Selected;
-                treeView_2.Items.Add(fileNode);
+                path = System.IO.Path.Combine(dir, fileName + " Rev:" + rev + " - " + i + fileExt);
+
+                if (!File.Exists(path))
+                    return path;
             }
         }
-
-        //generare il terzo blocco con tutte le revisione di quel file
-        private void treeItem_Selected(object sender, MouseButtonEventArgs e)
-        {
-            e.Handled = true;
-            TreeViewItem item = sender as TreeViewItem;
-            string path = item.Tag.ToString();
-            var fileInfo = new FileInfo(path);
-
-            treeView_3.Items.Clear();
-
-            /*
-
-            foreach (var file in rootDirectoryInfo.GetFiles())
-            {
-                var fileNode = new TreeViewItem() { Header = file.Name };
-                fileNode.MouseLeftButtonUp += treeItem_Selected;
-                treeView_3.Items.Add(fileNode);
-            }*/
-        }
-
         
     }
 }

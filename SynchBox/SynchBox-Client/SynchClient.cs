@@ -857,7 +857,7 @@ namespace SynchBox_Client
             remoteFiles[path + "\\"].rev = remoteFiles[path + "\\"].rev + 1;
         }
 
-        private void syncNewfile(string path, string hash)
+        public void syncNewfile(string path, string hash)
         {
             checkBeginSession(netStream);
 
