@@ -370,7 +370,7 @@ namespace SynchBox_Client
             //tab.Visibility = Visibility.Hidden;
             tab.IsEnabled = false;
 
-            tab = tabControl.Items[3] as TabItem;
+            //tab = tabControl.Items[3] as TabItem;
             //tab.Visibility = Visibility.Hidden;
             tab.IsEnabled = false;
         }
@@ -383,11 +383,26 @@ namespace SynchBox_Client
 
             tab = tabControl.Items[2] as TabItem;
             //tab.Visibility = Visibility.Visible;
-            tab.IsEnabled = true;
+            tab.IsEnabled = false;
 
-            tab = tabControl.Items[3] as TabItem;
+            //tab = tabControl.Items[3] as TabItem;
+            //tab.Visibility = Visibility.Visible;
+            //tab.IsEnabled = true;
+        }
+
+        private void enable_tabitems_sync()
+        {
+            var tab = tabControl.Items[1] as TabItem;
             //tab.Visibility = Visibility.Visible;
             tab.IsEnabled = true;
+
+            tab = tabControl.Items[2] as TabItem;
+            //tab.Visibility = Visibility.Visible;
+            tab.IsEnabled = true;
+
+            //tab = tabControl.Items[3] as TabItem;
+            //tab.Visibility = Visibility.Visible;
+            //tab.IsEnabled = true;
         }
 
 
@@ -445,6 +460,7 @@ namespace SynchBox_Client
 
             treeView_2.Items.Clear();
             treeView_3.Items.Clear();
+            enable_tabitems_sync();
 
         }
 
@@ -572,7 +588,7 @@ namespace SynchBox_Client
 
         private object CreateDirectoryNode(List<proto_client.FileListItem> remoteFileList, int p, proto_client.FileListItem parentDirectory)
         {
-            var directoryNode = new TreeViewItem() { Header = parentDirectory.filename.Substring(0, parentDirectory.filename.Length-1), Tag = parentDirectory.fid };
+            var directoryNode = new TreeViewItem() { Header = parentDirectory.filename.Substring(0, parentDirectory.filename.Length - 1), Tag = parentDirectory.fid };
             if (parentDirectory.deleted)
             {
                 directoryNode.Foreground = Brushes.Red;
