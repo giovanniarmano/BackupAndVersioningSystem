@@ -56,7 +56,8 @@ namespace SynchBox_Client
         public SynchClient synchClient = new SynchClient();
         public List<proto_client.FileListItem> remoteFileListAll;
         public List<proto_client.FileListItem> remoteFileListLast;
-        
+        internal static MainWindow tw;
+
         private void initializeSessionParam()
         {
             sessionVars.username = "";
@@ -72,6 +73,7 @@ namespace SynchBox_Client
         public MainWindow()
         {
             InitializeComponent();
+            tw = this;
             disable_tabitems();
             sessionVars = new SessionVars();
             Logging.WriteToLog("-----CLIENT STARTED------");
@@ -406,8 +408,8 @@ namespace SynchBox_Client
         }
 
 
-
-        private void b_logout_login_Click(object sender, RoutedEventArgs e)
+        //TODO chiudi la connessione se il server è andato a farsi un giro! (Network error o Server Stopped)
+        public void b_logout_login_Click(object sender, RoutedEventArgs e)
         {
             //do logout
             sessionVars.username = "";
@@ -425,6 +427,31 @@ namespace SynchBox_Client
             //ui logout
             logout_ui();
         }
+
+        //fa il logout quando il server si chiude! + sposta la visuale sulla finestra di login!
+        public void my_do_logout()
+        {
+            //do logout
+            sessionVars.username = "";
+            sessionVars.uid_str = "";
+
+            
+
+            //added! stop synch before do logout!
+            //copied from stop synch!
+            sessionVars.isSynchronizationActive = false;
+            start_synch_stopped_ui();
+
+            proto_client.do_logout(sessionVars.socketClient.getStream());
+            sessionVars.socketClient.Close();
+            //.Close();
+            initializeSessionParam();
+            //ui logout
+            tabControl.SelectedIndex = 0;
+            logout_ui();
+        }
+        
+
 
         //button begin Syncronization
         private void Button_Click_1(object sender, RoutedEventArgs e)

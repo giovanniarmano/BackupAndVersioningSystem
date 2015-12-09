@@ -44,7 +44,7 @@ namespace SynchBox_Client
             {
                 Logging.WriteToLog(e.ToString());
                 //DEBUG --remove in release
-                MessageBox.Show(e.Message);
+                //MessageBox.Show(e.Message);
             }
         }
 

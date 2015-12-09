@@ -64,9 +64,16 @@ namespace SynchBox_Client
             if (client != null)
             {
                 Logging.WriteToLog("Closing Stream & TcpClient ...");
-                client.GetStream().Close();
-                client.Close();
-                Logging.WriteToLog("Closing Stream & TcpClient DONE");
+                try {
+                    client.GetStream().Close();
+                }
+                catch { }
+                try {
+                    client.Close();
+                }
+                catch { }
+                
+                    Logging.WriteToLog("Closing Stream & TcpClient DONE");
             }
             else 
             {
