@@ -20,11 +20,14 @@ namespace SyncBox_Server
         {
             lock (locker)
             {
+                try { 
                 StreamWriter SW;
                 DateTime t = DateTime.Now;
                 SW = File.AppendText("C:\\backup\\Log_server.txt");
                 SW.WriteLine(t.ToString() + " - (" + System.Threading.Thread.CurrentThread.ManagedThreadId + ")" + message);
                 SW.Close();
+                }
+                catch { }
             }
         }
     }
