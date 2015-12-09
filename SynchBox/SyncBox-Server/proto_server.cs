@@ -30,6 +30,7 @@ namespace SyncBox_Server
             //while da testare! Uso questo per mantenere come local var il login dell'utente che sto gestendo
             login_c currentUser = new login_c();
             currentUser.is_logged = false;
+            int nGetSynchId = 0;
 
             while (!exc && !ct.IsCancellationRequested) { 
             try
@@ -132,7 +133,7 @@ namespace SyncBox_Server
                         break;
 
                     case (byte)CmdType.GetSynchId:
-                        Logging.WriteToLog("manage GetSynchId CASE ...");
+                        if (++nGetSynchId%100 == 0) Logging.WriteToLog("manage GetSynchId CASE (100) ...");
                         msgtype_r.accepted = true;
                         Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
                         manage_GetSynchId(netStream, ref currentUser);

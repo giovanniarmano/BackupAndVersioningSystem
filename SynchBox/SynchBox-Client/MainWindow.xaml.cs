@@ -412,7 +412,12 @@ namespace SynchBox_Client
             //do logout
             sessionVars.username = "";
             sessionVars.uid_str = "";
-            
+
+            //added! stop synch before do logout!
+            //copied from stop synch!
+            sessionVars.isSynchronizationActive = false;
+            start_synch_stopped_ui();
+
             proto_client.do_logout(sessionVars.socketClient.getStream());
             sessionVars.socketClient.Close();
             //.Close();
@@ -464,6 +469,7 @@ namespace SynchBox_Client
 
         }
 
+        //fare stop synch anche quando si fa logout!
         private void b_stop_sync_Click(object sender, RoutedEventArgs e)
         {
             sessionVars.isSynchronizationActive = false;
