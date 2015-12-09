@@ -12,6 +12,7 @@ namespace SynchBox_Client
         private static Mutex wrapMutex = new Mutex();
         private static Mutex getMutex = new Mutex();
         private static volatile int nGet = 0;
+        private static volatile int nGetSynchId = 0;
 
         public static ListResponse ListRequestAllWrapper(NetworkStream netStream)
         {
@@ -246,7 +247,7 @@ namespace SynchBox_Client
 
         public static int GetSynchIdWrapper(NetworkStream netStream)
         {
-            Logging.WriteToLog("Get Synch Id Wrapper ......");
+            if (++nGetSynchId%100==0)Logging.WriteToLog("Get Synch Id Wrapper (100) ......");
             wrapMutex.WaitOne();
             messagetype_c mt = new messagetype_c();
             mt.msgtype = (Byte)CmdType.GetSynchId;
@@ -267,7 +268,7 @@ namespace SynchBox_Client
                 Logging.WriteToLog("Error in GetSynchId. symnchid < -1 ");
 
 
-            Logging.WriteToLog("Get Synch Id Wrapper DONE");
+            if (nGetSynchId % 100 == 0) Logging.WriteToLog("Get Synch Id Wrapper (100) DONE");
             wrapMutex.ReleaseMutex();
             return getSynchId.synchid;
         }
