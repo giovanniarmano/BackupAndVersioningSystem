@@ -11,7 +11,6 @@ namespace SynchBox_Client
     public static partial class proto_client
     {
         private static Mutex wrapMutex = new Mutex();
-        //private static Mutex getMutex = new Mutex();//unused
         private static volatile int nGet = 0;
         private static volatile int nGetSynchId = 0;
 
@@ -47,7 +46,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-               // throw;
             }
             finally
             {
@@ -89,7 +87,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-                //throw;
             }
             finally
             {
@@ -141,7 +138,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-                //throw;
             }
             finally
             {
@@ -149,7 +145,7 @@ namespace SynchBox_Client
             }
             if (beginSession!=null)
                 return beginSession.sessionid;
-            return -1; //TODO ??
+            return -1;
         }
 
         /// <summary>
@@ -194,13 +190,13 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-                //throw;
+
             }
             finally
             {
                 wrapMutex.ReleaseMutex();
             }
-            return;// endSession.sessionid;
+            return;
         }
 
 
@@ -241,7 +237,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-                //throw;
             }
             finally
             {
@@ -281,7 +276,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-                //throw;
             }
             finally
             {
@@ -320,7 +314,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-                //throw;
             }
             finally
             {
@@ -359,7 +352,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-               // throw;
             }
             finally
             {
@@ -404,7 +396,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-                //throw;
             }
             finally
             {
@@ -412,11 +403,8 @@ namespace SynchBox_Client
             }
             if(getSynchId!=null)
                 return getSynchId.synchid;
-            return -1; //TODO ??
+            return -1;
         }
-
-        //GetListWrapper
-        //TODO Potrebbe
 
         /// <summary>
         /// ATTENZIONE. DA Usare con con GetResponseWrapper n volte!
@@ -473,13 +461,10 @@ namespace SynchBox_Client
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
                 wrapMutex.ReleaseMutex();
-                //throw;
             }
             
             return;
         }
-
-
 
         /// <summary>
         /// DA CHIAMARE N Volte solo dopo GetListWrapper. La GetResponse deve essere passata per riferimento dal chiamante(anche vuota)
@@ -493,9 +478,6 @@ namespace SynchBox_Client
                 return;
             }
 
-            // se durante la getResponse vengo interrotto... faccio logout se sono il primo a riscontrare sie Exception
-            //ma in ogni caso rilascio il mutex
-            //se non lo rilasciassi, quando il thread termina potrebbero succedere casini!
             try {
                 getResponse = Serializer.DeserializeWithLengthPrefix<GetResponse>(netStream, PrefixStyle.Base128);
                 nGet--;
@@ -555,7 +537,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-                //throw;
             }
             finally
             {
@@ -599,7 +580,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog("Generic Exception in wrapper -> toserver communication.\n" + e.ToString());
-               // throw;
             }
             finally {
                 Logging.WriteToLog("LockRelease db Wrapper DONE");

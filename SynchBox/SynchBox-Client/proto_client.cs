@@ -15,11 +15,8 @@ using System.Security.Cryptography;
 
 namespace SynchBox_Client
 {
-   
-
     public static partial class proto_client
     {
-
         public static void do_logout(NetworkStream netStream)
         {
             try { 
@@ -36,7 +33,6 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog(e.ToString());
-
             }
         }
 
@@ -70,11 +66,9 @@ namespace SynchBox_Client
             //MessageBox.Show("Attempting reading data!");
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
             
-
             Logging.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
             //Logging.WriteToLog("logging in: sending data...");
             
-
             return login_r;
         }
 
@@ -111,14 +105,11 @@ namespace SynchBox_Client
             //MessageBox.Show("Attempting reading data!");
             login_c login_r = Serializer.DeserializeWithLengthPrefix<login_c>(netStream, PrefixStyle.Base128);
 
-
             //Logging.WriteToLog("SENT REGISTER\n" + login.ToString() + "\n\nRCVD REGISTER\n" + login_r.ToString());
             Logging.WriteToLog("sent - " + login.ToString() + "\nreceived - " + login_r.ToString());
 
             return login_r;
         }
-
-        //public void my_sender(enum CmdType, )
 
 
         public static string DataTableToString(DataTable Table)
@@ -135,7 +126,6 @@ namespace SynchBox_Client
             }
             return sb.ToString();
         }
-
     }
         
 }

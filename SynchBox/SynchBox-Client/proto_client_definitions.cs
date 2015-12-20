@@ -491,7 +491,6 @@ namespace SynchBox_Client
                 str.Append("|dir(is a dir?)");
                 str.Append(dir.ToString());
                 str.Append("|filedump->XXX");
-                //str.Append(syncid);
                 str.Append("|");
                 return str.ToString();
             }
@@ -506,9 +505,6 @@ namespace SynchBox_Client
             [ProtoMember(2)]
             public int rev;
 
-            //[ProtoMember(3)]
-            //public int syncid;
-
 
             public string ToString()
             {
@@ -517,8 +513,6 @@ namespace SynchBox_Client
                 str.Append(fid);
                 str.Append("|rev");
                 str.Append(rev);
-                //str.Append("|syncid");
-                //str.Append(syncid);
                 str.Append("|");
                 return str.ToString();
             }

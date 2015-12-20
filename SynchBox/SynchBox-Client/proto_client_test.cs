@@ -11,7 +11,6 @@ using System.Threading;
 using System.Data;
 using System.IO;
 using System.Security.Cryptography;
-//using ProtoBuf.Data;
 
 namespace SynchBox_Client
 {
@@ -21,7 +20,6 @@ namespace SynchBox_Client
         {
             try
             {
-            
 
                 string basepath = "C:\\backup\\temp";
                 string rand = RandomString(4);
@@ -151,10 +149,6 @@ namespace SynchBox_Client
                     //create file
                     filename = i.ToString() + "_" + rand + ".txt";
                     bff = basepath + folder + filename;
-                    //write random string
-                    //text = RandomString(20);
-                    //File.WriteAllText(bff, text);
-                    //create add struct & populate
 
                     Delete delete = new Delete();
 
@@ -259,11 +253,9 @@ namespace SynchBox_Client
                 getList_.fileList = new List<proto_client.FileToGet>();
                 getList_.n = 0;
 
-                
                 proto_client.GetListWrapper(netStream, ref getList_); // TODO: problema sulla sincronizzazione delle cartelle (le chiede anche se ci sono per via dello slash --> risolto (?)
                 proto_client.GetResponse getResponse_ = new proto_client.GetResponse();
-                
-
+            
 
             }
             catch (Exception e)
