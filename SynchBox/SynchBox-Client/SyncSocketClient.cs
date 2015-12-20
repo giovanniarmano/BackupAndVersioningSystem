@@ -52,7 +52,6 @@ namespace SynchBox_Client
             {
                 Logging.WriteToLog("Error in Connecting to the server.");
                 Logging.WriteToLog(e.ToString());
-                //throw;
                 return false;
             }
 
@@ -60,7 +59,6 @@ namespace SynchBox_Client
         }
 
         public void Close() {
-            //magari mando un msg close prima
             if (client != null)
             {
                 Logging.WriteToLog("Closing Stream & TcpClient ...");

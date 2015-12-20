@@ -9,11 +9,6 @@ namespace SyncBox_Server
 {
     public static class Logging
     {
-        //public Logging()
-        //{
-
-        //}
-
         private static readonly object locker = new object();
 
         public static void WriteToLog(string message)

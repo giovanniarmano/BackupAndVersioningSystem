@@ -29,10 +29,7 @@ namespace SynchBox_Client
     /// </summary>
     public partial class MainWindow : Window
     {
-        //L'unica istanza di MainWindow conosce e istanzia un riferimento alla classe SessionVars
-        //L'istanza si chiama sessionVars
-        //L'idea è quella di usare questa classe per tenere traccia dei parametri di sessione (unici e non duplicati in quanto siamo sul client!)
-        
+   
         public class SessionVars
         {
             public CancellationTokenSource cts;
@@ -192,19 +189,7 @@ namespace SynchBox_Client
                 }
 
                 end_login_register_ui();
-                //Logging.WriteToLog("set login name, clear textbox, disable text box");
-                //istantiate myprotocol
-
-                //myprotocol login
-                //throws exception
-
-                //set session, user etc parameters
-
-                //UI login-> logout & not possible to login again
-
-                //set them (textbox values) to the class params
-
-                //spostati su home
+               
 
             }
             catch (System.IO.IOException se)
@@ -226,8 +211,7 @@ namespace SynchBox_Client
 
         private async Task<SyncSocketClient> myStartAsync(string _ip, int _port,CancellationToken ct)
         {
-           // Thread.Sleep(3000);
-            //throw new NotImplementedException();
+        
             if (sessionVars.connected)
             {
                 if (_ip.CompareTo(sessionVars.ip_str) == 0 && _port == sessionVars.port_int)
@@ -310,9 +294,7 @@ namespace SynchBox_Client
 
         private void login_ui() {
             setNameLogin();
-            //clearTextBox();
             disableTextBox();
-
         }
 
         private void logout_ui()
@@ -326,8 +308,6 @@ namespace SynchBox_Client
         private void clearTextBox() {
             username_tb.Clear();
             password_tb.Clear();
-            //ip_tb.Clear();
-            //port_tb.Clear();
         }
 
         private void enableTextBox()
@@ -365,50 +345,32 @@ namespace SynchBox_Client
         private void disable_tabitems()
         {
             var tab = tabControl.Items[1] as TabItem;
-            //tab.Visibility = Visibility.Hidden;
             tab.IsEnabled = false;
          
             tab = tabControl.Items[2] as TabItem;
-            //tab.Visibility = Visibility.Hidden;
             tab.IsEnabled = false;
-
-            //tab = tabControl.Items[3] as TabItem;
-            //tab.Visibility = Visibility.Hidden;
             tab.IsEnabled = false;
         }
 
         private void enable_tabitems()
         {
             var tab = tabControl.Items[1] as TabItem;
-            //tab.Visibility = Visibility.Visible;
             tab.IsEnabled = true;
 
             tab = tabControl.Items[2] as TabItem;
-            //tab.Visibility = Visibility.Visible;
             tab.IsEnabled = false;
-
-            //tab = tabControl.Items[3] as TabItem;
-            //tab.Visibility = Visibility.Visible;
-            //tab.IsEnabled = true;
         }
 
         private void enable_tabitems_sync()
         {
             var tab = tabControl.Items[1] as TabItem;
-            //tab.Visibility = Visibility.Visible;
             tab.IsEnabled = true;
 
             tab = tabControl.Items[2] as TabItem;
-            //tab.Visibility = Visibility.Visible;
             tab.IsEnabled = true;
-
-            //tab = tabControl.Items[3] as TabItem;
-            //tab.Visibility = Visibility.Visible;
-            //tab.IsEnabled = true;
         }
 
 
-        //TODO chiudi la connessione se il server è andato a farsi un giro! (Network error o Server Stopped)
         public void b_logout_login_Click(object sender, RoutedEventArgs e)
         {
             //do logout
@@ -422,7 +384,7 @@ namespace SynchBox_Client
 
             proto_client.do_logout(sessionVars.socketClient.getStream());
             sessionVars.socketClient.Close();
-            //.Close();
+      
             initializeSessionParam();
             //ui logout
             logout_ui();
@@ -434,8 +396,6 @@ namespace SynchBox_Client
             //do logout
             sessionVars.username = "";
             sessionVars.uid_str = "";
-
-            
 
             //added! stop synch before do logout!
             //copied from stop synch!
@@ -451,7 +411,6 @@ namespace SynchBox_Client
             logout_ui();
         }
         
-
 
         //button begin Syncronization
         private void Button_Click_1(object sender, RoutedEventArgs e)
@@ -474,8 +433,6 @@ namespace SynchBox_Client
                 start_synch_stopped_ui();
                 return;
             }
-
-            //PAGANO CHIAMA FUNZIONE
             
             synchClient.setEnvironment(sessionVars.socketClient.getStream(), sessionVars);
             ThreadStart MyDelegate = new ThreadStart(synchClient.StartSyncAsync);
@@ -485,7 +442,6 @@ namespace SynchBox_Client
             //TODO: aggiungere la terminazione di un thread, al posto del ct!!
 
             start_synch_end_ui();
-
 
             //sposto sull'evento click updateRestoreButton
             ShowRemoteFileSystem(sessionVars.socketClient.getStream());

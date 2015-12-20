@@ -11,39 +11,23 @@ using System.Data;
 using System.Security.Cryptography;
 using System.Threading;
 using System.IO;
-//using ProtoBuf.Data;
 
-//TODO save login info in all register login logout methods
-//TODO add a xontrol con il cancellation token
-//TODO prova a portare il multithreading al livello superiore, salvando il current user nel ciclo che gestisce i task
-//-> e testa le prestazioni a confronto!
 
-//TODO Logout method-> unset login_session
 namespace SyncBox_Server
 {
-    //Tante istanze quanti sono i processi attivi sul server!
     public static partial class proto_server
     {
        
         public static void manage(NetworkStream netStream,CancellationToken ct,ref bool exc)
         {
-            //while da testare! Uso questo per mantenere come local var il login dell'utente che sto gestendo
             login_c currentUser = new login_c();
             currentUser.is_logged = false;
             int nGetSynchId = 0;
 
             while (!exc && !ct.IsCancellationRequested) { 
             try
-            {   //magari si può mettere nella chiamata sopra!
-                //NetworkStream netStream = new NetworkStream(s, false); ///false = not own the socket
-                //Logging.WriteToLog("sleeping ...");
-                //System.Threading.Thread.Sleep(5000);
-                //Logging.WriteToLog("sleeping DONE");
-                   
+            {  
                 messagetype_c msgtype_r = Serializer.DeserializeWithLengthPrefix<messagetype_c>(netStream, PrefixStyle.Base128);
-
-                //DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG DEBUG
-                //System.Threading.Thread.Sleep(500);
                 
                 switch (msgtype_r.msgtype)
                 {
@@ -64,15 +48,12 @@ namespace SyncBox_Server
                     case (byte)CmdType.Logout:
                         Logging.WriteToLog("manage LOGOUT CASE ...");
                         msgtype_r.accepted = true;
-                            //TODO ADAPT
-                        //Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
                         manage_logout(netStream,ref currentUser);
                         break;
 
                     case (byte)CmdType.Test:
                         Logging.WriteToLog("manage TEST CASE ...");
                         msgtype_r.accepted = true;
-                        //Serializer.SerializeWithLengthPrefix(netStream, msgtype_r, PrefixStyle.Base128);
                         manage_test(netStream, ref currentUser);
                         break;
 
@@ -170,7 +151,6 @@ namespace SyncBox_Server
             GetSynchid getSynchId = Serializer.DeserializeWithLengthPrefix<GetSynchid>(netStream, PrefixStyle.Base128);
             getSynchId.synchid = db.GetSynchId(currentUser.uid);
             Serializer.SerializeWithLengthPrefix<GetSynchid>(netStream, getSynchId, PrefixStyle.Base128);
-            //throw new NotImplementedException();
         }
 
         private static void manage_EndSession(NetworkStream netStream, ref login_c currentUser)
@@ -195,7 +175,6 @@ namespace SyncBox_Server
 
         private static void manage_Add(NetworkStream netStream, ref login_c currentUser)
         {
-            //throw new NotImplementedException();
             Add add = Serializer.DeserializeWithLengthPrefix<Add>(netStream, PrefixStyle.Base128);
             if (currentUser.synchsessionid == -1) throw new Exception("Add out of SynchSession");
             AddOk addOk = db.Add(ref add, ref currentUser);
@@ -223,7 +202,6 @@ namespace SyncBox_Server
             if (currentUser.synchsessionid == -1) throw new Exception("Delete out of SynchSession");
             UpdateOk updateOk = db.Update(ref update, ref currentUser);
             Serializer.SerializeWithLengthPrefix<UpdateOk>(netStream, updateOk, PrefixStyle.Base128);
-            //throw new NotImplementedException();
         }
 
         private static void manage_GetList(NetworkStream netStream, ref login_c currentUser)
@@ -244,9 +222,7 @@ namespace SyncBox_Server
 
         private static void manage_ListRequest(NetworkStream netStream, ref login_c currentUser)
         {
-            //throw new NotImplementedException();
             ListRequest listRequest = Serializer.DeserializeWithLengthPrefix<ListRequest>(netStream, PrefixStyle.Base128);
-            //TODO Switch case
             switch (listRequest.listReqType)
             {
                 case (byte)ListRequestType.Last:
@@ -257,27 +233,10 @@ namespace SyncBox_Server
 
                 case (byte)ListRequestType.All:
                     Logging.WriteToLog("LIST REQUEST (All) ...");
-                    //throw new NotImplementedException();
                     ListResponse listResponseAll = db.ListResponseAll(currentUser.uid);
                     Serializer.SerializeWithLengthPrefix(netStream, listResponseAll, PrefixStyle.Base128);
                     break;
-/*
-//IO NON IMPLEMENTEREI QUESTE COSE BRUTTE xS Ma qualcosa è da fare
 
-                case (byte)ListRequestType.DateInterval:
-                    Logging.WriteToLog("LIST REQUEST (DateInterval) ...");
-                    throw new NotImplementedException();
-                    //ListResponse listResponse = db.ListResponseLast();
-                    Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
-                    break;
-
-                case (byte)ListRequestType.Filename:
-                    Logging.WriteToLog("LIST REQUEST (filename) ...");
-                    throw new NotImplementedException();
-                   // ListResponse listResponse = db.ListResponseLast();
-                    Serializer.SerializeWithLengthPrefix(netStream, listResponse, PrefixStyle.Base128);
-                    break;
-*/
                 default:
                     Logging.WriteToLog("LIST REQUEST Default case ... (panic!!!)");
                     break;
@@ -333,11 +292,6 @@ namespace SyncBox_Server
                 Logging.WriteToLog(e.ToString());
             }
 
-            // Provo ad aprire un file di test random
-
-            //genero random text
-
-            //aggiungo in db
         }
 
         public static string RandomString(int length)
@@ -456,12 +410,6 @@ namespace SyncBox_Server
 
         }
 
-
-       
-
-
-
-
         public static string CalculateMD5Hash(string input)
         {
             // step 1, calculate MD5 hash from input
@@ -505,11 +453,9 @@ namespace SyncBox_Server
                 foreach (var item in dataRow.ItemArray)
                 {
                     sb.Append(item + "|");
-                    //Console.WriteLine(item);
                 }
             }
             return sb.ToString();
         }
-
     }
 }

@@ -82,17 +82,12 @@ namespace SyncBox_Server
                         
                         await t;
 
-                        
-                        //Logging.WriteToLog("managing in current task ...");
-                        //proto_server.manage(ns, ct);
                     }
                     catch (Exception ex)
                     {   
-                        //inutile! Eccezione catturata nel thread
                         Logging.WriteToLog("//TODO// Guarda il Log con queste eccezioni e gestiscile meglio!");
                         Logging.WriteToLog(" public static void manageSocket(Socket s) - SyncSocketListener");
                         Logging.WriteToLog(ex.ToString());
-                       // connectionClosed = true;
                     }
                 }
             }

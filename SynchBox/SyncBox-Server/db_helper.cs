@@ -11,8 +11,6 @@ using System.Configuration;
 
 namespace SyncBox_Server
 {
-
-    //use lock to execute query??
     public static partial class db
     {
 
@@ -78,19 +76,16 @@ namespace SyncBox_Server
             
         }
 
-        //TODO Add verifica se il file era presente come cancellato e a questo punto può aggiungerlo!!!
         //ADD
         public static proto_server.AddOk Add(ref proto_server.Add add, ref proto_server.login_c currentUser)
         {
             //add.filename;add.folder;add.fileDump; uid;
             proto_server.AddOk addOk = new proto_server.AddOk();
 
-             
             //calcolo md5 & campi timestamp
             string md5 = proto_server.CalculateMD5Hash(add.fileDump);
             // string timestamp = DateTime.Now.ToString();
-            // DateTime dateTime = DateTime.Parse(timestamp);
-            
+            // DateTime dateTime = DateTime.Parse(timestamp);   
 
             SQLiteConnection cnn = new SQLiteConnection(dbConnection);
             cnn.Open();
@@ -182,15 +177,7 @@ namespace SyncBox_Server
                             Logging.WriteToLog("User not still present in history, snapshot, filedump!\n e-> " + e.ToString());
                             maxsyncId = 0;
                         }
-                        //int maxsyncId = -1;
-                        //if (value == null)
-                        //{
-                        //    maxsyncId = 0;
-                        //}
-                        //else {
-                        //    maxsyncId = int.Parse(value.ToString());
-                        //}
-                        //syncId
+
                         int syncId = maxsyncId + 1;
 
                         //seleziono  max fid tra uid
@@ -240,9 +227,6 @@ namespace SyncBox_Server
                             {
                                 folderid = 0;
                             }
-                            
-                        
-
 
                         //inserisco in HISTORY SNAPSJOT  e FILE_DUMP
                         //Add vuol dire che non ho da fare update ma solo insert
@@ -280,8 +264,6 @@ namespace SyncBox_Server
 
                                 //DEVO FARE ALTRA QUERY PER capire a che folder faccio riferimento
                                 //lookup di add.folder in concat folder+filename and dir = true in HISTORY
-
-
 
                                 mycommand.Parameters.AddWithValue("@filename", add.filename);
                                 mycommand.Parameters.AddWithValue("@md5", md5);
@@ -620,10 +602,7 @@ namespace SyncBox_Server
                 catch (Exception e)
                 {
                     Logging.WriteToLog(e.ToString());
-                    //addOk.fid = -1;
-                    //return addOk;
                 }
-                //manage try catch transaction commit
             }
             return updateOk;
         }
@@ -662,10 +641,6 @@ namespace SyncBox_Server
 
 
         //DELETE
-        //???? Un file cancellato può essere restored ? 
-        //rm from snapshot NO! Mi serve synchid -> faccio update in snapshot ----> ma quando poi faccio una getlist considero anche quelli deleted!
-        //add new revision in HISTORY deleted = true
-        //update SYNCHSESSION
 
         public static proto_server.DeleteOk Delete(ref proto_server.Delete delete, ref proto_server.login_c currentUser)
         {
@@ -804,10 +779,7 @@ namespace SyncBox_Server
                 catch (Exception e)
                 {
                     Logging.WriteToLog(e.ToString());
-                    //addOk.fid = -1;
-                    //return addOk;
                 }
-                //manage try catch transaction commit
             }
             return deleteOk;
         }
@@ -873,8 +845,6 @@ namespace SyncBox_Server
             catch (Exception e)
             {
                 Logging.WriteToLog(e.ToString());
-                //addOk.fid = -1;
-                //return addOk;
             }
             return deleteOk;
         }
@@ -896,7 +866,6 @@ namespace SyncBox_Server
                 DataTable dt = new DataTable();
                 dt.Load(reader);
 
-                //DataRow row = dt.Rows[0];
                 List<proto_server.FileListItem> fileList = new List<proto_server.FileListItem>();
                 var currentValues = dt.Rows[0].ItemArray;
                 foreach (DataRow row in dt.Rows)
@@ -1123,8 +1092,6 @@ namespace SyncBox_Server
             catch (Exception e)
             {
                 Logging.WriteToLog(e.ToString());
-                //addOk.fid = -1;
-                //return addOk;
             }
         }
 
@@ -1155,8 +1122,6 @@ namespace SyncBox_Server
                     SQLiteDataReader reader = mycommand.ExecuteReader();
                     DataTable dt = new DataTable();
                     dt.Load(reader);
-                    //reader.Close();
-                    //cnn.Close();
 
                     if (dt.Rows.Count != 1)
                         throw new Exception("Get file/folder not existing. row count-> " + dt.Rows.Count);
@@ -1251,8 +1216,6 @@ namespace SyncBox_Server
                 getResponse.fileInfo.rev = 0;
 
                 return getResponse;
-                //throw;
-                //return null;
             }
         }
 
@@ -1313,7 +1276,7 @@ namespace SyncBox_Server
             }
             return null;
         }
-        //method ended
+
 
         public static proto_server.ListResponse ListResponseAll(int uid)
         {
@@ -1346,7 +1309,6 @@ namespace SyncBox_Server
                             var values = row.ItemArray;
                             var fileListItem = new proto_server.FileListItem()
                             {
-                                //TODO Capire come gestire un eccezione di parsing... ha senso farla in modo diverso?
                                 fid = int.Parse(values[0].ToString()),
                                 rev = int.Parse(values[1].ToString()),
                                 filename = values[2].ToString(),
@@ -1374,7 +1336,6 @@ namespace SyncBox_Server
             }
             return null;
         }
-        //method ended
 
 
 
@@ -1392,10 +1353,7 @@ namespace SyncBox_Server
                     //BEGIN TRANSACTION
                     using (var transaction = cnn.BeginTransaction())
                     {
-            
-                       
-
-                        
+ 
                         //inserisco in HISTORY SNAPSJOT  e FILE_DUMP
                         //Add vuol dire che non ho da fare update ma solo insert
                         //HISTORY INSERT
@@ -1419,7 +1377,6 @@ namespace SyncBox_Server
                         mycommand.Parameters.AddWithValue("@md5", null);
                         mycommand.Parameters.AddWithValue("@folder_id", 1);
                         
-                        //DEBUG HERE!!!
                         int nUpdated = mycommand.ExecuteNonQuery();
                         if (nUpdated != 1)
                             throw new Exception("No Row updated! Rollback");
@@ -1448,7 +1405,6 @@ namespace SyncBox_Server
                     Logging.WriteToLog(e.ToString());
                     return ;
                 }
-                //manage try catch transaction commit
             }
             return ;
         }

@@ -21,11 +21,7 @@ namespace SynchBox_Client
         {
             try
             {
-                //TODO
-
-                //ListLast
-                //ListAll
-                //GetSync id
+            
 
                 string basepath = "C:\\backup\\temp";
                 string rand = RandomString(4);

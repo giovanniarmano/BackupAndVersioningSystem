@@ -47,7 +47,6 @@ namespace SyncBox_Server
                 dbConnection = db_path_textbox.Text;
                 db.start();
                 
-                //nuovo oggetto listener
                 listener = new SyncSocketListener(1500,cts.Token);
                 listener.Start();
 
@@ -66,15 +65,12 @@ namespace SyncBox_Server
         {
             Logging.WriteToLog("stopping the server ...");
             closing_ui();
-
-           // StopServerThreads();
-            //TODO REDO!
             
             if (cts != null) {
                 Logging.WriteToLog("Cancelling Tasks ... ");
                 cts.Cancel();
             }
-            //TODO Check if not throw exceotons
+
             listener.Stop();
 
             Logging.WriteToLog("stopping the server DONE");

@@ -12,38 +12,17 @@ using System.Configuration;
 namespace SyncBox_Server
 {
 
-    //use lock to execute query??
     public static partial class  db
     {
         static string dbConnection; 
         static string dbPath;
-       
-        //public static db(string dbConn)
-        //{
-        //    //dbConnection = "e:\\backup\\db.db";
-        //    //dbConnection = dbConn;
-        //    dbPath = dbConn;
-        //    dbConnection = string.Format(@"Data Source={0}; Pooling=false; FailIfMissing=false;", dbConn);
-
-        //}
-
 
         public static void setDbConn(string dbConn)
         {
-            //dbConnection = "e:\\backup\\db.db";
-            //dbConnection = dbConn;
             dbPath = dbConn;
             dbConnection = string.Format(@"Data Source={0}; Pooling=false; FailIfMissing=false;", dbConn);
         }
-        //public db() { }
 
-       // public void set_path(string path)
-       // {
-        //    this.dbConnection = path;
-       // }
-
-        //start viene chiamata solo dal main thread del server, che verifica se il percorso è valido etc ec e
-        // ... e se il db non esiste o èp vuoto ne crea uno con le tabelle di default!
 
         public static void start()
         {
@@ -161,32 +140,7 @@ namespace SyncBox_Server
             cnntodb.Close();
         }
 
-        /// <summary>  
-        ///     Single Param Constructor for specifying the DB file.  
-        /// </summary>  
-        /// <param name="inputFile">The File containing the DB</param>  
 
-        //public db(string DBDirectoryInfo, String inputFile)
-        //{
-        //    string sourceFile = Path.Combine(DBDirectoryInfo, inputFile);
-        //    dbConnection = String.Format("Data Source={0}", sourceFile);
-        //}
-
-        /// <summary>  
-        ///     Single Param Constructor for specifying advanced connection options.  
-        /// </summary>  
-        /// <param name="connectionOpts">A dictionary containing all desired options and their 
-        //   values</param>  
-        //public db(Dictionary<String, String> connectionOpts)
-        //{
-        //    String str = "";
-        //    foreach (KeyValuePair<String, String> row in connectionOpts)
-        //    {
-        //        str += String.Format("{0}={1}; ", row.Key, row.Value);
-        //    }
-        //    str = str.Trim().Substring(0, str.Length - 1);
-        //    dbConnection = str;
-        //}
 
         /// <summary>  
         ///     Allows the programmer to run a query against the Database.  

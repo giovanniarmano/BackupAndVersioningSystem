@@ -8,9 +8,7 @@ using System.Threading.Tasks;
 namespace SynchBox_Client
 {
     public static class Logging
-    {
-        
-
+    { 
         private static readonly object locker = new object();
 
         public static void WriteToLog(string message)

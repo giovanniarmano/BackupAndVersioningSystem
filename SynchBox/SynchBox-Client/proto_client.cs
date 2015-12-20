@@ -19,13 +19,6 @@ namespace SynchBox_Client
 
     public static partial class proto_client
     {
-        //private NetworkStream netStream= null;
-        //Logging log;
-
-        //ctor
-        //public proto_client(NetworkStream s) { netStream = s; }
-
-       
 
         public static void do_logout(NetworkStream netStream)
         {
@@ -43,8 +36,7 @@ namespace SynchBox_Client
             catch (Exception e)
             {
                 Logging.WriteToLog(e.ToString());
-                //DEBUG --remove in release
-                //MessageBox.Show(e.Message);
+
             }
         }
 
